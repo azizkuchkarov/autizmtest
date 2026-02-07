@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { QUESTIONS, BLOCKS, ageToBand, type BlockId } from "@/lib/questions";
+import { type BlockId } from "@/lib/questions";
 import { type AnswersMap } from "@/lib/scoring";
 import BlockIntroLoader from "@/components/BlockIntroLoader";
 import { tBlock, type Lang } from "@/lib/i18n";
@@ -13,9 +13,18 @@ type Props = {
   childAgeYears: number;
   lang: Lang;
   onComplete: (answers: AnswersMap) => void;
+  questions: {
+    id: string;
+    block: BlockId;
+    text: string;
+    example: string;
+    explain: string;
+    bands: string[];
+  }[];
+  blocks: { id: BlockId; title: string; subtitle: string }[];
 };
 
-export default function TestWizard({ childAgeYears, lang, onComplete }: Props) {
+export default function TestWizard({ childAgeYears, lang, onComplete, questions, blocks }: Props) {
   const router = useRouter();
   // Try to load saved progress
   const savedProgress = React.useMemo(() => loadProgress(), []);
@@ -32,11 +41,7 @@ export default function TestWizard({ childAgeYears, lang, onComplete }: Props) {
   const hasShownFirstIntroRef = React.useRef(false);
   const lastBlockRef = React.useRef<BlockId | null>(null);
 
-  const ageBand = React.useMemo(() => ageToBand(childAgeYears), [childAgeYears]);
-  const ageQuestions = React.useMemo(
-    () => QUESTIONS.filter((question) => question.bands.includes(ageBand)),
-    [ageBand]
-  );
+  const ageQuestions = questions;
 
   React.useEffect(() => {
     if (idx >= ageQuestions.length) {
@@ -91,9 +96,9 @@ export default function TestWizard({ childAgeYears, lang, onComplete }: Props) {
   const currentValue: 0 | 1 | 2 | 3 = (answers[q.id] ?? 0) as 0 | 1 | 2 | 3;
 
   // Get current block info
-  const blockIndex = BLOCKS.findIndex((b) => b.id === q.block);
-  const blockTitle = BLOCKS[blockIndex]?.title ?? "";
-  const isLastBlock = blockIndex === BLOCKS.length - 1;
+  const blockIndex = blocks.findIndex((b) => b.id === q.block);
+  const blockTitle = blocks[blockIndex]?.title ?? "";
+  const isLastBlock = blockIndex === blocks.length - 1;
 
   /** ===== HANDLERS ===== */
   function setAnswer(v: 0 | 1 | 2 | 3) {
@@ -131,8 +136,8 @@ export default function TestWizard({ childAgeYears, lang, onComplete }: Props) {
     setShowBlockComplete(false);
     // Find first question of next block
     const nextBlockIndex = blockIndex + 1;
-    if (nextBlockIndex < BLOCKS.length) {
-      const nextBlock = BLOCKS[nextBlockIndex];
+    if (nextBlockIndex < blocks.length) {
+      const nextBlock = blocks[nextBlockIndex];
     const nextBlockFirstQuestion = ageQuestions.findIndex((q) => q.block === nextBlock.id);
       if (nextBlockFirstQuestion !== -1) {
         setIdx(nextBlockFirstQuestion);
@@ -149,10 +154,10 @@ export default function TestWizard({ childAgeYears, lang, onComplete }: Props) {
   const labels =
     lang === "ru"
       ? {
-          always: "Постоянно / сильно",
+          always: "Постоянно / очень сильно",
           often: "Часто",
-          sometimes: "Иногда",
-          no: "Нет",
+          sometimes: "Редко / иногда",
+          no: "Нет / никогда",
           back: "Назад",
           next: "Далее",
           finish: "Завершить",
@@ -166,10 +171,10 @@ export default function TestWizard({ childAgeYears, lang, onComplete }: Props) {
           note: "Это скрининг, не диагноз.",
         }
       : {
-          always: "Doimiy / kuchli",
+          always: "Doimiy / Juda kuchli",
           often: "Ko'pincha",
-          sometimes: "Ba'zan",
-          no: "Yo'q",
+          sometimes: "Kamdan-kam / Ba'zan",
+          no: "Yo'q / Hech qachon",
           back: "Orqaga",
           next: "Keyingi",
           finish: "Yakunlash",
@@ -185,7 +190,7 @@ export default function TestWizard({ childAgeYears, lang, onComplete }: Props) {
 
   /** ===== BLOCK COMPLETE SCREEN ===== */
   if (showBlockComplete && completedBlock) {
-    const completedBlockInfo = BLOCKS.find((b) => b.id === completedBlock);
+    const completedBlockInfo = blocks.find((b) => b.id === completedBlock);
     return (
       <div className="min-h-dvh bg-gradient-to-br from-indigo-50 via-white to-emerald-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 transition-colors duration-300 px-4 pt-6 pb-10 flex items-center justify-center">
         <div className="mx-auto max-w-md rounded-2xl glass dark:bg-slate-800/50 p-8 shadow-xl ring-1 ring-slate-200/50 dark:ring-slate-700/50 animate-scaleIn">

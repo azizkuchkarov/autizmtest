@@ -162,19 +162,99 @@ html {
 }
 
 /* PDF-safe overrides for html2canvas (avoid oklab/oklch parsing) */
-.pdf-safe,
-.pdf-safe * {
-  color: #0f172a !important;
+.pdf-safe {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+.pdf-safe :not(svg):not(svg *) {
+  color: #111827 !important;
   background-color: #ffffff !important;
   background-image: none !important;
   box-shadow: none !important;
   text-shadow: none !important;
   border-color: #e2e8f0 !important;
+  opacity: 1 !important;
+  filter: none !important;
 }
 
 .pdf-safe svg,
 .pdf-safe svg * {
-  color: #0f172a !important;
-  stroke: #0f172a !important;
-  fill: #0f172a !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  border-color: transparent !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* Keep chart colors in PDF (do not override SVG colors) */
+.pdf-layout .pdf-color svg,
+.pdf-layout .pdf-color svg * {
+  color: revert !important;
+  stroke: revert !important;
+  fill: revert !important;
+  background-color: transparent !important;
+}
+
+/* A4 layout helper for pdf snapshot */
+.pdf-layout {
+  width: 794px;
+  max-width: 794px;
+  margin: 0 auto;
+  font-size: 13px;
+  line-height: 1.5;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
+.pdf-layout .pdf-hide {
+  display: none !important;
+}
+
+.pdf-layout .pdf-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.pdf-layout .pdf-section {
+  break-inside: avoid;
+}
+
+.pdf-layout .pdf-qa {
+  page-break-inside: auto;
+}
+
+.pdf-layout .pdf-qa-block {
+  border-radius: 6px;
+  break-inside: avoid;
+}
+
+.pdf-layout .pdf-qa-block ol {
+  padding-left: 18px;
+}
+
+.pdf-layout .donut-label {
+  margin-top: 6px;
+}
+
+.pdf-layout .radar-wrap {
+  height: 200px;
+  margin-top: 4px;
+  margin-bottom: 6px;
+  overflow: hidden;
+}
+
+.pdf-layout .pdf-section {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.pdf-layout .pdf-header {
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e5e7eb;
 }

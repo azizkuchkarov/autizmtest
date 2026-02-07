@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  sessions  AdminSession[]
+}
+
+model AdminSession {
+  id        String   @id @default(uuid())
+  adminId   String
+  token     String   @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+}
+
+model Block {
+  id        String   @id
+  titleUz   String
+  subtitleUz String
+  titleRu   String
+  subtitleRu String
+  order     Int
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Question {
+  id          String   @id
+  block       String
+  text        String
+  example     String
+  explain     String
+  bands       String[]
+  direction   String
+  isCoreFlag  Boolean  @default(false)
+  isRedFlag   Boolean  @default(false)
+  order       Int
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ScoringConfig {
+  id        String   @id @default("default")
+  config    Json
+  updatedAt DateTime @updatedAt
+}
+
+model AiPrompt {
+  id        String   @id @default("default")
+  prompt    String
+  updatedAt DateTime @updatedAt
+}
+
+model UserEvent {
+  id        String   @id @default(uuid())
+  type      String
+  metadata  Json?
+  createdAt DateTime @default(now())
+}
+
+model Feedback {
+  id        String   @id @default(uuid())
+  name      String?
+  phone     String?
+  message   String
+  createdAt DateTime @default(now())
+}
+
+model AbaCenter {
+  id        String   @id @default(uuid())
+  region    String
+  name      String
+  phone     String?
+  address   String?
+  note      String?
+  order     Int
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

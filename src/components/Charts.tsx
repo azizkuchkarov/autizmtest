@@ -15,7 +15,7 @@ export function DonutRisk({ value }: { value: number }) {
   const colors = ["#6366f1", "#E2E8F0"]; // indigo + slate-200
 
   return (
-    <div className="h-44 w-full">
+    <div className="h-44 w-full pdf-color">
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
@@ -30,7 +30,7 @@ export function DonutRisk({ value }: { value: number }) {
           </Pie>
         </PieChart>
       </ResponsiveContainer>
-      <div className="-mt-28 text-center">
+      <div className="-mt-28 text-center donut-label">
         <div className="text-3xl font-extrabold text-slate-900 dark:text-slate-100">{value}%</div>
         <div className="text-xs font-semibold text-slate-600 dark:text-slate-400">Umumiy risk</div>
       </div>
@@ -45,7 +45,7 @@ export function RadarBlocks({
 }) {
   // value: 0..18
   return (
-    <div className="h-72 w-full">
+    <div className="h-72 w-full radar-wrap pdf-color">
       <ResponsiveContainer width="100%" height="100%">
         <RadarChart data={points}>
           <PolarGrid stroke="#cbd5e1" className="dark:stroke-slate-600" />

@@ -1,5 +1,6 @@
 // src/app/api/ai-explain/route.ts
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
 
 export const runtime = "nodejs";
 
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
 
     const input = await req.json();
 
-    const system = `
+    const defaultPrompt = `
 Siz klinik skrining natijalarini tushuntiradigan professional yordamchisiz.
 Vazifa: foydalanuvchiga (ota-onaga) autizm skriningi natijasini aniq, ehtiyotkor va tushunarli qilib izohlash.
 
@@ -58,6 +59,9 @@ CHIQISH (OUTPUT):
 - Faqat tayyor xulosa matni (sarlavha bilan).
 - Hech qanday JSON qaytarmang.
 `.trim();
+
+    const saved = await prisma.aiPrompt.findUnique({ where: { id: "default" } });
+    const system = (saved?.prompt && saved.prompt.trim()) ? saved.prompt.trim() : defaultPrompt;
 
     const user = `INPUT JSON: ${JSON.stringify(input)}`;
 

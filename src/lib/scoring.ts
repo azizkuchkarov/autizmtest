@@ -57,13 +57,29 @@ export type Summary = ScoringResult & {
   blocks: Record<DomainId, BlockScore>;
 };
 
-const DOMAIN_WEIGHTS: Record<DomainId, number> = {
-  social: 2.6,
-  communication: 2.4,
-  repetitive: 2.0,
-  sensory: 1.6,
-  play: 1.4,
-  daily: 1.8,
+export type ScoringConfig = {
+  weights: Record<DomainId, number>;
+  coreBoost: { threshold: number; max: number };
+  impactMultiplier: { threshold: number; max: number };
+  redFlagBump: { one: number; two: number };
+  tierThresholds: { watch: number; moderate: number; high: number };
+  blockStatus: { normalMax: number; mediumMax: number };
+};
+
+export const defaultScoringConfig: ScoringConfig = {
+  weights: {
+    social: 2.6,
+    communication: 2.4,
+    repetitive: 2.0,
+    sensory: 1.6,
+    play: 1.4,
+    daily: 1.8,
+  },
+  coreBoost: { threshold: 0.55, max: 0.18 },
+  impactMultiplier: { threshold: 0.5, max: 0.25 },
+  redFlagBump: { one: 0.08, two: 0.1 },
+  tierThresholds: { watch: 25, moderate: 45, high: 65 },
+  blockStatus: { normalMax: 0.34, mediumMax: 0.67 },
 };
 
 const DOMAIN_MAX_RAW = 6 * 3; // 6 savol, max 3 ball
@@ -76,9 +92,9 @@ function toSeverity(direction: Direction, v: AnswerValue): AnswerValue {
   return direction === "negative" ? v : ((3 - v) as AnswerValue);
 }
 
-function blockStatus(severity01: number): BlockScore["status"] {
-  if (severity01 < 0.34) return "Normal";
-  if (severity01 < 0.67) return "O‘rtacha";
+function blockStatus(severity01: number, config: ScoringConfig): BlockScore["status"] {
+  if (severity01 < config.blockStatus.normalMax) return "Normal";
+  if (severity01 < config.blockStatus.mediumMax) return "O‘rtacha";
   return "Yuqori";
 }
 
@@ -89,7 +105,10 @@ function blockStatus(severity01: number): BlockScore["status"] {
  * - Functional impact multiplier: daily yuqori bo‘lsa risk ko‘tariladi
  * - Red-flag escalation: kritik savollar ko‘p bo‘lsa tier kamida MODERATE/HIGH
  */
-export function scoreAutismScreening(input: ScoringInput): ScoringResult {
+export function scoreAutismScreening(
+  input: ScoringInput,
+  config: ScoringConfig = defaultScoringConfig
+): ScoringResult {
   const { ageBand, responses } = input;
 
   // Group by domain
@@ -117,13 +136,13 @@ export function scoreAutismScreening(input: ScoringInput): ScoringResult {
         rawSum,
         maxRaw: DOMAIN_MAX_RAW,
         severity01,
-        weighted01: severity01 * DOMAIN_WEIGHTS[domain],
+        weighted01: severity01 * config.weights[domain],
       };
     }
   );
 
   // Normalize weighted score to 0..1
-  const weightTotal = Object.values(DOMAIN_WEIGHTS).reduce((a, b) => a + b, 0);
+  const weightTotal = Object.values(config.weights).reduce((a, b) => a + b, 0);
   const weightedSum = domains.reduce((s, d) => s + d.weighted01, 0);
   const weighted01 = clamp01(weightedSum / weightTotal);
 
@@ -141,18 +160,19 @@ export function scoreAutismScreening(input: ScoringInput): ScoringResult {
 
   // Core boost curve (smooth): 0..~0.18
   // Past coreSeverity 0.55 risk starts increasing faster
-  const coreBoost = clamp01((coreSeverity01 - 0.55) / 0.45) * 0.18;
+  const coreBoost = clamp01((coreSeverity01 - config.coreBoost.threshold) / (1 - config.coreBoost.threshold)) * config.coreBoost.max;
 
   // Functional impact multiplier: up to +25%
   // daily >=0.5 -> gradually increases
-  const impactMultiplier = 1 + clamp01((functionalImpact01 - 0.5) / 0.5) * 0.25;
+  const impactMultiplier =
+    1 + clamp01((functionalImpact01 - config.impactMultiplier.threshold) / (1 - config.impactMultiplier.threshold)) * config.impactMultiplier.max;
 
   // Base score
   let riskScore01 = clamp01((weighted01 + coreBoost) * impactMultiplier);
 
   // Red-flag escalation: bump score and minimum tier
-  if (redFlagCount >= 1) riskScore01 = clamp01(riskScore01 + 0.08);
-  if (redFlagCount >= 2) riskScore01 = clamp01(riskScore01 + 0.1);
+  if (redFlagCount >= 1) riskScore01 = clamp01(riskScore01 + config.redFlagBump.one);
+  if (redFlagCount >= 2) riskScore01 = clamp01(riskScore01 + config.redFlagBump.two);
 
   const riskScorePercent = Math.round(riskScore01 * 100);
 
@@ -162,11 +182,11 @@ export function scoreAutismScreening(input: ScoringInput): ScoringResult {
   // MODERATE: 45-64
   // HIGH: 65+
   let tier: RiskTier =
-    riskScorePercent >= 65
+    riskScorePercent >= config.tierThresholds.high
       ? "HIGH"
-      : riskScorePercent >= 45
+      : riskScorePercent >= config.tierThresholds.moderate
       ? "MODERATE"
-      : riskScorePercent >= 25
+      : riskScorePercent >= config.tierThresholds.watch
       ? "WATCH"
       : "LOW";
 
@@ -199,9 +219,15 @@ export function scoreAutismScreening(input: ScoringInput): ScoringResult {
   };
 }
 
-export function computeSummary(childAgeYears: number, answers: AnswersMap): Summary {
+export function computeSummary(
+  childAgeYears: number,
+  answers: AnswersMap,
+  config: ScoringConfig = defaultScoringConfig,
+  questionsOverride?: typeof QUESTIONS
+): Summary {
   const ageBand = ageToBand(childAgeYears);
-  const ageQuestions = QUESTIONS.filter((q) => q.bands.includes(ageBand));
+  const source = questionsOverride ?? QUESTIONS;
+  const ageQuestions = source.filter((q) => q.bands.includes(ageBand));
   const totalCount = ageQuestions.length;
 
   let answeredCount = 0;
@@ -218,14 +244,14 @@ export function computeSummary(childAgeYears: number, answers: AnswersMap): Summ
     };
   });
 
-  const result = scoreAutismScreening({ ageBand, responses });
+  const result = scoreAutismScreening({ ageBand, responses }, config);
 
   const blocks = result.domains.reduce((acc, d) => {
     acc[d.domain] = {
       rawSum: d.rawSum,
       maxRaw: d.maxRaw,
       severity01: d.severity01,
-      status: blockStatus(d.severity01),
+      status: blockStatus(d.severity01, config),
     };
     return acc;
   }, {} as Record<DomainId, BlockScore>);

@@ -4,7 +4,15 @@ import React from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { DonutRisk, RadarBlocks } from "@/components/Charts";
-import { computeSummary, type AnswerValue, type AnswersMap, type Summary, type RiskTier } from "@/lib/scoring";
+import {
+  computeSummary,
+  type AnswerValue,
+  type AnswersMap,
+  type Summary,
+  type RiskTier,
+  type ScoringConfig,
+  defaultScoringConfig,
+} from "@/lib/scoring";
 import { QUESTIONS, type Direction } from "@/lib/questions";
 import DarkModeToggle from "@/components/DarkModeToggle";
 
@@ -62,16 +70,16 @@ function statusLabel(status: Summary["blocks"][keyof Summary["blocks"]]["status"
 function answerLabel(value: AnswerValue, lang: "uz" | "ru") {
   const map = {
     uz: {
-      3: "Doimiy / kuchli",
+      3: "Doimiy / Juda kuchli",
       2: "Ko'pincha",
-      1: "Ba'zan",
-      0: "Yo'q",
+      1: "Kamdan-kam / Ba'zan",
+      0: "Yo'q / Hech qachon",
     },
     ru: {
-      3: "Постоянно / сильно",
+      3: "Постоянно / очень сильно",
       2: "Часто",
-      1: "Иногда",
-      0: "Нет",
+      1: "Редко / иногда",
+      0: "Нет / никогда",
     },
   };
   return map[lang][value];
@@ -240,6 +248,11 @@ export default function ResultClient() {
   const [summary, setSummary] = React.useState<ReturnType<typeof computeSummary> | null>(null);
   const [lang, setLang] = React.useState<"uz" | "ru">("uz");
   const [answers, setAnswers] = React.useState<AnswersMap | null>(null);
+  const [questions, setQuestions] = React.useState<any[]>(QUESTIONS);
+  const [blocks, setBlocks] = React.useState<any[]>([]);
+  const [abaCenters, setAbaCenters] = React.useState<any[]>([]);
+  const [selectedRegion, setSelectedRegion] = React.useState<string>("");
+  const [scoringConfig, setScoringConfig] = React.useState<ScoringConfig>(defaultScoringConfig);
   const [reportId, setReportId] = React.useState<string>("");
   const [reportDate, setReportDate] = React.useState<string>("");
 
@@ -253,7 +266,7 @@ export default function ResultClient() {
     const age = Number(rawAge);
     if (rawLang === "ru" || rawLang === "uz") setLang(rawLang);
     setAnswers(answers);
-    setSummary(computeSummary(age, answers));
+    setSummary(computeSummary(age, answers, scoringConfig, questions));
 
     const now = new Date();
     const dateLabel =
@@ -264,86 +277,177 @@ export default function ResultClient() {
     setReportId(`ASDS-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(
       now.getDate()
     ).padStart(2, "0")}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`);
-  }, []);
+  }, [scoringConfig, questions]);
 
-  async function generatePdf() {
-    const el = document.getElementById("report");
-    if (!el) return;
-    const canvas = await html2canvas(el, {
+  React.useEffect(() => {
+    const age = Number(sessionStorage.getItem("asds_age") || "0");
+    const ageBand = age ? (age <= 3 ? "2-3" : age <= 5 ? "4-5" : "6-7") : null;
+    Promise.all([
+      fetch("/api/scoring-config").then((r) => r.json()),
+      fetch("/api/blocks").then((r) => r.json()),
+      ageBand ? fetch(`/api/questions?ageBand=${ageBand}`).then((r) => r.json()) : Promise.resolve({ items: QUESTIONS }),
+      fetch("/api/aba-centers").then((r) => r.json()).catch(() => ({ items: [] })),
+    ])
+      .then(([cfg, blk, q, aba]) => {
+        setScoringConfig(cfg.config ?? defaultScoringConfig);
+        setBlocks(blk.items ?? []);
+        setQuestions(q.items ?? QUESTIONS);
+        setAbaCenters(aba.items ?? []);
+        if (!selectedRegion && Array.isArray(aba.items) && aba.items.length > 0) {
+          setSelectedRegion(String(aba.items[0].region ?? ""));
+        }
+      })
+      .catch(() => {});
+  }, [selectedRegion]);
+
+  async function requestAiText(): Promise<AiOut | null> {
+    if (!summary) return null;
+    const domainSeverities = {
+      social: Math.round(summary.blocks.social.severity01 * 100),
+      communication: Math.round(summary.blocks.communication.severity01 * 100),
+      repetitive: Math.round(summary.blocks.repetitive.severity01 * 100),
+      sensory: Math.round(summary.blocks.sensory.severity01 * 100),
+      play: Math.round(summary.blocks.play.severity01 * 100),
+      daily: Math.round(summary.blocks.daily.severity01 * 100),
+    };
+
+    const aiInput = {
+      ageBand: summary.ageBand,
+      riskTier: summary.tier,
+      riskScorePercent: summary.riskScorePercent,
+      topDomains: summary.rationale.topDomains,
+      domainSeverities,
+      redFlagCount: summary.redFlagCount,
+      parentNotes: "",
+    };
+
+    const res = await fetch("/api/ai-explain", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(aiInput),
+    });
+    const data = await res.json();
+    return normalizeAi(data);
+  }
+
+  async function renderNodeToCanvas(node: HTMLElement) {
+    const keepColor = node.classList.contains("pdf-keep-color");
+    const temp = document.createElement("div");
+    temp.className = keepColor ? "pdf-layout" : "pdf-safe pdf-layout";
+    temp.style.position = "fixed";
+    temp.style.left = "-99999px";
+    temp.style.top = "0";
+    temp.style.background = "#ffffff";
+    temp.style.padding = "24px";
+    temp.style.width = "794px";
+    temp.style.maxWidth = "794px";
+
+    const style = document.createElement("style");
+    style.textContent = `
+      * { box-shadow: none !important; text-shadow: none !important; filter: none !important; background-image: none !important; }
+      svg, svg * { box-shadow: none !important; text-shadow: none !important; filter: none !important; }
+    `;
+    temp.appendChild(style);
+
+    const cloned = node.cloneNode(true) as HTMLElement;
+    if (!keepColor) cloned.classList.add("pdf-safe");
+    temp.appendChild(cloned);
+    if (keepColor) {
+      const nodes = cloned.querySelectorAll("*");
+      nodes.forEach((n) => {
+        if (n instanceof SVGElement) return;
+        const el = n as HTMLElement;
+        el.style.color = "#111827";
+        el.style.backgroundColor = "#ffffff";
+        el.style.boxShadow = "none";
+        el.style.textShadow = "none";
+        el.style.backgroundImage = "none";
+      });
+    }
+    document.body.appendChild(temp);
+
+    const canvas = await html2canvas(temp, {
       scale: 2,
       backgroundColor: "#ffffff",
-      onclone: (doc) => {
-        const cloned = doc.getElementById("report");
-        if (cloned) {
-          cloned.classList.add("pdf-safe");
-          const all = cloned.querySelectorAll("*");
-          all.forEach((node) => {
-            const el = node as HTMLElement;
-            el.style.color = "#0f172a";
-            el.style.backgroundColor = "#ffffff";
-            el.style.borderColor = "#e2e8f0";
-            el.style.boxShadow = "none";
-            el.style.textShadow = "none";
-            el.style.backgroundImage = "none";
-            if (el instanceof doc.defaultView!.SVGElement) {
-              el.style.fill = "#0f172a";
-              el.style.stroke = "#0f172a";
-            }
-          });
-        }
-      },
     });
-    const imgData = canvas.toDataURL("image/png");
 
+    document.body.removeChild(temp);
+    return canvas;
+  }
+
+  async function generatePdf() {
+    if (!summary) return;
+    if (!ai) {
+      setLoadingAi(true);
+      try {
+        const out = await requestAiText();
+        if (out) setAi(out);
+      } finally {
+        setLoadingAi(false);
+      }
+      // Allow React to render AI text before snapshot
+      await new Promise((r) => setTimeout(r, 150));
+    }
     const pdf = new jsPDF("p", "mm", "a4");
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 10;
+    const maxWidth = pageWidth - margin * 2;
+    const maxHeight = pageHeight - margin * 2;
+    let cursorY = margin;
 
-    const imgWidth = pageWidth;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    const report = document.getElementById("report");
+    if (!report) return;
 
-    let position = 0;
-    let remaining = imgHeight;
+    const sections = Array.from(report.querySelectorAll(".pdf-section")) as HTMLElement[];
+    const items: HTMLElement[] = [];
+    for (const section of sections) {
+      if (section.classList.contains("pdf-qa-section")) {
+        const title = section.querySelector(".pdf-qa-title") as HTMLElement | null;
+        if (title) items.push(title);
+        const blocks = Array.from(section.querySelectorAll(".pdf-qa-block")) as HTMLElement[];
+        items.push(...blocks);
+      } else {
+        items.push(section);
+      }
+    }
 
-    while (remaining > 0) {
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-      remaining -= pageHeight;
-      position -= pageHeight;
-      if (remaining > 0) pdf.addPage();
+    for (let i = 0; i < items.length; i += 1) {
+      const canvas = await renderNodeToCanvas(items[i]);
+      const imgData = canvas.toDataURL("image/png");
+      let imgWidth = maxWidth;
+      let imgHeight = (canvas.height * imgWidth) / canvas.width;
+      if (imgHeight > maxHeight) {
+        const scale = maxHeight / imgHeight;
+        imgWidth = imgWidth * scale;
+        imgHeight = imgHeight * scale;
+      }
+
+      if (cursorY + imgHeight > pageHeight - margin) {
+        pdf.addPage();
+        cursorY = margin;
+      }
+      pdf.addImage(imgData, "PNG", margin, cursorY, imgWidth, imgHeight);
+      cursorY += imgHeight + 4;
     }
 
     pdf.save("autism-screening-report.pdf");
+    fetch("/api/log", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "pdf_download",
+        metadata: { ageBand: summary.ageBand, riskScorePercent: summary.riskScorePercent },
+      }),
+    }).catch(() => null);
   }
 
   async function fetchAi() {
     if (!summary) return;
     setLoadingAi(true);
     try {
-      const domainSeverities = {
-        social: Math.round(summary.blocks.social.severity01 * 100),
-        communication: Math.round(summary.blocks.communication.severity01 * 100),
-        repetitive: Math.round(summary.blocks.repetitive.severity01 * 100),
-        sensory: Math.round(summary.blocks.sensory.severity01 * 100),
-        play: Math.round(summary.blocks.play.severity01 * 100),
-        daily: Math.round(summary.blocks.daily.severity01 * 100),
-      };
-
-      const aiInput = {
-        ageBand: summary.ageBand,
-        riskTier: summary.tier,
-        riskScorePercent: summary.riskScorePercent,
-        topDomains: summary.rationale.topDomains,
-        domainSeverities,
-        redFlagCount: summary.redFlagCount,
-        parentNotes: "",
-      };
-      const res = await fetch("/api/ai-explain", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(aiInput),
-      });
-      const data = await res.json();
-      setAi(normalizeAi(data));
+      const out = await requestAiText();
+      if (out) setAi(out);
     } finally {
       setLoadingAi(false);
     }
@@ -364,6 +468,21 @@ export default function ResultClient() {
 
   const chip = riskChipStyle(summary.tier);
   const parentConclusion = buildParentConclusion(summary, answers, lang);
+  const ageQuestions = (questions.length ? questions : QUESTIONS).filter((q) => q.bands.includes(summary.ageBand));
+  const qaList = ageQuestions.map((q) => {
+    const v = answers?.[q.id];
+    return {
+      id: q.id,
+      block: q.block,
+      text: cleanQuestionText(q.text),
+      answerLabel: v === undefined ? (lang === "ru" ? "Нет ответа" : "Javob berilmagan") : answerLabel(v, lang),
+    };
+  });
+  const qaByBlock = qaList.reduce((acc, item) => {
+    acc[item.block] = acc[item.block] ?? [];
+    acc[item.block].push(item);
+    return acc;
+  }, {} as Record<string, typeof qaList>);
   const radar = [
     { label: "Ijtimoiy", value: summary.blocks.social.rawSum },
     { label: "Muloqot", value: summary.blocks.communication.rawSum },
@@ -372,6 +491,13 @@ export default function ResultClient() {
     { label: "O‘yin", value: summary.blocks.play.rawSum },
     { label: "Kundalik", value: summary.blocks.daily.rawSum },
   ];
+  const regionOptions = Array.from(
+    new Set(abaCenters.map((c) => String(c.region)).filter(Boolean))
+  );
+  const filteredCenters =
+    selectedRegion && regionOptions.length > 0
+      ? abaCenters.filter((c) => String(c.region) === selectedRegion)
+      : abaCenters;
 
   return (
     <div className="min-h-dvh bg-gradient-to-br from-indigo-50 via-white to-emerald-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors duration-300 pb-16">
@@ -381,10 +507,10 @@ export default function ResultClient() {
       </div>
       <div className="mx-auto max-w-md px-4 pt-6">
         <div className="relative overflow-hidden rounded-3xl bg-white/80 dark:bg-slate-900/70 backdrop-blur-xl p-6 shadow-xl ring-1 ring-slate-200/60 dark:ring-slate-700/60 hover-lift animate-fadeIn" id="report">
-          <div className="pointer-events-none absolute -right-12 top-10 rotate-12 text-5xl font-bold tracking-widest text-indigo-200/40 dark:text-indigo-400/20">
+          <div className="pointer-events-none absolute -right-12 top-10 rotate-12 text-5xl font-bold tracking-widest text-indigo-200/40 dark:text-indigo-400/20 pdf-hide">
             PREMIUM
           </div>
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start justify-between gap-3 pdf-section pdf-header">
             <div className="flex-1">
               <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50/80 dark:bg-indigo-900/30 px-3 py-1 text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-100/70 dark:ring-indigo-800/60">
                 Premium hisobot
@@ -409,8 +535,8 @@ export default function ResultClient() {
             </div>
           </div>
 
-          <div className="mt-5 grid gap-4">
-            <div className="rounded-2xl bg-gradient-to-br from-white to-slate-50/60 dark:from-slate-900/70 dark:to-slate-800/60 p-5 ring-1 ring-slate-200/60 dark:ring-slate-700/60 shadow-md hover-lift">
+          <div className="mt-5 grid gap-4 pdf-grid">
+            <div className="rounded-2xl bg-gradient-to-br from-white to-slate-50/60 dark:from-slate-900/70 dark:to-slate-800/60 p-5 ring-1 ring-slate-200/60 dark:ring-slate-700/60 shadow-md hover-lift pdf-section pdf-keep-color">
               <DonutRisk value={summary.riskScorePercent} />
               <div className="mt-3 flex items-center justify-between text-xs text-slate-700 dark:text-slate-300">
                 <span className="font-medium">Umumiy risk</span>
@@ -426,13 +552,39 @@ export default function ResultClient() {
               </div>
             </div>
 
-            <div className="rounded-2xl bg-gradient-to-br from-white to-slate-50/60 dark:from-slate-900/70 dark:to-slate-800/60 p-5 ring-1 ring-slate-200/60 dark:ring-slate-700/60 shadow-md hover-lift">
+            <div className="rounded-2xl bg-gradient-to-br from-white to-slate-50/60 dark:from-slate-900/70 dark:to-slate-800/60 p-5 ring-1 ring-slate-200/60 dark:ring-slate-700/60 shadow-md hover-lift pdf-section pdf-keep-color">
               <div className="text-base font-bold text-slate-900 dark:text-slate-100 mb-2">Rivojlanish profili</div>
               <p className="mt-1.5 text-xs text-slate-600 dark:text-slate-400">Yuqori qiymat — shu sohada yordam ehtiyoji ko'proq bo'lishi mumkin.</p>
               <RadarBlocks points={radar} />
             </div>
 
-            <div className="rounded-2xl bg-gradient-to-br from-white to-slate-50/60 dark:from-slate-900/70 dark:to-slate-800/60 p-5 ring-1 ring-slate-200/60 dark:ring-slate-700/60 shadow-md hover-lift">
+            <div className="rounded-2xl bg-gradient-to-br from-white to-slate-50/60 dark:from-slate-900/70 dark:to-slate-800/60 p-5 ring-1 ring-slate-200/60 dark:ring-slate-700/60 shadow-md hover-lift pdf-section pdf-qa-section">
+              <div className="text-base font-bold text-slate-900 dark:text-slate-100 mb-2 pdf-qa-title">
+                {lang === "ru" ? "Вопросы и ответы" : "Savollar va javoblar"}
+              </div>
+              <div className="mt-3 space-y-4 text-sm text-slate-700 dark:text-slate-300 pdf-qa">
+                {Object.entries(qaByBlock).map(([blockId, items]) => (
+                  <div key={blockId} className="rounded-xl border border-slate-200/70 dark:border-slate-700/60 p-3 pdf-qa-block">
+                    <div className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                      {blockLabel(blockId as any, lang)}
+                    </div>
+                    <ol className="mt-2 list-decimal pl-5 space-y-1.5">
+                      {items.map((item) => (
+                        <li key={item.id} className="leading-relaxed">
+                          <span className="font-medium text-slate-900 dark:text-slate-100">{item.text}</span>
+                          <span className="text-slate-600 dark:text-slate-300">
+                            {" "}
+                            — {lang === "ru" ? "Ответ:" : "Javob:"} {item.answerLabel}
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-gradient-to-br from-white to-slate-50/60 dark:from-slate-900/70 dark:to-slate-800/60 p-5 ring-1 ring-slate-200/60 dark:ring-slate-700/60 shadow-md hover-lift pdf-section">
               <div className="text-base font-bold text-slate-900 dark:text-slate-100 mb-2">
                 {lang === "ru" ? "Вывод по ответам родителей" : "Ota-ona javoblari bo'yicha xulosa"}
               </div>
@@ -455,7 +607,7 @@ export default function ResultClient() {
               </p>
             </div>
 
-            <div className="rounded-2xl bg-gradient-to-br from-white to-slate-50/60 dark:from-slate-900/70 dark:to-slate-800/60 p-5 ring-1 ring-slate-200/60 dark:ring-slate-700/60 shadow-md hover-lift">
+            <div className="rounded-2xl bg-gradient-to-br from-white to-slate-50/60 dark:from-slate-900/70 dark:to-slate-800/60 p-5 ring-1 ring-slate-200/60 dark:ring-slate-700/60 shadow-md hover-lift pdf-section">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-base font-bold text-slate-900 dark:text-slate-100">AI xulosa</div>
@@ -471,7 +623,9 @@ export default function ResultClient() {
               </div>
 
               {!ai ? (
-                <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">"AI xulosa" tugmasini bosing.</p>
+                <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
+                  {loadingAi ? "Yuklanmoqda..." : "AI xulosa hali tayyor emas."}
+                </p>
               ) : (
                 <div className="mt-4 rounded-2xl bg-gradient-to-br from-white to-slate-50/60 dark:from-slate-900/70 dark:to-slate-800/60 p-4 ring-1 ring-slate-200/60 dark:ring-slate-700/60 shadow-sm text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line">
                   {ai.text}
@@ -479,9 +633,48 @@ export default function ResultClient() {
               )}
             </div>
 
+            <div className="rounded-2xl bg-gradient-to-br from-white to-slate-50/60 dark:from-slate-900/70 dark:to-slate-800/60 p-5 ring-1 ring-slate-200/60 dark:ring-slate-700/60 shadow-md hover-lift pdf-section">
+              <div className="text-base font-bold text-slate-900 dark:text-slate-100 mb-2">
+                ABA markazlar ro‘yxati (12 viloyat)
+              </div>
+              {regionOptions.length > 0 && (
+                <div className="mb-3">
+                  <label className="text-xs font-semibold text-slate-600">Viloyatni tanlang</label>
+                  <select
+                    className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                    value={selectedRegion}
+                    onChange={(e) => setSelectedRegion(e.target.value)}
+                  >
+                    {regionOptions.map((r) => (
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {abaCenters.length === 0 ? (
+                <div className="text-sm text-slate-600">Ro‘yxat hali kiritilmagan.</div>
+              ) : filteredCenters.length === 0 ? (
+                <div className="text-sm text-slate-600">Ushbu viloyat uchun markaz topilmadi.</div>
+              ) : (
+                <div className="grid gap-2 text-sm text-slate-700">
+                  {filteredCenters.map((c) => (
+                    <div key={c.id} className="rounded-xl border border-slate-200/70 p-3">
+                      <div className="text-xs font-semibold text-slate-500">{c.region}</div>
+                      <div className="mt-0.5 font-semibold text-slate-900">{c.name}</div>
+                      {c.address && <div className="text-xs text-slate-600 mt-1">{c.address}</div>}
+                      {c.phone && <div className="text-xs text-slate-600">{c.phone}</div>}
+                      {c.note && <div className="text-xs text-slate-500 mt-1">{c.note}</div>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <button
               onClick={generatePdf}
-              className="w-full rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-indigo-600 dark:from-indigo-500 dark:via-indigo-400 dark:to-indigo-600 px-6 py-4 text-sm font-bold text-white shadow-xl shadow-indigo-500/30 dark:shadow-indigo-500/40 transition-all hover:from-indigo-700 hover:via-indigo-600 hover:to-indigo-700 dark:hover:from-indigo-600 dark:hover:via-indigo-500 dark:hover:to-indigo-700 hover:shadow-2xl hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
+              className="w-full rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-indigo-600 dark:from-indigo-500 dark:via-indigo-400 dark:to-indigo-600 px-6 py-4 text-sm font-bold text-white shadow-xl shadow-indigo-500/30 dark:shadow-indigo-500/40 transition-all hover:from-indigo-700 hover:via-indigo-600 hover:to-indigo-700 dark:hover:from-indigo-600 dark:hover:via-indigo-500 dark:hover:to-indigo-700 hover:shadow-2xl hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 pdf-hide"
             >
               PDF yuklab olish
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
