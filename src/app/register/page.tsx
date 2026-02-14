@@ -27,7 +27,7 @@ export default function RegisterPage() {
       sessionStorage.setItem("asds_family_history", familyHistory);
       sessionStorage.setItem("asds_lang", "uz");
     } catch {}
-    router.push("/test");
+    router.push("/payment");
   }
 
   return (
@@ -142,7 +142,7 @@ export default function RegisterPage() {
               onClick={handleStart}
               className="w-full rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-indigo-600 dark:from-indigo-500 dark:via-indigo-400 dark:to-indigo-600 px-6 py-4 text-base font-bold text-white shadow-xl shadow-indigo-500/30 dark:shadow-indigo-500/40 transition-all hover:from-indigo-700 hover:via-indigo-600 hover:to-indigo-700 dark:hover:from-indigo-600 dark:hover:via-indigo-500 dark:hover:to-indigo-700 hover:shadow-2xl hover:-translate-y-0.5"
             >
-              Testni boshlash
+              To'lovga o'tish
             </button>
           </div>
         </section>

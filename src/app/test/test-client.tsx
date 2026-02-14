@@ -19,6 +19,7 @@ export default function TestClient() {
   React.useEffect(() => {
     const rawAge = sessionStorage.getItem("asds_age");
     const rawLang = sessionStorage.getItem("asds_lang");
+    const rawPhone = sessionStorage.getItem("asds_phone");
     if (!rawAge) {
       router.replace("/start");
       return;
@@ -28,9 +29,22 @@ export default function TestClient() {
       router.replace("/start");
       return;
     }
-    setAge(ageVal);
-    if (rawLang === "ru" || rawLang === "uz") setLang(rawLang);
-    setReady(true);
+    if (!rawPhone) {
+      router.replace("/register");
+      return;
+    }
+    fetch(`/api/payment/status?phone=${encodeURIComponent(rawPhone)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.hasPaid) {
+          router.replace("/payment");
+          return;
+        }
+        setAge(ageVal);
+        if (rawLang === "ru" || rawLang === "uz") setLang(rawLang);
+        setReady(true);
+      })
+      .catch(() => router.replace("/payment"));
   }, [router]);
 
   React.useEffect(() => {
