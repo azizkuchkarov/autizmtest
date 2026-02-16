@@ -1,16 +1,30 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import DarkModeToggle from "@/components/DarkModeToggle";
 
 export default function PaymentPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [phone, setPhone] = React.useState("+998");
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
   const [merchantTransId, setMerchantTransId] = React.useState<string | null>(null);
   const [polling, setPolling] = React.useState(false);
+  const [amount, setAmount] = React.useState<number>(125_000);
+
+  // Format raqam — server va client da bir xil (hydration xatosiz)
+  const amountText = String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+
+  React.useEffect(() => {
+    fetch("/api/payment/config")
+      .then((r) => r.json())
+      .then((d) => {
+        if (typeof d.amount === "number" && d.amount > 0) setAmount(d.amount);
+      })
+      .catch(() => {});
+  }, []);
 
   React.useEffect(() => {
     try {
@@ -18,6 +32,14 @@ export default function PaymentPage() {
       if (stored) setPhone(stored);
     } catch {}
   }, []);
+
+  React.useEffect(() => {
+    const mt = searchParams.get("mt") || searchParams.get("merchant_trans_id");
+    if (mt) {
+      setMerchantTransId(mt);
+      setPolling(true);
+    }
+  }, [searchParams]);
 
   React.useEffect(() => {
     if (!merchantTransId || !polling) return;
@@ -35,7 +57,9 @@ export default function PaymentPage() {
     return () => clearInterval(t);
   }, [merchantTransId, polling, router]);
 
-  async function handlePay() {
+  const isLocalhost = typeof window !== "undefined" && window.location.hostname === "localhost";
+
+  async function handlePay(devSkip = false) {
     setError("");
     const cleaned = phone.replace(/\s+/g, "").trim();
     if (!/^\+998\d{9}$/.test(cleaned)) {
@@ -47,7 +71,7 @@ export default function PaymentPage() {
       const res = await fetch("/api/payment/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: cleaned }),
+        body: JSON.stringify({ phone: cleaned, dev_skip: devSkip }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -57,6 +81,40 @@ export default function PaymentPage() {
       try {
         sessionStorage.setItem("asds_phone", cleaned);
       } catch {}
+      setMerchantTransId(data.merchantTransId);
+      setPolling(true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handlePayByCard() {
+    setError("");
+    const cleaned = phone.replace(/\s+/g, "").trim();
+    if (!/^\+998\d{9}$/.test(cleaned)) {
+      setError("Telefon raqam +998XXXXXXXXX ko'rinishida bo'lishi kerak.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const returnUrl = typeof window !== "undefined" ? window.location.origin : "";
+      const res = await fetch("/api/payment/redirect-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: cleaned, return_url: returnUrl }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data?.error ?? "Xatolik.");
+        return;
+      }
+      try {
+        sessionStorage.setItem("asds_phone", cleaned);
+      } catch {}
+      if (data.redirectUrl) {
+        window.location.href = data.redirectUrl;
+        return;
+      }
       setMerchantTransId(data.merchantTransId);
       setPolling(true);
     } finally {
@@ -76,7 +134,7 @@ export default function PaymentPage() {
             To'lov
           </h1>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-            Autizm skrining testi uchun to'lov — 125 000 so'm
+            Autizm skrining testi uchun to'lov — {amountText} so'm
           </p>
 
           {!merchantTransId ? (
@@ -104,12 +162,30 @@ export default function PaymentPage() {
               )}
               <button
                 type="button"
-                onClick={handlePay}
+                onClick={() => handlePay(false)}
                 disabled={loading}
                 className="mt-6 w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-6 py-4 text-base font-bold text-white shadow-lg shadow-emerald-500/30 transition-all hover:from-emerald-700 hover:to-emerald-600 disabled:opacity-60"
               >
-                {loading ? "Yuborilmoqda..." : "Click orqali to'lash"}
+                {loading ? "Yuborilmoqda..." : "Telefonga invoice (Click ilovasi)"}
               </button>
+              <button
+                type="button"
+                onClick={handlePayByCard}
+                disabled={loading}
+                className="mt-3 w-full rounded-2xl bg-slate-800 dark:bg-slate-700 text-white px-6 py-4 text-base font-bold shadow-lg transition-all hover:bg-slate-700 dark:hover:bg-slate-600 disabled:opacity-60"
+              >
+                Karta orqali to'lash (Click sahifasida)
+              </button>
+              {isLocalhost && (
+                <button
+                  type="button"
+                  onClick={() => handlePay(true)}
+                  disabled={loading}
+                  className="mt-3 w-full rounded-2xl border-2 border-amber-400 bg-amber-50 dark:bg-amber-900/20 px-6 py-3 text-sm font-bold text-amber-800 dark:text-amber-200 transition-all hover:bg-amber-100 dark:hover:bg-amber-900/30 disabled:opacity-60"
+                >
+                  Test rejimida to'lash (to'lovsiz, faqat lokal)
+                </button>
+              )}
             </>
           ) : (
             <div className="mt-6 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 p-4 ring-1 ring-emerald-200/60 dark:ring-emerald-800/40">

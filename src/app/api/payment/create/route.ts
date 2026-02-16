@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { createInvoice } from "@/lib/click";
-
-const AMOUNT = 125_000; // sum
+import { getPaymentAmount } from "@/lib/payment-config";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const phone = String(body?.phone || "").replace(/\s+/g, "").trim();
+    const devSkip = body?.dev_skip === true && process.env.NODE_ENV !== "production";
 
     if (!/^\+998\d{9}$/.test(phone)) {
       return NextResponse.json(
@@ -16,12 +16,31 @@ export async function POST(req: Request) {
       );
     }
 
+    const amount = getPaymentAmount();
     const merchantTransId = `autizm-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+    if (devSkip) {
+      await prisma.payment.create({
+        data: {
+          phone,
+          amount,
+          status: "paid",
+          merchantTransId,
+          paidAt: new Date(),
+        },
+      });
+    return NextResponse.json({
+      ok: true,
+      merchantTransId,
+      amount,
+      message: "Test rejimida to'lov o'tkazildi.",
+    });
+    }
 
     await prisma.payment.create({
       data: {
         phone,
-        amount: AMOUNT,
+        amount,
         status: "pending",
         merchantTransId,
       },
@@ -29,7 +48,7 @@ export async function POST(req: Request) {
 
     const result = await createInvoice({
       phone,
-      amount: AMOUNT,
+      amount,
       merchantTransId,
     });
 
@@ -48,7 +67,7 @@ export async function POST(req: Request) {
       ok: true,
       merchantTransId,
       invoiceId: result.invoiceId,
-      amount: AMOUNT,
+      amount,
       message: "Telefoningizga Click orqali to'lov yuborildi. Click ilovasida to'lang.",
     });
   } catch (err: unknown) {
