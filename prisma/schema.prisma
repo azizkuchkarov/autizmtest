@@ -118,16 +118,42 @@ model UserSession {
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model PinSetupToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
 model Payment {
-  id                 String   @id @default(uuid())
+  id                 String        @id @default(uuid())
   phone              String
-  amount             Int      // sum
-  status             String   @default("pending") // pending, paid, failed
-  merchantTransId    String   @unique // Click uchun
-  clickTransId       String?
+  amount             Int           // sum
+  status             String        @default("pending") // pending, paid, failed
+  merchantTransId    String        @unique // Click uchun
+  clickTransId      String?
   merchantPrepareId  Int?
-  createdAt          DateTime @default(now())
+  createdAt          DateTime      @default(now())
   paidAt             DateTime?
+  assessments       Assessment[]
   @@index([phone])
   @@index([merchantTransId])
+}
+
+model Assessment {
+  id                String   @id @default(uuid())
+  testType          String   @default("screening") // screening | progress
+  ageGroup          String   // AGE_1_5_2 | AGE_3_4 | AGE_5_6 | AGE_7_9
+  answers           Json     // Record<questionId, 0|1|2|3>
+  scoring           Json     // OverallResult from scoring.ts
+  aiSummaryStatus   String   @default("pending") // pending | ready | failed
+  aiSummaryPayload  Json?    // AI structured output
+  aiSummaryError    String?
+  respondent        String?  // Ota | Ona | Vasiy
+  childGender       String?  // Qiz | O'g'il
+  paymentId         String?
+  payment           Payment? @relation(fields: [paymentId], references: [id])
+  createdAt         DateTime @default(now())
+  @@index([paymentId])
 }

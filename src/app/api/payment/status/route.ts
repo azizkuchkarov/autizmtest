@@ -16,6 +16,7 @@ export async function GET(req: Request) {
     });
     return NextResponse.json({
       status: p?.status ?? "not_found",
+      paymentId: p?.id,
       amount: p?.amount,
       paidAt: p?.paidAt,
     });

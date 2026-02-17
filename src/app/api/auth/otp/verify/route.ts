@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { normalizePhone } from "@/lib/user-auth";
-import { createUserSession, setUserSessionCookie } from "@/lib/user-auth";
+import {
+  normalizePhone,
+  createPinSetupToken,
+  setPinSetupCookie,
+  createUserSession,
+  setUserSessionCookie,
+} from "@/lib/user-auth";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const phone = normalizePhone(String(body?.phone || ""));
     const code = String(body?.code || "").trim();
+    const flow = body?.flow === "test";
 
     if (!/^\+998\d{9}$/.test(phone)) {
       return NextResponse.json(
@@ -51,11 +57,22 @@ export async function POST(req: Request) {
       });
     }
 
-    const session = await createUserSession(user.id);
-    await setUserSessionCookie(session.token, session.expiresAt);
+    if (flow) {
+      const { token, expiresAt } = await createUserSession(user.id);
+      await setUserSessionCookie(token, expiresAt);
+      return NextResponse.json({
+        ok: true,
+        needsPin: false,
+        user: { id: user.id, phone: user.phone },
+      });
+    }
+
+    const token = await createPinSetupToken(user.id);
+    await setPinSetupCookie(token);
 
     return NextResponse.json({
       ok: true,
+      needsPin: true,
       user: { id: user.id, phone: user.phone },
     });
   } catch (err: unknown) {

@@ -1,63 +1,81 @@
 import Link from "next/link";
 import DarkModeToggle from "@/components/DarkModeToggle";
+import { TEST_TYPE_LABELS } from "@/lib/test-types";
 
 export default function Home() {
   return (
-    <div className="min-h-dvh bg-gradient-to-br from-indigo-50 via-white to-emerald-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors duration-300">
-      <main className="mx-auto max-w-4xl px-4 pb-16 pt-8">
-        <div className="fixed top-4 right-4 z-50 animate-fadeIn">
-          <DarkModeToggle />
-        </div>
+    <div className="min-h-dvh bg-slate-50/80 dark:bg-slate-950 transition-colors duration-300">
+      <div className="fixed top-4 right-4 z-50">
+        <DarkModeToggle />
+      </div>
 
-        <section className="relative overflow-hidden rounded-3xl bg-white/80 dark:bg-slate-900/70 backdrop-blur-xl p-8 md:p-12 shadow-xl ring-1 ring-slate-200/60 dark:ring-slate-700/60 hover-lift animate-fadeIn mb-8">
-          <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-indigo-200/30 dark:bg-indigo-900/20 blur-3xl" />
-          <div className="absolute -bottom-24 -left-20 h-72 w-72 rounded-full bg-emerald-200/30 dark:bg-emerald-900/20 blur-3xl" />
+      <main className="mx-auto max-w-4xl px-4 sm:px-6 pb-20 pt-10 sm:pt-12">
+        {/* Hero — ota-onalarni jalb qiluvchi matn */}
+        <section className="relative overflow-hidden rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/95 shadow-xl shadow-slate-200/20 dark:shadow-black/20 p-8 md:p-12 mb-10">
+          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-indigo-200/30 dark:bg-indigo-900/20 blur-3xl" />
+          <div className="absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-emerald-200/30 dark:bg-emerald-900/20 blur-3xl" />
 
           <div className="relative">
-            <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50/80 dark:bg-indigo-900/30 px-4 py-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-100/70 dark:ring-indigo-800/60">
-              Autism Screening • Premium
-              <span className="rounded-full bg-white/80 dark:bg-slate-800/80 px-2.5 py-1 text-[10px] font-semibold text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-200/70 dark:ring-indigo-700/60">
-                Expert aligned
-              </span>
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-100">
-              Har bir bola o‘ziga xos.
-              <br />
-              Ba’zida esa qo‘shimcha e’tibor kerak bo‘ladi.
-            </h1>
-            <p className="mt-4 text-lg leading-relaxed text-slate-700 dark:text-slate-300">
-              Autizm belgilarini erta bosqichda aniqlash uchun ota-onalar uchun mo‘ljallangan skrining testi.
+            <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
+              Farzandingiz rivojlanishi — sizning tinchligingiz
             </p>
-            <div className="mt-6 grid gap-3 md:grid-cols-3">
-              {[
-                { title: "5 blok", desc: "Ijtimoiy, nutq, sensor, o‘yin va takroriy xatti-harakatlar" },
-                { title: "50 savol", desc: "Har bir blok 10 ta savoldan iborat" },
-                { title: "15–20 daqiqa", desc: "Qisqa va tushunarli format" },
-              ].map((item) => (
-                <div
-                  key={item.title}
-                  className="rounded-2xl bg-white/80 dark:bg-slate-900/60 p-4 ring-1 ring-slate-200/60 dark:ring-slate-700/60 shadow-sm"
-                >
-                  <div className="text-sm font-bold text-slate-900 dark:text-slate-100">{item.title}</div>
-                  <div className="mt-1 text-xs text-slate-600 dark:text-slate-400">{item.desc}</div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-6 rounded-2xl bg-gradient-to-r from-emerald-50/80 to-white dark:from-emerald-900/20 dark:to-slate-900/40 p-4 ring-1 ring-emerald-100/70 dark:ring-emerald-800/50">
-              <p className="text-sm text-slate-700 dark:text-slate-300">
-                Test savollari xalqaro amaliyotga mos holda ishlab chiqilgan. Natijalar ota-onaga oddiy va tushunarli
-                tilda taqdim etiladi.
-              </p>
-            </div>
+            <h1 className="mt-3 text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight leading-tight text-slate-900 dark:text-slate-100">
+              Bola alomatlarini erta bilish,
+              <br />
+              <span className="text-indigo-600 dark:text-indigo-400">to‘g‘ri qadam tashlashga</span> yordam beradi.
+            </h1>
+            <p className="mt-5 max-w-2xl text-lg text-slate-600 dark:text-slate-400 leading-relaxed">
+              Biz ota-onalar uchun professional, savolnoma uslubidagi <strong>autizmni aniqlash</strong> skrining testini taqdim etamiz.
+              3 asosiy soha (ijtimoiy aloqa, muloqot, cheklangan/takroriy va sezgi xatti-harakatlari) bo‘yicha savollar orqali
+              bolaning rivojlanishini baholashga yordam beradi.
+            </p>
             <div className="mt-8">
               <Link
                 href="/start"
-                className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-indigo-600 dark:from-indigo-500 dark:via-indigo-400 dark:to-indigo-600 px-8 py-4 text-base font-bold text-white shadow-xl shadow-indigo-500/30 dark:shadow-indigo-500/40 transition-all hover:from-indigo-700 hover:via-indigo-600 hover:to-indigo-700 dark:hover:from-indigo-600 dark:hover:via-indigo-500 dark:hover:to-indigo-700 hover:shadow-2xl hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-8 py-4 text-base font-bold text-white shadow-lg shadow-indigo-500/25 transition hover:bg-indigo-700 hover:shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-0.5"
               >
-                Kirish
+                Testni boshlash
+                <span className="text-white/90">→</span>
               </Link>
             </div>
           </div>
+        </section>
+
+        {/* Testlar haqida alohida ma'lumot */}
+        <section className="mb-10">
+          <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">Tanlov</p>
+          <h2 className="mt-1 text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 mb-6">
+            Qaysi test sizga kerak?
+          </h2>
+          <div className="grid gap-6 md:grid-cols-1">
+            {/* Autizmni aniqlash — skrining */}
+            <div className="rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/95 shadow-xl shadow-slate-200/20 dark:shadow-black/20 p-6 md:p-8 transition hover:shadow-2xl hover:shadow-slate-200/30 dark:hover:shadow-black/30">
+              <div className="inline-flex rounded-full bg-amber-100 dark:bg-amber-900/40 px-3 py-1 text-xs font-bold text-amber-800 dark:text-amber-200">
+                Skrining
+              </div>
+              <h3 className="mt-4 text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                {TEST_TYPE_LABELS.screening}
+              </h3>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                Farzandingizda autizm belgilarini erta aniqlash uchun professional ota-ona so‘rovnomasi.
+                Savollar yosh guruhiga moslashtirilgan (1,5–2, 3–4, 5–6, 7–9 yosh) va 3 asosiy soha bo‘yicha: ijtimoiy aloqa,
+                muloqot, cheklangan/takroriy va sezgi xatti-harakatlari.
+              </p>
+              <ul className="mt-4 space-y-1.5 text-sm text-slate-700 dark:text-slate-300">
+                <li>• 4 javob varianti: Yo‘q, Kamdan-kam, Ko‘pincha, Doim</li>
+                <li>• 3 soha: ijtimoiy aloqa, muloqot, cheklangan/takroriy va sezgi xatti-harakatlari</li>
+                <li>• Umumiy risk foizi, bloklar bo‘yicha profil, red-flag savollar va AI xulosa</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* Qisqa eslatma */}
+        <section className="rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/80 dark:bg-slate-800/50 p-5 sm:p-6">
+          <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+            <strong className="text-slate-900 dark:text-slate-100">Eslatma:</strong> Testlar tibbiy tashxis emas. Yakuniy baho va reja uchun mutaxassis (pediatr,
+            bolalar nevrologi yoki rivoj mutaxassisi) bilan muloqot qilishingiz tavsiya etiladi.
+          </p>
         </section>
       </main>
     </div>

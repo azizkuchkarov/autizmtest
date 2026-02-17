@@ -2,128 +2,235 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import DarkModeToggle from "@/components/DarkModeToggle";
+import type { AgeGroupId } from "@/data";
+import { INITIAL_DATA_KEY, type Respondent, type ChildGender, type InitialData } from "@/lib/initial-data";
 
-type AgeOption = { label: string; value: number };
-type Gender = "male" | "female";
+const AGE_OPTIONS: { id: AgeGroupId; label: string }[] = [
+  { id: "AGE_1_5_2", label: "1,5–2 yosh" },
+  { id: "AGE_3_4", label: "3–4 yosh" },
+  { id: "AGE_5_6", label: "5–6 yosh" },
+  { id: "AGE_7_9", label: "7–9 yosh" },
+];
 
-const AGE_OPTIONS: AgeOption[] = [
-  { label: "1,5–3", value: 3 },
-  { label: "4–5", value: 5 },
-  { label: "6–7", value: 7 },
-  { label: "7–10", value: 7 },
+const RESPONDENT_OPTIONS: { value: Respondent; label: string }[] = [
+  { value: "Ota", label: "Ota" },
+  { value: "Ona", label: "Ona" },
+  { value: "Vasiy", label: "Vasiy" },
+];
+
+const GENDER_OPTIONS: { value: ChildGender; label: string }[] = [
+  { value: "Qiz", label: "Qiz" },
+  { value: "O'g'il", label: "O'g'il" },
 ];
 
 export default function StartPage() {
   const router = useRouter();
-  const [age, setAge] = React.useState<AgeOption | null>(null);
-  const [gender, setGender] = React.useState<Gender | "">("");
-  const [error, setError] = React.useState<string>("");
+  const [ageGroup, setAgeGroup] = React.useState<AgeGroupId | null>(null);
+  const [respondent, setRespondent] = React.useState<Respondent | null>(null);
+  const [childGender, setChildGender] = React.useState<ChildGender | null>(null);
+  const [error, setError] = React.useState("");
 
-  React.useEffect(() => {
-    try {
-      sessionStorage.removeItem("asds_answers");
-    } catch {}
-  }, []);
-
-  function handleNext() {
-    if (!age || !gender) {
-      setError("Iltimos, yosh va jinsni tanlang.");
+  function handleRegister() {
+    if (!ageGroup || !respondent || !childGender) {
+      setError("Iltimos, barcha maydonlarni to'ldiring.");
       return;
     }
+    setError("");
     try {
-      sessionStorage.setItem("asds_age", String(age.value));
-      sessionStorage.setItem("asds_age_label", age.label);
-      sessionStorage.setItem("asds_gender", gender);
+      sessionStorage.setItem(
+        INITIAL_DATA_KEY,
+        JSON.stringify({ ageGroup, respondent, childGender } as InitialData)
+      );
     } catch {}
-    router.push("/register");
+    router.push("/start/register");
   }
 
+  const allFilled = ageGroup && respondent && childGender;
+
   return (
-    <div className="min-h-dvh bg-gradient-to-br from-indigo-50 via-white to-emerald-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors duration-300">
-      <main className="mx-auto max-w-3xl px-4 pb-16 pt-8">
-        <div className="fixed top-4 right-4 z-50 animate-fadeIn">
+    <div className="min-h-dvh bg-gradient-to-b from-indigo-50/60 via-white to-slate-50/80 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors duration-300">
+      <main className="mx-auto max-w-xl px-4 sm:px-6 pb-20 pt-8 sm:pt-12">
+        <div className="fixed top-4 right-4 z-50">
           <DarkModeToggle />
         </div>
 
-        <section className="rounded-3xl bg-white/80 dark:bg-slate-900/70 backdrop-blur-xl p-8 md:p-10 shadow-xl ring-1 ring-slate-200/60 dark:ring-slate-700/60 hover-lift animate-fadeIn">
-          <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50/80 dark:bg-indigo-900/30 px-4 py-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-100/70 dark:ring-indigo-800/60">
-            Premium
+        <div className="relative overflow-hidden rounded-[1.75rem] border border-slate-200/80 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 shadow-xl shadow-slate-200/25 dark:shadow-black/25 backdrop-blur-sm">
+          {/* Dekorativ fon */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute -right-24 -top-24 h-48 w-48 rounded-full bg-indigo-200/40 dark:bg-indigo-900/20 blur-3xl" />
+            <div className="absolute -left-16 top-1/3 h-32 w-32 rounded-full bg-amber-100/50 dark:bg-amber-900/10 blur-2xl" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-100">
-            Dastlabki ma'lumotlar
-          </h1>
-          <p className="mt-3 text-sm text-slate-700 dark:text-slate-300">
-            Farzandingizning yoshi va jinsini belgilang.
-          </p>
 
-          <div className="mt-6">
-            <div className="text-sm font-bold text-slate-900 dark:text-slate-100">Farzandingizning yoshi</div>
-            <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3">
-              {AGE_OPTIONS.map((opt) => {
-                const active = age?.label === opt.label;
-                return (
-                  <button
-                    key={opt.label}
-                    type="button"
-                    onClick={() => {
-                      setAge(opt);
-                      setError("");
-                    }}
-                    className={`rounded-2xl px-4 py-3 text-sm font-semibold ring-1 transition-all hover-lift ${
-                      active
-                        ? "bg-gradient-to-r from-indigo-600 to-indigo-500 text-white ring-indigo-200/80 shadow-lg shadow-indigo-500/30"
-                        : "bg-white/80 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300 ring-slate-300/80 dark:ring-slate-600/70 hover:ring-indigo-300/70"
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                );
-              })}
+          <section className="relative p-6 sm:p-8 md:p-10">
+            <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-sm font-bold">
+                1
+              </span>
+              <p className="text-xs font-semibold uppercase tracking-widest">
+                Boshlashdan oldin
+              </p>
             </div>
-          </div>
+            <h1 className="mt-4 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+              Dastlabki ma&apos;lumotlar
+            </h1>
+            <p className="mt-3 text-slate-600 dark:text-slate-400 leading-relaxed max-w-md">
+              Quyidagi ma&apos;lumotlarni to&apos;ldiring. Keyin ro&apos;yxatdan o&apos;tib, to&apos;lovni amalga oshirib testni boshlaysiz.
+            </p>
 
-          <div className="mt-6">
-            <div className="text-sm font-bold text-slate-900 dark:text-slate-100">Bolaning jinsi</div>
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              {([
-                { id: "male", label: "O‘g‘il" },
-                { id: "female", label: "Qiz" },
-              ] as const).map((opt) => {
-                const active = gender === opt.id;
-                return (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => {
-                      setGender(opt.id);
-                      setError("");
-                    }}
-                    className={`rounded-2xl px-4 py-3 text-sm font-semibold ring-1 transition-all hover-lift ${
-                      active
-                        ? "bg-gradient-to-r from-emerald-600 to-emerald-500 text-white ring-emerald-200/80 shadow-lg shadow-emerald-500/30"
-                        : "bg-white/80 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300 ring-slate-300/80 dark:ring-slate-600/70 hover:ring-emerald-300/70"
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                );
-              })}
+            <div className="mt-8 space-y-8">
+              {/* Yosh guruhi — katta kartalar */}
+              <div className="rounded-2xl border border-slate-100 dark:border-slate-700/80 bg-slate-50/80 dark:bg-slate-800/40 p-5 sm:p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </span>
+                  <label className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                    Bolaning yoshi (testga nisbatan)
+                  </label>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {AGE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setAgeGroup(opt.id)}
+                      className={`relative rounded-xl px-4 py-3.5 text-sm font-semibold transition-all duration-200 ${
+                        ageGroup === opt.id
+                          ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 ring-2 ring-indigo-400 ring-offset-2 dark:ring-offset-slate-900"
+                          : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:border-indigo-300 dark:hover:border-indigo-600 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20"
+                      }`}
+                    >
+                      {opt.label}
+                      {ageGroup === opt.id && (
+                        <span className="absolute top-2 right-2 text-white/80">
+                          <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Kim to'ldirayapti */}
+              <div className="rounded-2xl border border-slate-100 dark:border-slate-700/80 bg-slate-50/80 dark:bg-slate-800/40 p-5 sm:p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </span>
+                  <label className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                    Testni to&apos;ldirayotgan shaxs
+                  </label>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  {RESPONDENT_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setRespondent(opt.value)}
+                      className={`relative rounded-xl px-4 py-3.5 text-sm font-semibold transition-all duration-200 ${
+                        respondent === opt.value
+                          ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/25 ring-2 ring-emerald-400 ring-offset-2 dark:ring-offset-slate-900"
+                          : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:border-emerald-300 dark:hover:border-emerald-600 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/20"
+                      }`}
+                    >
+                      {opt.label}
+                      {respondent === opt.value && (
+                        <span className="absolute top-2 right-2 text-white/80">
+                          <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Farzand jinsi */}
+              <div className="rounded-2xl border border-slate-100 dark:border-slate-700/80 bg-slate-50/80 dark:bg-slate-800/40 p-5 sm:p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                  </span>
+                  <label className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                    Farzandning jinsi
+                  </label>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {GENDER_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setChildGender(opt.value)}
+                      className={`relative rounded-xl px-4 py-3.5 text-sm font-semibold transition-all duration-200 ${
+                        childGender === opt.value
+                          ? "bg-violet-600 text-white shadow-lg shadow-violet-500/25 ring-2 ring-violet-400 ring-offset-2 dark:ring-offset-slate-900"
+                          : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:border-violet-300 dark:hover:border-violet-600 hover:bg-violet-50/50 dark:hover:bg-violet-900/20"
+                      }`}
+                    >
+                      {opt.label}
+                      {childGender === opt.value && (
+                        <span className="absolute top-2 right-2 text-white/80">
+                          <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
 
-          {error && <div className="mt-4 text-sm font-semibold text-rose-600">{error}</div>}
+            {error && (
+              <div className="mt-6 flex items-center gap-2 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200/60 dark:border-rose-800/50 px-4 py-3">
+                <svg className="h-5 w-5 shrink-0 text-rose-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                <p className="text-sm font-semibold text-rose-700 dark:text-rose-300">{error}</p>
+              </div>
+            )}
 
-          <div className="mt-6">
-            <button
-              type="button"
-              onClick={handleNext}
-              className="w-full rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-indigo-600 dark:from-indigo-500 dark:via-indigo-400 dark:to-indigo-600 px-6 py-4 text-base font-bold text-white shadow-xl shadow-indigo-500/30 dark:shadow-indigo-500/40 transition-all hover:from-indigo-700 hover:via-indigo-600 hover:to-indigo-700 dark:hover:from-indigo-600 dark:hover:via-indigo-500 dark:hover:to-indigo-700 hover:shadow-2xl hover:-translate-y-0.5"
-            >
-              Dastlabki ma'lumotlarni kiritish
-            </button>
-          </div>
-        </section>
+            <div className="mt-10 flex flex-col-reverse sm:flex-row gap-3 sm:items-center sm:justify-between">
+              <Link
+                href="/"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-600 px-6 py-3.5 text-sm font-semibold text-slate-700 dark:text-slate-300 transition hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                Orqaga
+              </Link>
+              <button
+                type="button"
+                onClick={handleRegister}
+                disabled={!allFilled}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-8 py-4 text-base font-bold text-white shadow-lg shadow-indigo-500/25 transition-all duration-200 hover:bg-indigo-700 hover:shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:pointer-events-none disabled:translate-y-0"
+              >
+                Ro&apos;yxatdan o&apos;tish
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </button>
+            </div>
+
+            {allFilled && (
+              <p className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
+                Keyingi qadam: telefon raqam va tasdiqlash kodi
+              </p>
+            )}
+          </section>
+        </div>
       </main>
     </div>
   );

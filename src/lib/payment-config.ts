@@ -2,5 +2,5 @@
 export function getPaymentAmount(): number {
   const v = process.env.PAYMENT_AMOUNT;
   const n = v ? parseInt(v, 10) : NaN;
-  return Number.isFinite(n) && n > 0 ? n : 125_000;
+  return Number.isFinite(n) && n > 0 ? n : 1_000;
 }

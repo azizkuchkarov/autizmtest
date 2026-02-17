@@ -1,10 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import DarkModeToggle from "@/components/DarkModeToggle";
 
-export default function PaymentPage() {
+function PaymentContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [phone, setPhone] = React.useState("+998");
@@ -49,7 +49,11 @@ export default function PaymentPage() {
         const data = await res.json();
         if (data.status === "paid") {
           setPolling(false);
-          router.push("/test");
+          const params = new URLSearchParams();
+          if (data.paymentId) params.set("payment_id", data.paymentId);
+          if (typeof data.amount === "number") params.set("amount", String(data.amount));
+          const qs = params.toString() ? `?${params.toString()}` : "";
+          router.push(`/test${qs}`);
           router.refresh();
         }
       } catch {}
@@ -57,9 +61,7 @@ export default function PaymentPage() {
     return () => clearInterval(t);
   }, [merchantTransId, polling, router]);
 
-  const isLocalhost = typeof window !== "undefined" && window.location.hostname === "localhost";
-
-  async function handlePay(devSkip = false) {
+  async function handlePay() {
     setError("");
     const cleaned = phone.replace(/\s+/g, "").trim();
     if (!/^\+998\d{9}$/.test(cleaned)) {
@@ -71,7 +73,7 @@ export default function PaymentPage() {
       const res = await fetch("/api/payment/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: cleaned, dev_skip: devSkip }),
+        body: JSON.stringify({ phone: cleaned }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -162,11 +164,11 @@ export default function PaymentPage() {
               )}
               <button
                 type="button"
-                onClick={() => handlePay(false)}
+                onClick={handlePay}
                 disabled={loading}
                 className="mt-6 w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-6 py-4 text-base font-bold text-white shadow-lg shadow-emerald-500/30 transition-all hover:from-emerald-700 hover:to-emerald-600 disabled:opacity-60"
               >
-                {loading ? "Yuborilmoqda..." : "Telefonga invoice (Click ilovasi)"}
+                {loading ? "Yuborilmoqda..." : "Click orqali to'lash"}
               </button>
               <button
                 type="button"
@@ -176,16 +178,6 @@ export default function PaymentPage() {
               >
                 Karta orqali to'lash (Click sahifasida)
               </button>
-              {isLocalhost && (
-                <button
-                  type="button"
-                  onClick={() => handlePay(true)}
-                  disabled={loading}
-                  className="mt-3 w-full rounded-2xl border-2 border-amber-400 bg-amber-50 dark:bg-amber-900/20 px-6 py-3 text-sm font-bold text-amber-800 dark:text-amber-200 transition-all hover:bg-amber-100 dark:hover:bg-amber-900/30 disabled:opacity-60"
-                >
-                  Test rejimida to'lash (to'lovsiz, faqat lokal)
-                </button>
-              )}
             </>
           ) : (
             <div className="mt-6 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 p-4 ring-1 ring-emerald-200/60 dark:ring-emerald-800/40">
@@ -203,5 +195,22 @@ export default function PaymentPage() {
         </section>
       </main>
     </div>
+  );
+}
+
+export default function PaymentPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-dvh bg-gradient-to-br from-indigo-50 via-white to-emerald-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center">
+          <div className="fixed top-4 right-4 z-50">
+            <DarkModeToggle />
+          </div>
+          <p className="text-slate-600 dark:text-slate-400">Yuklanmoqda...</p>
+        </div>
+      }
+    >
+      <PaymentContent />
+    </Suspense>
   );
 }

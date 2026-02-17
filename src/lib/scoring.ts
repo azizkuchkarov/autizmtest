@@ -1,266 +1,453 @@
-// src/lib/scoring.ts
-import { QUESTIONS, ageToBand, type AgeBand, type BlockId, type Direction } from "./questions";
+/**
+ * scoring.ts (single-file, production-friendly)
+ * Premium Autism Screening — Professional Scoring Engine (age-normed)
+ *
+ * How to use:
+ *   import { scoreAssessment } from "@/lib/scoring";
+ *   const result = scoreAssessment({ ageGroup: "AGE_3_4", answers, questions });
+ *
+ * Notes:
+ * - answers: Record<questionId, 0|1|2|3>
+ * - questions: array from your JSON (must include: id, domain, weight, isRedFlag)
+ * - The engine:
+ *   1) Calculates question score = answer * weight
+ *   2) Normalizes per domain (0..1)
+ *   3) Computes overall riskIndex with domain weights
+ *   4) Applies red-flag override rules (age-normed)
+ *   5) Returns: risk level + domain profile + recommendations-ready insights
+ */
 
+export type AgeGroup = "AGE_1_5_2" | "AGE_3_4" | "AGE_5_6" | "AGE_7_9";
+export type DomainId = "SOCIAL" | "COMM" | "JOINT" | "PLAY" | "RRB" | "SENSORY";
 export type AnswerValue = 0 | 1 | 2 | 3;
-export type AnswersMap = Record<string, AnswerValue>;
-export type DomainId = BlockId;
 
-export type QuestionResponse = {
-  questionId: string;
-  domain: DomainId;
-  answer: AnswerValue; // 0..3 (severity)
-  isCore?: boolean; // Core ASD (social/communication)
-  isRedFlag?: boolean; // kritik savol
-};
+/** Progress test bloklari (B1–B5) yoki screening domenlari */
+export type AnyDomainId = DomainId | "B1" | "B2" | "B3" | "B4" | "B5";
 
-export type ScoringInput = {
-  ageBand: AgeBand;
-  responses: QuestionResponse[];
-};
+export interface Question {
+  id: string;
+  domain: DomainId | string; // screening: DomainId; progress: B1..B5
+  weight: number; // recommended 1..3
+  isRedFlag: boolean;
+  text?: string;
+  example?: string;
+  explanation?: string;
+}
 
-export type DomainScore = {
-  domain: DomainId;
-  rawSum: number; // 0..18 (6 savol * 3)
-  maxRaw: number; // 18
-  severity01: number; // 0..1
-  weighted01: number; // 0..weight normalized later
-};
+export interface ScoringInput {
+  ageGroup: AgeGroup;
+  answers: Record<string, AnswerValue | undefined>;
+  questions: Question[];
+  // Optional: allow tuning red-flag trigger threshold for what counts as "flagged"
+  // default: answer >= 2
+  redFlagTriggerAnswer?: AnswerValue; // 2 or 3 recommended
+}
 
-export type RiskTier = "LOW" | "WATCH" | "MODERATE" | "HIGH";
+export type RiskLevel = "LOW" | "MONITOR" | "MODERATE" | "HIGH";
 
-export type ScoringResult = {
-  ageBand: AgeBand;
-  domains: DomainScore[];
-  coreSeverity01: number; // social + communication combined (0..1)
-  functionalImpact01: number; // daily domain severity
-  redFlagCount: number;
-  riskScore01: number; // 0..1
-  riskScorePercent: number; // 0..100
-  tier: RiskTier;
-  rationale: {
-    topDomains: DomainId[];
-    notes: string[];
-  };
-};
-
-export type BlockScore = {
-  rawSum: number;
-  maxRaw: number;
-  severity01: number;
-  status: "Normal" | "O‘rtacha" | "Yuqori";
-};
-
-export type Summary = ScoringResult & {
-  childAgeYears: number;
+export interface DomainScore {
+  domain: DomainId | string;
+  raw: number;
+  max: number;
+  normalized: number;
+  risk: number;
+  band: DomainBand;
+  flaggedQuestions: string[];
   answeredCount: number;
   totalCount: number;
-  blocks: Record<DomainId, BlockScore>;
+}
+
+export type DomainBand = "STRONG" | "AGE_APPROPRIATE" | "NEEDS_ATTENTION" | "NEEDS_SUPPORT";
+
+export interface OverallResult {
+  ageGroup: AgeGroup;
+  completeness: {
+    answered: number;
+    total: number;
+    ratio: number; // 0..1
+    isValid: boolean; // e.g., >= 70% answered
+  };
+  redFlags: {
+    count: number;
+    triggeredIds: string[];
+    triggerAnswer: AnswerValue;
+    overrideApplied: boolean;
+    overrideReason?: string;
+  };
+  domains: Record<string, DomainScore>;
+  overall: {
+    riskIndex: number;
+    skillIndex: number;
+    level: RiskLevel;
+    levelReason: string;
+    thresholdsUsed: RiskThresholds;
+  };
+  insights: {
+    strengths: string[];
+    needsAttention: string[];
+    needsSupport: string[];
+    topPriorityDomains: string[];
+    aiFacts: Record<string, unknown>;
+  };
+}
+
+/* -------------------------- CONFIGURATION -------------------------- */
+
+// Domain weights (DSM-5 oriented: SOCIAL/COMM/JOINT higher)
+const DOMAIN_WEIGHTS: Record<DomainId, number> = {
+  SOCIAL: 0.25,
+  COMM: 0.25,
+  JOINT: 0.2,
+  PLAY: 0.1,
+  RRB: 0.1,
+  SENSORY: 0.1,
 };
 
-export type ScoringConfig = {
-  weights: Record<DomainId, number>;
-  coreBoost: { threshold: number; max: number };
-  impactMultiplier: { threshold: number; max: number };
-  redFlagBump: { one: number; two: number };
-  tierThresholds: { watch: number; moderate: number; high: number };
-  blockStatus: { normalMax: number; mediumMax: number };
+const SCREENING_DOMAIN_IDS: DomainId[] = ["SOCIAL", "COMM", "JOINT", "PLAY", "RRB", "SENSORY"];
+
+// Age-normed thresholds for riskIndex (higher = higher risk).
+// These are "professional screening" thresholds (not a diagnosis).
+export interface RiskThresholds {
+  lowMax: number; // inclusive upper bound
+  monitorMax: number;
+  moderateMax: number;
+  // above moderateMax => HIGH
+}
+
+// Thresholds become stricter with age (lower tolerance for missing milestones).
+const AGE_THRESHOLDS: Record<AgeGroup, RiskThresholds> = {
+  AGE_1_5_2: { lowMax: 0.24, monitorMax: 0.39, moderateMax: 0.59 },
+  AGE_3_4: { lowMax: 0.19, monitorMax: 0.34, moderateMax: 0.54 },
+  AGE_5_6: { lowMax: 0.17, monitorMax: 0.3, moderateMax: 0.49 },
+  AGE_7_9: { lowMax: 0.15, monitorMax: 0.27, moderateMax: 0.44 },
 };
 
-export const defaultScoringConfig: ScoringConfig = {
-  weights: {
-    social: 2.6,
-    communication: 2.4,
-    repetitive: 2.0,
-    sensory: 1.6,
-    play: 1.4,
-    daily: 1.8,
-  },
-  coreBoost: { threshold: 0.55, max: 0.18 },
-  impactMultiplier: { threshold: 0.5, max: 0.25 },
-  redFlagBump: { one: 0.08, two: 0.1 },
-  tierThresholds: { watch: 25, moderate: 45, high: 65 },
-  blockStatus: { normalMax: 0.34, mediumMax: 0.67 },
-};
+// Domain bands based on normalized skill (0..1):
+// Higher = better developed skills for that domain.
+const DOMAIN_BANDS: Array<{ min: number; band: DomainBand }> = [
+  { min: 0.75, band: "STRONG" },
+  { min: 0.5, band: "AGE_APPROPRIATE" },
+  { min: 0.3, band: "NEEDS_ATTENTION" },
+  { min: 0, band: "NEEDS_SUPPORT" },
+];
 
-const DOMAIN_MAX_RAW = 6 * 3; // 6 savol, max 3 ball
+// Completeness rule: require at least 70% answered to be "valid enough".
+const MIN_COMPLETENESS_RATIO = 0.7;
 
-function clamp01(x: number) {
+// Red-flag override rules (age-normed):
+// If redFlagCount >= 2 => at least MODERATE
+// If redFlagCount >= 4 => HIGH
+// Additionally: if a SINGLE critical red flag appears with answer=3 in AGE_1_5_2/AGE_3_4, can bump to MODERATE.
+const REDFLAG_MIN_MODERATE = 2;
+const REDFLAG_HIGH = 4;
+
+/* ---------------------------- UTILITIES ---------------------------- */
+
+function clamp01(x: number): number {
+  if (Number.isNaN(x) || !Number.isFinite(x)) return 0;
   return Math.max(0, Math.min(1, x));
 }
 
-function toSeverity(direction: Direction, v: AnswerValue): AnswerValue {
-  return direction === "negative" ? v : ((3 - v) as AnswerValue);
+function bandFromNormalized(normalized: number): DomainBand {
+  const n = clamp01(normalized);
+  for (const b of DOMAIN_BANDS) {
+    if (n >= b.min) return b.band;
+  }
+  return "NEEDS_SUPPORT";
 }
 
-function blockStatus(severity01: number, config: ScoringConfig): BlockScore["status"] {
-  if (severity01 < config.blockStatus.normalMax) return "Normal";
-  if (severity01 < config.blockStatus.mediumMax) return "O‘rtacha";
-  return "Yuqori";
+function safeDiv(n: number, d: number): number {
+  if (!d) return 0;
+  return n / d;
 }
 
-/**
- * Professional risk:
- * - Weighted domain severity (0..1 each domain)
- * - Core boost: social+communication yuqori bo‘lsa risk ko‘tariladi
- * - Functional impact multiplier: daily yuqori bo‘lsa risk ko‘tariladi
- * - Red-flag escalation: kritik savollar ko‘p bo‘lsa tier kamida MODERATE/HIGH
- */
-export function scoreAutismScreening(
-  input: ScoringInput,
-  config: ScoringConfig = defaultScoringConfig
-): ScoringResult {
-  const { ageBand, responses } = input;
+function riskLevelFromIndex(
+  age: AgeGroup,
+  riskIndex: number
+): { level: RiskLevel; reason: string; thresholds: RiskThresholds } {
+  const t = AGE_THRESHOLDS[age];
+  const r = clamp01(riskIndex);
 
-  // Group by domain
-  const byDomain: Record<DomainId, QuestionResponse[]> = {
-    social: [],
-    communication: [],
-    repetitive: [],
-    sensory: [],
-    play: [],
-    daily: [],
-  };
+  if (r <= t.lowMax) return { level: "LOW", reason: `Risk indeksi ${r.toFixed(2)} ≤ ${t.lowMax}`, thresholds: t };
+  if (r <= t.monitorMax) return { level: "MONITOR", reason: `Risk indeksi ${r.toFixed(2)} ≤ ${t.monitorMax}`, thresholds: t };
+  if (r <= t.moderateMax) return { level: "MODERATE", reason: `Risk indeksi ${r.toFixed(2)} ≤ ${t.moderateMax}`, thresholds: t };
+  return { level: "HIGH", reason: `Risk indeksi ${r.toFixed(2)} > ${t.moderateMax}`, thresholds: t };
+}
 
-  for (const r of responses) {
-    byDomain[r.domain].push(r);
+// Escalate risk level to at least "minLevel"
+function escalateLevel(current: RiskLevel, minLevel: RiskLevel): RiskLevel {
+  const order: RiskLevel[] = ["LOW", "MONITOR", "MODERATE", "HIGH"];
+  const c = order.indexOf(current);
+  const m = order.indexOf(minLevel);
+  return order[Math.max(c, m)] ?? current;
+}
+
+/* --------------------------- CORE SCORING -------------------------- */
+
+export function scoreAssessment(input: ScoringInput): OverallResult {
+  const { ageGroup, answers, questions } = input;
+  const triggerAnswer: AnswerValue = input.redFlagTriggerAnswer ?? 2;
+
+  const total = questions.length;
+
+  // Count answered
+  let answered = 0;
+  for (const q of questions) {
+    const a = answers[q.id];
+    if (a === 0 || a === 1 || a === 2 || a === 3) answered += 1;
   }
 
-  // Compute per-domain severity
-  const domains: DomainScore[] = (Object.keys(byDomain) as DomainId[]).map(
-    (domain) => {
-      const items = byDomain[domain];
-      const rawSum = items.reduce((s, x) => s + x.answer, 0);
-      const severity01 = clamp01(rawSum / DOMAIN_MAX_RAW); // 0..1
-      return {
-        domain,
-        rawSum,
-        maxRaw: DOMAIN_MAX_RAW,
-        severity01,
-        weighted01: severity01 * config.weights[domain],
-      };
-    }
+  const completenessRatio = safeDiv(answered, total);
+  const isValid = completenessRatio >= MIN_COMPLETENESS_RATIO;
+
+  // Faqat savoli bor domenlar (screening: SOCIAL, COMM, ...; progress: B1..B5)
+  const domainIdsFromQuestions = Array.from(
+    new Map(questions.map((q) => [q.domain as string, true])).keys()
   );
+  const activeDomainIds: string[] = domainIdsFromQuestions;
+  const activeWeights: Record<string, number> = {};
+  activeDomainIds.forEach((id) => {
+    activeWeights[id] =
+      (DOMAIN_WEIGHTS as Record<string, number>)[id] ?? 1 / activeDomainIds.length;
+  });
+  const weightSumTotal = activeDomainIds.reduce((s, id) => s + (activeWeights[id] ?? 0), 0);
+  if (weightSumTotal > 0) {
+    activeDomainIds.forEach((id) => {
+      activeWeights[id] = (activeWeights[id] ?? 0) / weightSumTotal;
+    });
+  }
 
-  // Normalize weighted score to 0..1
-  const weightTotal = Object.values(config.weights).reduce((a, b) => a + b, 0);
-  const weightedSum = domains.reduce((s, d) => s + d.weighted01, 0);
-  const weighted01 = clamp01(weightedSum / weightTotal);
+  const domainRaw: Record<string, number> = {};
+  const domainMax: Record<string, number> = {};
+  const domainCounts: Record<string, { answered: number; total: number; flagged: string[] }> = {};
+  activeDomainIds.forEach((id) => {
+    domainRaw[id] = 0;
+    domainMax[id] = 0;
+    domainCounts[id] = { answered: 0, total: 0, flagged: [] };
+  });
 
-  // Core severity: social + communication
-  const social = domains.find((d) => d.domain === "social")!;
-  const comm = domains.find((d) => d.domain === "communication")!;
-  const coreSeverity01 = clamp01((social.severity01 + comm.severity01) / 2);
+  const redFlagTriggeredIds: string[] = [];
 
-  // Functional impact: daily
-  const daily = domains.find((d) => d.domain === "daily")!;
-  const functionalImpact01 = daily.severity01;
+  // Savollarni hisoblash (faqat config dagi savol id lari)
+  for (const q of questions) {
+    const d = q.domain as string;
+    if (!domainCounts[d]) continue;
+    domainCounts[d].total += 1;
 
-  // Red flags
-  const redFlagCount = responses.filter((r) => r.isRedFlag && r.answer >= 2).length;
+    const w = Math.max(0, q.weight ?? 1);
+    domainMax[d] += 3 * w;
 
-  // Core boost curve (smooth): 0..~0.18
-  // Past coreSeverity 0.55 risk starts increasing faster
-  const coreBoost = clamp01((coreSeverity01 - config.coreBoost.threshold) / (1 - config.coreBoost.threshold)) * config.coreBoost.max;
+    const a = answers[q.id];
+    const hasAnswer = a === 0 || a === 1 || a === 2 || a === 3;
 
-  // Functional impact multiplier: up to +25%
-  // daily >=0.5 -> gradually increases
-  const impactMultiplier =
-    1 + clamp01((functionalImpact01 - config.impactMultiplier.threshold) / (1 - config.impactMultiplier.threshold)) * config.impactMultiplier.max;
+    if (hasAnswer) {
+      domainCounts[d].answered += 1;
+      domainRaw[d] += (a as number) * w;
 
-  // Base score
-  let riskScore01 = clamp01((weighted01 + coreBoost) * impactMultiplier);
+      if (q.isRedFlag && (a as number) >= triggerAnswer) {
+        redFlagTriggeredIds.push(q.id);
+        domainCounts[d].flagged.push(q.id);
+      }
+    }
+  }
 
-  // Red-flag escalation: bump score and minimum tier
-  if (redFlagCount >= 1) riskScore01 = clamp01(riskScore01 + config.redFlagBump.one);
-  if (redFlagCount >= 2) riskScore01 = clamp01(riskScore01 + config.redFlagBump.two);
+  // Domain normalized skill and risk
+  const domains: Record<string, DomainScore> = {};
+  activeDomainIds.forEach((d) => {
+    const normalizedSkill = clamp01(safeDiv(domainRaw[d], domainMax[d]));
+    const risk = clamp01(1 - normalizedSkill);
 
-  const riskScorePercent = Math.round(riskScore01 * 100);
-
-  // Tier thresholds (professional, conservative)
-  // LOW: 0-24
-  // WATCH: 25-44
-  // MODERATE: 45-64
-  // HIGH: 65+
-  let tier: RiskTier =
-    riskScorePercent >= config.tierThresholds.high
-      ? "HIGH"
-      : riskScorePercent >= config.tierThresholds.moderate
-      ? "MODERATE"
-      : riskScorePercent >= config.tierThresholds.watch
-      ? "WATCH"
-      : "LOW";
-
-  // If red flags present, don't allow LOW
-  if (redFlagCount >= 1 && tier === "LOW") tier = "WATCH";
-  if (redFlagCount >= 2 && (tier === "LOW" || tier === "WATCH")) tier = "MODERATE";
-
-  // Top domains for explanation
-  const topDomains = [...domains]
-    .sort((a, b) => b.severity01 - a.severity01)
-    .slice(0, 2)
-    .map((d) => d.domain);
-
-  const notes: string[] = [];
-  notes.push(`Weighted severity: ${(weighted01 * 100).toFixed(0)}%`);
-  notes.push(`Core domains (social+communication): ${(coreSeverity01 * 100).toFixed(0)}%`);
-  notes.push(`Functional impact (daily): ${(functionalImpact01 * 100).toFixed(0)}%`);
-  if (redFlagCount > 0) notes.push(`Red flags (answer>=2): ${redFlagCount}`);
-
-  return {
-    ageBand,
-    domains,
-    coreSeverity01,
-    functionalImpact01,
-    redFlagCount,
-    riskScore01,
-    riskScorePercent,
-    tier,
-    rationale: { topDomains, notes },
-  };
-}
-
-export function computeSummary(
-  childAgeYears: number,
-  answers: AnswersMap,
-  config: ScoringConfig = defaultScoringConfig,
-  questionsOverride?: typeof QUESTIONS
-): Summary {
-  const ageBand = ageToBand(childAgeYears);
-  const source = questionsOverride ?? QUESTIONS;
-  const ageQuestions = source.filter((q) => q.bands.includes(ageBand));
-  const totalCount = ageQuestions.length;
-
-  let answeredCount = 0;
-  for (const q of ageQuestions) if (answers[q.id] !== undefined) answeredCount += 1;
-
-  const responses: QuestionResponse[] = ageQuestions.map((q) => {
-    const raw = answers[q.id] ?? 0;
-    return {
-      questionId: q.id,
-      domain: q.block,
-      answer: toSeverity(q.direction, raw),
-      isCore: q.isCoreFlag,
-      isRedFlag: q.isRedFlag,
+    domains[d] = {
+      domain: d,
+      raw: domainRaw[d],
+      max: domainMax[d],
+      normalized: normalizedSkill,
+      risk,
+      band: bandFromNormalized(normalizedSkill),
+      flaggedQuestions: domainCounts[d].flagged,
+      answeredCount: domainCounts[d].answered,
+      totalCount: domainCounts[d].total,
     };
   });
 
-  const result = scoreAutismScreening({ ageBand, responses }, config);
+  // Compute overall riskIndex as weighted sum of domain risks
+  let riskIndex = 0;
+  let weightSum = 0;
 
-  const blocks = result.domains.reduce((acc, d) => {
-    acc[d.domain] = {
-      rawSum: d.rawSum,
-      maxRaw: d.maxRaw,
-      severity01: d.severity01,
-      status: blockStatus(d.severity01, config),
-    };
-    return acc;
-  }, {} as Record<DomainId, BlockScore>);
+  activeDomainIds.forEach((d) => {
+    const w = activeWeights[d] ?? 1 / activeDomainIds.length;
+    if (domains[d]?.max <= 0) return;
+    riskIndex += domains[d].risk * w;
+    weightSum += w;
+  });
+
+  riskIndex = weightSum > 0 ? clamp01(riskIndex / weightSum) : 0;
+  const skillIndex = clamp01(1 - riskIndex);
+
+  const base = riskLevelFromIndex(ageGroup, riskIndex);
+  let level: RiskLevel = base.level;
+  let levelReason: string = base.reason;
+  let overrideApplied = false;
+  let overrideReason: string | undefined;
+
+  const redFlagCount = redFlagTriggeredIds.length;
+
+  if (redFlagCount >= REDFLAG_HIGH) {
+    if (level !== "HIGH") {
+      overrideApplied = true;
+      overrideReason = `Red-flag soni ${redFlagCount} (≥ ${REDFLAG_HIGH}) → HIGH`;
+    }
+    level = "HIGH";
+    levelReason = overrideReason ?? levelReason;
+  } else if (redFlagCount >= REDFLAG_MIN_MODERATE) {
+    const escalated = escalateLevel(level, "MODERATE");
+    if (escalated !== level) {
+      overrideApplied = true;
+      overrideReason = `Red-flag soni ${redFlagCount} (≥ ${REDFLAG_MIN_MODERATE}) → kamida MODERATE`;
+      levelReason = overrideReason;
+    }
+    level = escalated;
+  } else {
+    if ((ageGroup === "AGE_1_5_2" || ageGroup === "AGE_3_4") && redFlagTriggeredIds.length === 1) {
+      const onlyId = redFlagTriggeredIds[0];
+      const ans = answers[onlyId];
+      if (ans === 3) {
+        const escalated = escalateLevel(level, "MODERATE");
+        if (escalated !== level) {
+          overrideApplied = true;
+          overrideReason = `Yosh ${ageGroup} va 1 ta kuchli red-flag (javob=3) → kamida MODERATE`;
+          levelReason = overrideReason;
+        }
+        level = escalated;
+      }
+    }
+  }
+
+  const strengths: string[] = [];
+  const needsAttention: string[] = [];
+  const needsSupport: string[] = [];
+
+  activeDomainIds.forEach((d) => {
+    const b = domains[d]?.band;
+    if (b === "STRONG") strengths.push(d);
+    if (b === "NEEDS_ATTENTION") needsAttention.push(d);
+    if (b === "NEEDS_SUPPORT") needsSupport.push(d);
+  });
+
+  const topPriorityDomains = activeDomainIds
+    .slice()
+    .sort((a, b) => (domains[b]?.risk ?? 0) - (domains[a]?.risk ?? 0))
+    .slice(0, 3);
+
+  const aiFacts = {
+    ageGroup,
+    completeness: { answered, total, ratio: Number(completenessRatio.toFixed(2)), isValid },
+    overall: {
+      riskIndex: Number(riskIndex.toFixed(2)),
+      skillIndex: Number(skillIndex.toFixed(2)),
+      level,
+    },
+    redFlags: {
+      count: redFlagCount,
+      ids: redFlagTriggeredIds,
+      triggerAnswer,
+    },
+    domains: activeDomainIds.reduce(
+      (acc, d) => {
+        const dom = domains[d];
+        if (dom)
+          acc[d] = {
+            normalized: Number(dom.normalized.toFixed(2)),
+            risk: Number(dom.risk.toFixed(2)),
+            band: dom.band,
+            answered: dom.answeredCount,
+            total: dom.totalCount,
+            redFlags: dom.flaggedQuestions,
+          };
+        return acc;
+      },
+      {} as Record<string, unknown>
+    ),
+    priorities: {
+      strengths,
+      needsAttention,
+      needsSupport,
+      topPriorityDomains,
+    },
+  };
+
+  if (!isValid) {
+    levelReason = `Diqqat: test to‘liq emas (${answered}/${total}, ${(completenessRatio * 100).toFixed(0)}%). Natija taxminiy. ${levelReason}`;
+  }
 
   return {
-    childAgeYears,
-    answeredCount,
-    totalCount,
-    blocks,
-    ...result,
+    ageGroup,
+    completeness: {
+      answered,
+      total,
+      ratio: completenessRatio,
+      isValid,
+    },
+    redFlags: {
+      count: redFlagCount,
+      triggeredIds: redFlagTriggeredIds,
+      triggerAnswer,
+      overrideApplied,
+      overrideReason,
+    },
+    domains,
+    overall: {
+      riskIndex,
+      skillIndex,
+      level,
+      levelReason,
+      thresholdsUsed: base.thresholds,
+    },
+    insights: {
+      strengths,
+      needsAttention,
+      needsSupport,
+      topPriorityDomains,
+      aiFacts,
+    },
   };
+}
+
+/* --------------------- OPTIONAL: HUMAN LABELS ---------------------- */
+
+export const DOMAIN_LABELS_UZ: Record<string, string> = {
+  SOCIAL: "Ijtimoiy aloqa",
+  COMM: "Muloqot",
+  JOINT: "Birgalikda diqqat",
+  PLAY: "O‘yin va tasavvur",
+  RRB: "Takroriy xatti-harakat / rigidlik",
+  SENSORY: "Sensor va moslashuv",
+  // Progress test bloklari (3–4 yosh)
+  B1: "Muloqot va til rivoji",
+  B2: "Ijtimoiy o‘zaro ta’sir",
+  B3: "Xulq va moslashuv",
+  B4: "Sensor va sezgirlik",
+  B5: "Mustaqillik va kundalik ko‘nikmalar",
+};
+
+export const RISK_LABELS_UZ: Record<RiskLevel, string> = {
+  LOW: "Past risk (yoshga mos)",
+  MONITOR: "Monitoring kerak",
+  MODERATE: "O‘rta risk (mutaxassis bilan maslahat tavsiya)",
+  HIGH: "Yuqori risk (tezroq mutaxassis bahosi tavsiya)",
+};
+
+/* --------------------- OPTIONAL: QUICK SUMMARY --------------------- */
+/**
+ * If you want a short local (non-AI) summary string for the result page.
+ */
+export function buildShortUzSummary(result: OverallResult): string {
+  const riskText = RISK_LABELS_UZ[result.overall.level];
+  const pr = result.insights.topPriorityDomains.map((d) => DOMAIN_LABELS_UZ[d] ?? d).join(", ");
+  const rf = result.redFlags.count > 0 ? ` Red-flag: ${result.redFlags.count} ta.` : "";
+  const comp = result.completeness.isValid
+    ? ""
+    : ` Test to‘liq emas (${result.completeness.answered}/${result.completeness.total}).`;
+
+  return `${riskText}.${comp}${rf} Eng muhim yo‘nalishlar: ${pr}.`;
 }

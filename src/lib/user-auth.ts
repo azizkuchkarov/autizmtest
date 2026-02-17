@@ -55,6 +55,58 @@ export async function clearUserSessionCookie() {
   });
 }
 
+const PIN_SETUP_COOKIE = "pin_setup";
+
+export async function createPinSetupToken(userId: string): Promise<string> {
+  const token = crypto.randomUUID();
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 10); // 10 daqiqa
+  await prisma.pinSetupToken.create({
+    data: { userId, token, expiresAt },
+  });
+  return token;
+}
+
+export async function setPinSetupCookie(token: string) {
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 10);
+  const cookieStore = await cookies();
+  cookieStore.set(PIN_SETUP_COOKIE, token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    expires: expiresAt,
+    path: "/",
+  });
+}
+
+export async function getPinSetupUserId(): Promise<string | null> {
+  const token = (await cookies()).get(PIN_SETUP_COOKIE)?.value;
+  if (!token) return null;
+  const record = await prisma.pinSetupToken.findUnique({
+    where: { token },
+  });
+  if (!record) return null;
+  if (record.expiresAt < new Date()) {
+    await prisma.pinSetupToken.delete({ where: { token } }).catch(() => {});
+    return null;
+  }
+  return record.userId;
+}
+
+export async function consumePinSetupToken(): Promise<void> {
+  const token = (await cookies()).get(PIN_SETUP_COOKIE)?.value;
+  if (token) {
+    await prisma.pinSetupToken.delete({ where: { token } }).catch(() => {});
+    const cookieStore = await cookies();
+    cookieStore.set(PIN_SETUP_COOKIE, "", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      expires: new Date(0),
+      path: "/",
+    });
+  }
+}
+
 export async function getSessionUser() {
   const token = (await cookies()).get(USER_SESSION_COOKIE)?.value;
   if (!token) return null;

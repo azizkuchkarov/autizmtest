@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     const merchantTransId = `autizm-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
     if (devSkip) {
-      await prisma.payment.create({
+      const paid = await prisma.payment.create({
         data: {
           phone,
           amount,
@@ -29,12 +29,13 @@ export async function POST(req: Request) {
           paidAt: new Date(),
         },
       });
-    return NextResponse.json({
-      ok: true,
-      merchantTransId,
-      amount,
-      message: "Test rejimida to'lov o'tkazildi.",
-    });
+      return NextResponse.json({
+        ok: true,
+        merchantTransId,
+        paymentId: paid.id,
+        amount,
+        message: "Test rejimida to'lov o'tkazildi.",
+      });
     }
 
     await prisma.payment.create({
