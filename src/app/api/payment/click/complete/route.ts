@@ -29,11 +29,21 @@ export async function POST(req: Request) {
     const signTime = p.sign_time;
     const signString = p.sign_string;
 
-    if (!clickTransId || !merchantTransId || action !== "1") {
-      return new NextResponse(
-        `click_trans_id=${clickTransId}&merchant_trans_id=${merchantTransId}&merchant_confirm_id=0&error=-8&error_note=Invalid params`,
-        { headers: { "Content-Type": "text/plain; charset=utf-8" } }
+    function jsonResponse(
+      click_trans_id: string,
+      merchant_trans_id: string,
+      merchant_confirm_id: number,
+      error: number,
+      error_note: string
+    ) {
+      return NextResponse.json(
+        { click_trans_id, merchant_trans_id, merchant_confirm_id, error, error_note },
+        { headers: { "Content-Type": "application/json" } }
       );
+    }
+
+    if (!clickTransId || !merchantTransId || action !== "1") {
+      return jsonResponse(String(clickTransId), String(merchantTransId), 0, -8, "Invalid params");
     }
 
     const signOk = verifyCompleteSign({
@@ -48,10 +58,7 @@ export async function POST(req: Request) {
     });
 
     if (!signOk) {
-      return new NextResponse(
-        `click_trans_id=${clickTransId}&merchant_trans_id=${merchantTransId}&merchant_confirm_id=0&error=-1&error_note=Bad sign`,
-        { headers: { "Content-Type": "text/plain; charset=utf-8" } }
-      );
+      return jsonResponse(clickTransId, merchantTransId, 0, -1, "Bad sign");
     }
 
     const payment = await prisma.payment.findUnique({
@@ -59,16 +66,16 @@ export async function POST(req: Request) {
     });
 
     if (!payment) {
-      return new NextResponse(
-        `click_trans_id=${clickTransId}&merchant_trans_id=${merchantTransId}&merchant_confirm_id=0&error=-5&error_note=Order not found`,
-        { headers: { "Content-Type": "text/plain; charset=utf-8" } }
-      );
+      return jsonResponse(clickTransId, merchantTransId, 0, -5, "Order not found");
     }
 
     if (payment.status === "paid") {
-      return new NextResponse(
-        `click_trans_id=${clickTransId}&merchant_trans_id=${merchantTransId}&merchant_confirm_id=${payment.merchantPrepareId || 0}&error=-4&error_note=Already confirmed`,
-        { headers: { "Content-Type": "text/plain; charset=utf-8" } }
+      return jsonResponse(
+        clickTransId,
+        merchantTransId,
+        payment.merchantPrepareId || 0,
+        -4,
+        "Already confirmed"
       );
     }
 
@@ -84,21 +91,15 @@ export async function POST(req: Request) {
         where: { merchantTransId },
         data: { status: "failed" },
       });
-      return new NextResponse(
-        `click_trans_id=${clickTransId}&merchant_trans_id=${merchantTransId}&merchant_confirm_id=${merchantConfirmId}&error=-9&error_note=Cancel`,
-        { headers: { "Content-Type": "text/plain; charset=utf-8" } }
-      );
+      return jsonResponse(clickTransId, merchantTransId, merchantConfirmId, -9, "Cancel");
     }
 
-    return new NextResponse(
-      `click_trans_id=${clickTransId}&merchant_trans_id=${merchantTransId}&merchant_confirm_id=${merchantConfirmId}&error=0&error_note=Success`,
-      { headers: { "Content-Type": "text/plain; charset=utf-8" } }
-    );
+    return jsonResponse(clickTransId, merchantTransId, merchantConfirmId, 0, "Success");
   } catch (err) {
     console.error("[Click complete]", err);
-    return new NextResponse(
-      `click_trans_id=0&merchant_trans_id=0&merchant_confirm_id=0&error=-9&error_note=Server error`,
-      { headers: { "Content-Type": "text/plain; charset=utf-8" } }
+    return NextResponse.json(
+      { click_trans_id: "0", merchant_trans_id: "0", merchant_confirm_id: 0, error: -9, error_note: "Server error" },
+      { headers: { "Content-Type": "application/json" } }
     );
   }
 }
