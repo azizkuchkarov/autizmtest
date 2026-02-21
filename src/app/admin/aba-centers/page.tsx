@@ -8,7 +8,10 @@ type AbaCenter = {
   name: string;
   phone?: string;
   address?: string;
+  url?: string;
+  instagram?: string;
   note?: string;
+  imageUrl?: string;
 };
 
 const REGIONS = [
@@ -45,7 +48,10 @@ export default function AdminAbaCenters() {
           name: "",
           phone: "",
           address: "",
+          url: "",
+          instagram: "",
           note: "",
+          imageUrl: "",
         }));
         setItems(seeded);
       });
@@ -64,9 +70,25 @@ export default function AdminAbaCenters() {
         name: "",
         phone: "",
         address: "",
+        url: "",
+        instagram: "",
         note: "",
+        imageUrl: "",
       },
     ]);
+  }
+
+  async function uploadImage(index: number, file: File) {
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/admin/aba-centers/upload", { method: "POST", body: fd });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert(err?.error || "Rasm yuklanmadi");
+      return;
+    }
+    const data = await res.json();
+    if (data?.url) update(index, { imageUrl: data.url });
   }
 
   function removeCenter(id: string) {
@@ -150,6 +172,58 @@ export default function AdminAbaCenters() {
                             value={it.address || ""}
                             onChange={(e) => update(idx, { address: e.target.value })}
                           />
+                          <input
+                            className="rounded-xl border border-slate-300 px-3 py-2 text-sm md:col-span-2"
+                            placeholder="URL address (veb-sayt, sahifa)"
+                            value={it.url || ""}
+                            onChange={(e) => update(idx, { url: e.target.value })}
+                          />
+                          <input
+                            className="rounded-xl border border-slate-300 px-3 py-2 text-sm md:col-span-2"
+                            placeholder="Instagram profil (havola)"
+                            value={it.instagram || ""}
+                            onChange={(e) => update(idx, { instagram: e.target.value })}
+                          />
+                          <div className="md:col-span-2">
+                            <span className="block text-xs font-medium text-slate-600 mb-1">Rasm (faqat yuklash)</span>
+                            {it.imageUrl ? (
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <img src={it.imageUrl} alt="" className="h-16 w-16 object-cover rounded-lg border border-slate-200" />
+                                <label className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-medium cursor-pointer hover:bg-slate-200">
+                                  Almashtirish
+                                  <input
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp,image/gif"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      const f = e.target.files?.[0];
+                                      if (f) uploadImage(idx, f);
+                                    }}
+                                  />
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={() => update(idx, { imageUrl: "" })}
+                                  className="text-xs text-rose-600 hover:underline"
+                                >
+                                  O‘chirish
+                                </button>
+                              </div>
+                            ) : (
+                              <label className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm cursor-pointer hover:bg-slate-50">
+                                Rasm tanlash (JPEG, PNG, 5 MB gacha)
+                                <input
+                                  type="file"
+                                  accept="image/jpeg,image/png,image/webp,image/gif"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const f = e.target.files?.[0];
+                                    if (f) uploadImage(idx, f);
+                                  }}
+                                />
+                              </label>
+                            )}
+                          </div>
                           <input
                             className="rounded-xl border border-slate-300 px-3 py-2 text-sm md:col-span-2"
                             placeholder="Izoh (ixtiyoriy)"

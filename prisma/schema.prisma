@@ -85,7 +85,10 @@ model AbaCenter {
   name      String
   phone     String?
   address   String?
+  url       String?  // Veb-sayt / sahifa manzili
+  instagram String?  // Instagram profil havolasi
   note      String?
+  imageUrl  String?  // Yuklangan rasm yo‘li (upload)
   order     Int
   active    Boolean  @default(true)
   createdAt DateTime @default(now())

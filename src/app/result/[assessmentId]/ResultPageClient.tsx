@@ -28,6 +28,161 @@ function isOverallResult(scoring: ScoreResponse["scoring"]): scoring is OverallR
   return "overall" in scoring && "domains" in scoring && "insights" in scoring;
 }
 
+const ABA_REGIONS = [
+  "Andijon",
+  "Buxoro",
+  "Farg‘ona",
+  "Jizzax",
+  "Namangan",
+  "Navoiy",
+  "Qashqadaryo",
+  "Samarqand",
+  "Sirdaryo",
+  "Surxondaryo",
+  "Toshkent",
+  "Xorazm",
+];
+
+export type AbaCenterItem = {
+  id: string;
+  region: string;
+  name: string;
+  phone?: string | null;
+  address?: string | null;
+  url?: string | null;
+  instagram?: string | null;
+  note?: string | null;
+  imageUrl?: string | null;
+};
+
+function AbaCentersSection({
+  region,
+  setRegion,
+  centers,
+  setCenters,
+}: {
+  region: string;
+  setRegion: (v: string) => void;
+  centers: AbaCenterItem[];
+  setCenters: (v: AbaCenterItem[]) => void;
+}) {
+  const [loading, setLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!region) {
+      setCenters([]);
+      return;
+    }
+    setLoading(true);
+    fetch(`/api/aba-centers?region=${encodeURIComponent(region)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        setCenters(Array.isArray(data?.items) ? data.items : []);
+      })
+      .finally(() => setLoading(false));
+  }, [region]);
+
+  return (
+    <section className="mt-8 rounded-3xl border border-indigo-200/60 dark:border-indigo-800/50 bg-white dark:bg-slate-900/95 shadow-xl shadow-slate-200/20 dark:shadow-black/20 p-6 sm:p-8">
+      <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
+        Yordam
+      </p>
+      <h3 className="mt-1 text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100 mb-4">
+        ABA markazlar — viloyatingizni tanlang
+      </h3>
+      <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+        O‘zingizga qulay viloyatni tanlang, shu viloyatdagi ABA terapiya markazlari ro‘yxati chiqadi.
+      </p>
+      <select
+        value={region}
+        onChange={(e) => setRegion(e.target.value)}
+        className="rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+      >
+        <option value="">Viloyatni tanlang</option>
+        {ABA_REGIONS.map((r) => (
+          <option key={r} value={r}>
+            {r}
+          </option>
+        ))}
+      </select>
+
+      {loading && (
+        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Yuklanmoqda...</p>
+      )}
+      {!loading && region && centers.length === 0 && (
+        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
+          Ushbu viloyatda hozircha markazlar ro‘yxati kiritilmagan.
+        </p>
+      )}
+      {!loading && centers.length > 0 && (
+        <div className="mt-6 space-y-4">
+          {centers.map((c) => (
+            <div
+              key={c.id}
+              className="rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-800/40 p-4 sm:p-5 flex flex-col sm:flex-row gap-4"
+            >
+              {c.imageUrl && (
+                <div className="shrink-0">
+                  <img
+                    src={c.imageUrl}
+                    alt={c.name || "Markaz"}
+                    className="rounded-xl object-cover w-full sm:w-32 h-32 sm:h-28 border border-slate-200 dark:border-slate-700"
+                  />
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                {c.name && (
+                  <h4 className="font-bold text-slate-900 dark:text-slate-100">{c.name}</h4>
+                )}
+                {c.address && (
+                  <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">📍 {c.address}</p>
+                )}
+                {c.phone && (
+                  <p className="mt-1 text-sm">
+                    <a
+                      href={`tel:${c.phone.replace(/\s/g, "")}`}
+                      className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+                    >
+                      📞 {c.phone}
+                    </a>
+                  </p>
+                )}
+                {c.url && (
+                  <p className="mt-1 text-sm">
+                    <a
+                      href={c.url.startsWith("http") ? c.url : `https://${c.url}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+                    >
+                      🔗 {c.url}
+                    </a>
+                  </p>
+                )}
+                {c.instagram && (
+                  <p className="mt-1 text-sm">
+                    <a
+                      href={c.instagram.startsWith("http") ? c.instagram : `https://instagram.com/${c.instagram.replace(/^@?\/?/, "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+                    >
+                      📷 Instagram
+                    </a>
+                  </p>
+                )}
+                {c.note && (
+                  <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">{c.note}</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 type Props = { assessmentId: string };
 
 export default function ResultPageClient({ assessmentId }: Props) {
@@ -36,6 +191,8 @@ export default function ResultPageClient({ assessmentId }: Props) {
   const [aiLoading, setAiLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = React.useState(false);
+  const [abaRegion, setAbaRegion] = React.useState("");
+  const [abaCenters, setAbaCenters] = React.useState<AbaCenterItem[]>([]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -159,6 +316,8 @@ export default function ResultPageClient({ assessmentId }: Props) {
         domains,
         answers: data.answers ?? null,
         aiPayload: data.aiSummary.payload ?? null,
+        selectedAbaRegion: abaRegion || undefined,
+        abaCenters: abaCenters.length > 0 ? abaCenters : undefined,
       });
     } catch (e) {
       console.error(e);
@@ -313,6 +472,14 @@ export default function ResultPageClient({ assessmentId }: Props) {
               </button>
             </div>
           </section>
+
+          {/* ABA markazlar — AI xulosadan keyin; PDF da ham tanlangan viloyat/markazlar chiqadi */}
+          <AbaCentersSection
+            region={abaRegion}
+            setRegion={setAbaRegion}
+            centers={abaCenters}
+            setCenters={setAbaCenters}
+          />
         </div>
       </div>
     );

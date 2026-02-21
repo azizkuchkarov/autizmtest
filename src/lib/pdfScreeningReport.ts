@@ -15,6 +15,75 @@ const FONT_SIZE_BODY = 10;
 const FONT_SIZE_TITLE = 14;
 const FONT_SIZE_HEADING = 11;
 
+/** Risk darajasi bo‘yicha RGB (jsPDF setFillColor uchun) */
+function getRiskRgb(totalScore: number): [number, number, number] {
+  if (totalScore <= 20) return [16, 185, 129];   // emerald — Juda past
+  if (totalScore <= 40) return [34, 197, 94];   // green — Past
+  if (totalScore <= 60) return [245, 158, 11];  // amber — O'rta
+  if (totalScore <= 80) return [249, 115, 22];  // orange — Yuqori
+  return [239, 68, 68];                          // rose — Juda yuqori
+}
+
+/** Blok foizi bo‘yicha bar rangi */
+function getBlockBarRgb(score: number): [number, number, number] {
+  if (score <= 30) return [16, 185, 129];
+  if (score <= 60) return [245, 158, 11];
+  return [239, 68, 68];
+}
+
+/** Donut chizish: tashqi rangli halqa, ichida foiz matni */
+function drawDonut(doc: jsPDF, cx: number, cy: number, value: number): void {
+  const outerR = 14;
+  const innerR = 8;
+  const [r, g, b] = getRiskRgb(value);
+  doc.setFillColor(r, g, b);
+  doc.circle(cx, cy, outerR, "F");
+  doc.setFillColor(255, 255, 255);
+  doc.circle(cx, cy, innerR, "F");
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(0, 0, 0);
+  doc.text(`${Math.round(value)}%`, cx - 3.5, cy + 1.2);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(FONT_SIZE_BODY);
+  doc.setTextColor(0, 0, 0);
+}
+
+/** Gorizontal risk bar (0–100%) */
+function drawRiskBar(doc: jsPDF, x: number, y: number, w: number, h: number, value: number): void {
+  doc.setFillColor(230, 230, 230);
+  doc.rect(x, y, w, h, "F");
+  const fillW = Math.max(0, Math.min(100, value) / 100) * w;
+  if (fillW > 0) {
+    const [r, g, b] = getRiskRgb(value);
+    doc.setFillColor(r, g, b);
+    doc.rect(x, y, fillW, h, "F");
+  }
+}
+
+/** Risk shkala — 5 ta rangli quti (0–20% … 80–100%) */
+function drawRiskScale(doc: jsPDF, x: number, y: number, boxW: number, boxH: number, gap: number): number {
+  const items: { label: string; rgb: [number, number, number] }[] = [
+    { label: "0–20%", rgb: [16, 185, 129] },
+    { label: "20–40%", rgb: [34, 197, 94] },
+    { label: "40–60%", rgb: [245, 158, 11] },
+    { label: "60–80%", rgb: [249, 115, 22] },
+    { label: "80–100%", rgb: [239, 68, 68] },
+  ];
+  let xCur = x;
+  for (const item of items) {
+    doc.setFillColor(...item.rgb);
+    doc.roundedRect(xCur, y, boxW, boxH, 1, 1, "F");
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(0, 0, 0);
+    doc.text(item.label, xCur + boxW / 2 - 4, y + boxH / 2 + 1.2);
+    xCur += boxW + gap;
+  }
+  doc.setFontSize(FONT_SIZE_BODY);
+  return y + boxH + 4;
+}
+
 const ANSWER_LABELS: Record<number, string> = {
   0: "Yo'q / hech qachon",
   1: "Kamdan-kam",
@@ -86,6 +155,17 @@ export type PdfScreeningParams = {
   domains: Array<{ id: string; title: string }>;
   answers: Record<string, number> | null;
   aiPayload: AiSummaryPayload | null | undefined;
+  /** Tanlangan viloyat va ABA markazlar — PDF da chiqadi */
+  selectedAbaRegion?: string;
+  abaCenters?: Array<{
+    name: string;
+    phone?: string | null;
+    address?: string | null;
+    url?: string | null;
+    instagram?: string | null;
+    note?: string | null;
+    imageUrl?: string | null;
+  }>;
 };
 
 function ensurePage(doc: jsPDF, y: number, needSpace: number): number {
@@ -106,6 +186,8 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
     domains,
     answers,
     aiPayload,
+    selectedAbaRegion,
+    abaCenters,
   } = params;
 
   const doc = new jsPDF({ unit: "mm", format: "a4" });
@@ -125,7 +207,19 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(FONT_SIZE_BODY);
   doc.text(`${result.riskLabel} — Risk ko'rsatkichi: ${result.totalScore.toFixed(1)}%`, MARGIN, y);
-  y += LINE_HEIGHT;
+  y += LINE_HEIGHT + 2;
+
+  // Rangli donut va risk bar (diagramma)
+  const donutCx = MARGIN + 18;
+  const donutCy = y + 18;
+  drawDonut(doc, donutCx, donutCy, result.totalScore);
+  const barX = MARGIN + 50;
+  const barW = 55;
+  const barH = 6;
+  drawRiskBar(doc, barX, y + 12, barW, barH, result.totalScore);
+  doc.text(`Risk: ${result.totalScore.toFixed(1)}%`, barX + barW + 4, y + 16);
+  y += 38;
+
   const disclaimerUmumiy =
     "Bu natija faqat skrining hisoblanadi va diagnoz qo'yish uchun ishlatilmaydi. Aniq tashxis mutaxassis tomonidan qo'yiladi.";
   const disclaimerLines = doc.splitTextToSize(disclaimerUmumiy, contentW);
@@ -133,12 +227,22 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
   y += disclaimerLines.length * LINE_HEIGHT;
   const redFlagCount = (result.redFlags ?? []).length;
   doc.text(`Red-flag savollar: ${redFlagCount} ta`, MARGIN, y);
+  y += LINE_HEIGHT + 4;
+
+  // Risk shkalasi — 5 ta rangli quti
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.text("Risk ko'rsatkichlari:", MARGIN, y);
   y += LINE_HEIGHT + 2;
-  const scaleText =
-    "Risk ko'rsatkichlari: 0–20% Juda past | 20–40% Past | 40–60% O'rta | 60–80% Yuqori | 80–100% Juda yuqori";
-  const scaleLines = doc.splitTextToSize(scaleText, contentW);
-  doc.text(scaleLines, MARGIN, y);
-  y += scaleLines.length * LINE_HEIGHT + 4;
+  const boxW = 32;
+  const boxH = 10;
+  const gap = 2;
+  y = drawRiskScale(doc, MARGIN, y, boxW, boxH, gap);
+  doc.setFontSize(8);
+  doc.text("Juda past   Past   O'rta   Yuqori   Juda yuqori", MARGIN, y);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(FONT_SIZE_BODY);
+  y += 5;
 
   // ——— 2. Xulosa (ekrandagi ikkinchi blok: metadata + xulosa matni + tavsiya) ———
   doc.setFont("helvetica", "bold");
@@ -167,16 +271,26 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
   doc.text(smallLines, MARGIN, y);
   y += smallLines.length * LINE_HEIGHT + 4;
 
-  // ——— 3. Bloklar bo'yicha (%) ———
+  // ——— 3. Bloklar bo'yicha (%) — rangli barlar ———
   doc.setFont("helvetica", "bold");
   doc.text("Bloklar bo'yicha (%)", MARGIN, y);
-  y += LINE_HEIGHT;
+  y += LINE_HEIGHT + 2;
   doc.setFont("helvetica", "normal");
+  const blockBarW = 50;
+  const blockBarH = 4;
   for (const b of result.blocks ?? []) {
-    doc.text(`${b.title}: ${Math.round(b.score)}%`, MARGIN, y);
-    y += LINE_HEIGHT;
+    const score = Math.min(100, Math.max(0, Number(b.score) || 0));
+    const [r, g, bl] = getBlockBarRgb(score);
+    doc.setFillColor(230, 230, 230);
+    doc.rect(MARGIN, y - 2.5, blockBarW, blockBarH, "F");
+    if (score > 0) {
+      doc.setFillColor(r, g, bl);
+      doc.rect(MARGIN, y - 2.5, (score / 100) * blockBarW, blockBarH, "F");
+    }
+    doc.text(`${b.title}: ${Math.round(score)}%`, MARGIN + blockBarW + 4, y + 0.5);
+    y += LINE_HEIGHT + 2;
   }
-  y += 6;
+  y += 4;
 
   // ——— 4. Red-flag savollar ———
   if ((result.redFlags ?? []).length > 0) {
@@ -267,6 +381,61 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
       doc.text(dLines, MARGIN, y);
       doc.setFont("helvetica", "normal");
     }
+  }
+
+  // ——— ABA markazlar (tanlangan viloyat) ———
+  if (selectedAbaRegion && abaCenters && abaCenters.length > 0) {
+    y = ensurePage(doc, y, 40);
+    y += 6;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(FONT_SIZE_HEADING);
+    doc.text("ABA markazlar", MARGIN, y);
+    y += LINE_HEIGHT;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(FONT_SIZE_BODY);
+    doc.text(`Viloyat: ${selectedAbaRegion}`, MARGIN, y);
+    y += LINE_HEIGHT + 3;
+    for (const c of abaCenters) {
+      y = ensurePage(doc, y, LINE_HEIGHT * 6);
+      if (c.name) {
+        doc.setFont("helvetica", "bold");
+        doc.text(c.name, MARGIN, y);
+        doc.setFont("helvetica", "normal");
+        y += LINE_HEIGHT;
+      }
+      if (c.address) {
+        const aLines = doc.splitTextToSize(`Manzil: ${c.address}`, contentW - 2);
+        doc.text(aLines, MARGIN, y);
+        y += aLines.length * LINE_HEIGHT;
+      }
+      if (c.phone) {
+        doc.text(`Telefon: ${c.phone}`, MARGIN, y);
+        y += LINE_HEIGHT;
+      }
+      if (c.url) {
+        const urlAbs = c.url.startsWith("http") ? c.url : `https://${c.url}`;
+        doc.setTextColor(0, 51, 102);
+        doc.textWithLink(`URL: ${c.url}`, MARGIN, y, { url: urlAbs });
+        doc.setTextColor(0, 0, 0);
+        y += LINE_HEIGHT;
+      }
+      if (c.instagram) {
+        const igAbs = c.instagram.startsWith("http")
+          ? c.instagram
+          : `https://instagram.com/${c.instagram.replace(/^@?\/?/, "")}`;
+        doc.setTextColor(0, 51, 102);
+        doc.textWithLink(`Instagram: ${c.instagram}`, MARGIN, y, { url: igAbs });
+        doc.setTextColor(0, 0, 0);
+        y += LINE_HEIGHT;
+      }
+      if (c.note) {
+        const nLines = doc.splitTextToSize(c.note, contentW - 2);
+        doc.text(nLines, MARGIN, y);
+        y += nLines.length * LINE_HEIGHT;
+      }
+      y += 3;
+    }
+    y += 4;
   }
 
   y += 8;

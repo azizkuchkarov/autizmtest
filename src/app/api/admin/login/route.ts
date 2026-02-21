@@ -34,6 +34,13 @@ export async function POST(req: Request) {
     const session = await createSession(admin.id);
     await setSessionCookie(session.token, session.expiresAt);
 
+    await prisma.userEvent.create({
+      data: {
+        type: "admin_login",
+        metadata: { email: admin.email, adminId: admin.id },
+      },
+    });
+
     return NextResponse.json({ ok: true, email: admin.email });
   } catch (err: any) {
     const message = typeof err?.message === "string" ? err.message : "Server xatoligi.";
