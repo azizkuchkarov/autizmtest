@@ -124,6 +124,10 @@ function TestContent() {
       }
       const id = data?.assessmentId;
       if (id) {
+        try {
+          sessionStorage.removeItem(PAYMENT_ID_KEY);
+          sessionStorage.removeItem(PAID_AMOUNT_KEY);
+        } catch {}
         router.push(`/result/${id}`);
       } else {
         setError("Assessment ID topilmadi");

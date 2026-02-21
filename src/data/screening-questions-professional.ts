@@ -49,9 +49,9 @@ export const professionalQuestions: ScreeningQuestion[] = [
     domain: "A",
     weight: 1,
     isRedFlag: false,
-    text: "Bola sizning ko‘ringizga qarab biror narsani qidirishga harakat qiladimi?",
-    example: "Siz biror narsaga qarasangiz va bola ham shu tomonga qaraydimi?",
-    explanation: "Boshqalarning ko‘rish yo‘nalishini kuzatish va shunga moslashish ijtimoiy kognitsiya va birgalikda diqqatning muhim ko‘rsatkichidir.",
+    text: "Bola siz biror narsaga qaraganingizda, o‘sha tomonga qaraydimi va narsani qidirishga harakat qiladimi?",
+    example: "Siz biror narsaga (masalan, deraza, o‘yinchoq) qarasangiz — bola ham shu yo‘nalishga qaraydimi yoki «qayerda?» deb qidiradimi?",
+    explanation: "Boshqalarning qarash yo‘nalishini kuzatish va shunga moslashish (gaze following) ijtimoiy kognitsiya va birgalikda diqqatning muhim ko‘rsatkichidir.",
   },
   {
     id: "SCREENING_A_03",

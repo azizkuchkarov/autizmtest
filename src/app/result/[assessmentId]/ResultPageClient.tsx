@@ -690,15 +690,19 @@ function ScreeningV2ResultView({
         </section>
       )}
 
-      {/* Autizmga moyilligi bor savollar va javoblari */}
-      {(result.topOverall ?? []).length > 0 && (
+      {/* Autizmga moyilligi bor savollar va javoblari — faqat ball olgan (risk > 0, javob > 0) */}
+      {(() => {
+        const withBall = (result.topOverall ?? []).filter(
+          (issue) => (issue.risk ?? 0) > 0 && (issue.answer ?? 0) > 0
+        );
+        return withBall.length > 0 && (
         <section className="mt-8 rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/95 shadow-xl shadow-slate-200/20 dark:shadow-black/20 p-6 sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">Savol va javoblar</p>
           <h3 className="mt-1 text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100 mb-4">
             Autizmga moyilligi bor savollar va javoblari
           </h3>
           <div className="space-y-3">
-            {(result.topOverall ?? []).map((issue) => (
+            {withBall.map((issue) => (
               <div
                 key={issue.questionId}
                 className={`rounded-2xl border p-4 sm:p-5 transition-colors ${
@@ -737,7 +741,8 @@ function ScreeningV2ResultView({
             ))}
           </div>
         </section>
-      )}
+      );
+      })()}
     </>
   );
 }

@@ -25,12 +25,23 @@ const GENDER_OPTIONS: { value: ChildGender; label: string }[] = [
   { value: "O'g'il", label: "O'g'il" },
 ];
 
+const TEST_PHONE = "+998000000001";
+
 export default function StartPage() {
   const router = useRouter();
   const [ageGroup, setAgeGroup] = React.useState<AgeGroupId | null>(null);
   const [respondent, setRespondent] = React.useState<Respondent | null>(null);
   const [childGender, setChildGender] = React.useState<ChildGender | null>(null);
   const [error, setError] = React.useState("");
+  const [testLoading, setTestLoading] = React.useState(false);
+  const [isTestMode, setIsTestMode] = React.useState(false);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname;
+      setIsTestMode(host === "localhost" || host === "127.0.0.1");
+    }
+  }, []);
 
   function handleRegister() {
     if (!ageGroup || !respondent || !childGender) {
@@ -45,6 +56,39 @@ export default function StartPage() {
       );
     } catch {}
     router.push("/start/register");
+  }
+
+  async function handleTestMode() {
+    if (!ageGroup || !respondent || !childGender) {
+      setError("Iltimos, barcha maydonlarni to'ldiring.");
+      return;
+    }
+    setError("");
+    try {
+      sessionStorage.setItem(
+        INITIAL_DATA_KEY,
+        JSON.stringify({ ageGroup, respondent, childGender } as InitialData)
+      );
+    } catch {}
+    setTestLoading(true);
+    try {
+      const res = await fetch("/api/payment/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: TEST_PHONE, dev_skip: true }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data?.error ?? "Test rejimida to'lov yaratilmadi.");
+        return;
+      }
+      const params = new URLSearchParams();
+      if (data.paymentId) params.set("payment_id", data.paymentId);
+      if (typeof data.amount === "number") params.set("amount", String(data.amount));
+      router.push(`/test?${params.toString()}`);
+    } finally {
+      setTestLoading(false);
+    }
   }
 
   const allFilled = ageGroup && respondent && childGender;
@@ -222,11 +266,27 @@ export default function StartPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
               </button>
+
+              {isTestMode && (
+                <button
+                  type="button"
+                  onClick={handleTestMode}
+                  disabled={!allFilled || testLoading}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-amber-400 bg-amber-50 dark:bg-amber-900/20 px-6 py-3.5 text-sm font-bold text-amber-800 dark:text-amber-200 transition-all hover:bg-amber-100 dark:hover:bg-amber-900/30 disabled:opacity-50 disabled:pointer-events-none"
+                >
+                  {testLoading ? "Yuklanmoqda..." : "Test rejimida davom etish (OTP va to'lovsiz)"}
+                </button>
+              )}
             </div>
 
-            {allFilled && (
+            {allFilled && !isTestMode && (
               <p className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
                 Keyingi qadam: telefon raqam va tasdiqlash kodi
+              </p>
+            )}
+            {allFilled && isTestMode && (
+              <p className="mt-4 text-center text-xs text-amber-600 dark:text-amber-400">
+                Test rejimi: OTP va to&apos;lovni o&apos;tkazib, to&apos;g&apos;ridan-to&apos;g&apos;ri testga o&apos;ting
               </p>
             )}
           </section>

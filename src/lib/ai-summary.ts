@@ -1,6 +1,14 @@
 import type { AiSummaryPayload, ScreeningV2Result } from "@/types/api";
 import type { MonitoringResult } from "./monitoringScoring";
 
+/** OpenAI API bazasi. Region bloklangan bo'lsa proxy yoki boshqa endpoint .env da OPENAI_BASE_URL qilib o'rnating. */
+function getOpenAiBaseUrl(): string {
+  const base = process.env.OPENAI_BASE_URL?.trim();
+  return base ? base.replace(/\/$/, "") : "https://api.openai.com";
+}
+
+const OPENAI_CHAT_URL = () => `${getOpenAiBaseUrl()}/v1/chat/completions`;
+
 const DEFAULT_DISCLAIMER =
   "Bu skrining natijasi — tibbiy tashxis emas. Yakuniy baho va tavsiyalar uchun mutaxassis (pediatr, bolalar nevrologi yoki rivoj mutaxassisi) bilan muloqot qilishingiz tavsiya etiladi.";
 
@@ -61,7 +69,7 @@ export async function generateAiSummary(aiFacts: Record<string, unknown>): Promi
 
   const userContent = `Quyidagi skrining natijasi (aiFacts) asosida JSON xulosa yozing. Faqat JSON qaytaring.\n\n${JSON.stringify(aiFacts, null, 2)}`;
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+  const res = await fetch(OPENAI_CHAT_URL(), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -191,7 +199,7 @@ export async function generateAiSummaryForScreeningV2(
 
   const userContent = `Quyidagi skrining (screening v2) natijasi asosida JSON xulosa yozing. Faqat JSON qaytaring.\n\n${JSON.stringify(facts, null, 2)}`;
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+  const res = await fetch(OPENAI_CHAT_URL(), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -323,7 +331,7 @@ export async function generateAiSummaryForMonitoring(
 
   const userContent = `Quyidagi progress monitoring natijasi asosida JSON xulosa yozing. Faqat JSON qaytaring.\n\n${JSON.stringify(facts, null, 2)}`;
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+  const res = await fetch(OPENAI_CHAT_URL(), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,

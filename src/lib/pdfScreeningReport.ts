@@ -1,6 +1,6 @@
 /**
  * Skrining natijasini A4 PDF sifatida yaratish.
- * Barcha savollar va javoblar, xulosa, risk shkalasi, AI xulosa.
+ * Tartib va tarkib ekrandagi "Skrining natijasi" sahifasi bilan bir xil.
  */
 
 import { jsPDF } from "jspdf";
@@ -40,6 +40,41 @@ function formatDate(iso: string | undefined): string {
   } catch {
     return iso;
   }
+}
+
+/** Ekrandagi "Xulosa" bo'limi matnlari — risk darajasi va yosh guruhiga qarab */
+function getXulosaParagraphs(riskLabel: string, ageLabel: string | null, totalScore: number): string[] {
+  const lines: string[] = [];
+  if (riskLabel === "Past xavf") {
+    const p1 =
+      ageLabel === "1,5–2 yosh"
+        ? "Ushbu yoshdagi bolada skrining bo'yicha autizm belgilari ehtimoli past baholandi. Erta yoshda ijtimoiy va muloqot ko'nikmalari hali rivojlanayotgan bo'lgani uchun kuzatishni davom ettirish, oilada ijtimoiy o'yin va muloqotga vaqt ajratish tavsiya etiladi."
+        : ageLabel === "3–4 yosh" || ageLabel === "5–6 yosh"
+          ? "Skrining bo'yicha autizm belgilari ehtimoli past. Bolaning ijtimoiy aloqa, muloqot va moslashuv ko'rsatkichlari hozircha normativ rivojlanish doirasida baholandi. Maktabgacha yoki maktab yoshida kuzatishni davom ettirish va kerak bo'lsa keyinchalik qayta tekshirish mumkin."
+          : "Skrining natijasiga ko'ra autizm belgilari ehtimoli past. Bolaning javoblari asosida hozircha qo'shimcha tekshiruv talab qilinmaydi. Rivojlanishni kuzatish va ota-ona savollari paydo bo'lsa mutaxassisga murojaat qilish tavsiya etiladi.";
+    lines.push(p1);
+    let tavsiya =
+      "Kuzatishni davom ettiring. Agar keyinchalik ota-ona tashvishlansa yoki bolada o'zgarishlar sezilsa, qayta skrining yoki bolalar nevrologi yoki rivojlanish mutaxassisi bilan konsultatsiya qilish mumkin.";
+    if (totalScore > 40) tavsiya += " 40% dan yuqori bo'lgan hollarda ABA mutaxassislari bilan ham konsultatsiya qilish tavsiya etiladi.";
+    lines.push("Tavsiya: " + tavsiya);
+  } else if (riskLabel === "O'rtacha xavf") {
+    const p1 = ageLabel
+      ? `${ageLabel} guruhidagi bolada skrining bo'yicha ba'zi belgilar qayd etildi. Bu mutlaqo autizm borligini anglatmaydi; boshqa sabablar ham bo'lishi mumkin. To'liq klinik baholash orqali aniqroq yo'nalish olish mumkin.`
+      : "Skrining bo'yicha ba'zi belgilar qayd etildi. To'liq klinik baholash orqali aniqroq yo'nalish olish mumkin.";
+    lines.push(p1);
+    let tavsiya =
+      "Bolalar nevrologi yoki rivojlanish bo'yicha mutaxassis bilan konsultatsiya qilish tavsiya etiladi. Mutaxassis bolani ko'rib, anamnez va qo'shimcha tekshiruvlar asosida keyingi qadamni aniqlaydi.";
+    if (totalScore > 40) tavsiya += " 40% dan yuqori bo'lgani uchun ABA mutaxassislari bilan ham konsultatsiya qilish tavsiya etiladi.";
+    lines.push("Tavsiya: " + tavsiya);
+  } else if (riskLabel === "Yuqori xavf") {
+    lines.push(
+      "Skrining bo'yicha belgilar sezilarli darajada qayd etildi. Bu natija diagnoz emas; faqat keyingi tekshiruv va mutaxassis bilan uchrashuvni rejalash uchun asos hisoblanadi. Aniq tashxis faqat mutaxassis tomonidan to'liq klinik va kerak bo'lsa instrumental baholashdan keyin qo'yiladi."
+    );
+    lines.push(
+      "Tavsiya: Tezroq bolalar nevrologi yoki rivojlanish/autizm bo'yicha ixtisoslashtirilgan markazga murojaat qilish va diagnostik baholashdan o'tish tavsiya etiladi. Erta yordam va qo'llab-quvvatlash natijani yaxshilashda muhim rol o'ynaydi. ABA mutaxassislari bilan ham konsultatsiya qilish tavsiya etiladi."
+    );
+  }
+  return lines;
 }
 
 export type PdfScreeningParams = {
@@ -82,7 +117,33 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
   doc.text("Skrining natijasi — Autizm belgilari", MARGIN, y);
   y += LINE_HEIGHT + 2;
 
+  // ——— 1. Umumiy xulosa (ekrandagi birinchi blok) ———
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(FONT_SIZE_HEADING);
+  doc.text("Umumiy xulosa", MARGIN, y);
+  y += LINE_HEIGHT;
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(FONT_SIZE_BODY);
+  doc.text(`${result.riskLabel} — Risk ko'rsatkichi: ${result.totalScore.toFixed(1)}%`, MARGIN, y);
+  y += LINE_HEIGHT;
+  const disclaimerUmumiy =
+    "Bu natija faqat skrining hisoblanadi va diagnoz qo'yish uchun ishlatilmaydi. Aniq tashxis mutaxassis tomonidan qo'yiladi.";
+  const disclaimerLines = doc.splitTextToSize(disclaimerUmumiy, contentW);
+  doc.text(disclaimerLines, MARGIN, y);
+  y += disclaimerLines.length * LINE_HEIGHT;
+  const redFlagCount = (result.redFlags ?? []).length;
+  doc.text(`Red-flag savollar: ${redFlagCount} ta`, MARGIN, y);
+  y += LINE_HEIGHT + 2;
+  const scaleText =
+    "Risk ko'rsatkichlari: 0–20% Juda past | 20–40% Past | 40–60% O'rta | 60–80% Yuqori | 80–100% Juda yuqori";
+  const scaleLines = doc.splitTextToSize(scaleText, contentW);
+  doc.text(scaleLines, MARGIN, y);
+  y += scaleLines.length * LINE_HEIGHT + 4;
+
+  // ——— 2. Xulosa (ekrandagi ikkinchi blok: metadata + xulosa matni + tavsiya) ———
+  doc.setFont("helvetica", "bold");
+  doc.text("Xulosa", MARGIN, y);
+  y += LINE_HEIGHT;
   doc.setFont("helvetica", "normal");
   doc.text(`Xulosa raqami: ${getXulosaRaqami(assessmentId, completedAt)}`, MARGIN, y);
   y += LINE_HEIGHT;
@@ -92,23 +153,21 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
     doc.text(`Yosh guruhi: ${ageLabel}`, MARGIN, y);
     y += LINE_HEIGHT;
   }
-  y += 3;
+  const xulosaParagraphs = getXulosaParagraphs(result.riskLabel, ageLabel, result.totalScore);
+  for (const p of xulosaParagraphs) {
+    y += 2;
+    const pLines = doc.splitTextToSize(p, contentW);
+    doc.text(pLines, MARGIN, y);
+    y += pLines.length * LINE_HEIGHT;
+  }
+  y += 2;
+  const smallDisclaimer =
+    "Agar ota-ona tashvishlansa yoki bolada o'zgarishlar sezilsa, mutaxassis bilan muloqot qilish tavsiya etiladi.";
+  const smallLines = doc.splitTextToSize(smallDisclaimer, contentW);
+  doc.text(smallLines, MARGIN, y);
+  y += smallLines.length * LINE_HEIGHT + 4;
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(FONT_SIZE_HEADING);
-  doc.text("Umumiy xulosa", MARGIN, y);
-  y += LINE_HEIGHT;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(FONT_SIZE_BODY);
-  doc.text(`${result.riskLabel} — Risk ko'rsatkichi: ${result.totalScore.toFixed(1)}%`, MARGIN, y);
-  y += LINE_HEIGHT + 2;
-
-  const scaleText =
-    "Risk ko'rsatkichlari: 0–20% Juda past | 20–40% Past | 40–60% O'rta | 60–80% Yuqori | 80–100% Juda yuqori";
-  const scaleLines = doc.splitTextToSize(scaleText, contentW);
-  doc.text(scaleLines, MARGIN, y);
-  y += scaleLines.length * LINE_HEIGHT + 4;
-
+  // ——— 3. Bloklar bo'yicha (%) ———
   doc.setFont("helvetica", "bold");
   doc.text("Bloklar bo'yicha (%)", MARGIN, y);
   y += LINE_HEIGHT;
@@ -119,38 +178,9 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
   }
   y += 6;
 
-  y = ensurePage(doc, y, 35);
-  y += 2;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(FONT_SIZE_HEADING);
-  doc.text("Barcha savollar va ota-onaning javoblari", MARGIN, y);
-  y += LINE_HEIGHT + 4;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(FONT_SIZE_BODY);
-
-  const domainTitles = Object.fromEntries(domains.map((d) => [d.id, d.title]));
-
-  for (const q of questions) {
-    y = ensurePage(doc, y, LINE_HEIGHT * 5);
-    const blockTitle = domainTitles[q.domain] ?? q.domain;
-    const answerVal = answers?.[q.id];
-    const answerStr =
-      answerVal !== undefined && answerVal !== null
-        ? ANSWER_LABELS[answerVal] ?? `Javob: ${answerVal}`
-        : "—";
-
-    const qLines = doc.splitTextToSize(`${q.text}`, contentW - 2);
-    doc.text(qLines, MARGIN, y);
-    y += qLines.length * LINE_HEIGHT;
-    doc.setFont("helvetica", "bold");
-    doc.text(`Javob: ${answerStr}  (${blockTitle})`, MARGIN, y);
-    doc.setFont("helvetica", "normal");
-    y += LINE_HEIGHT + 3;
-  }
-
+  // ——— 4. Red-flag savollar ———
   if ((result.redFlags ?? []).length > 0) {
     y = ensurePage(doc, y, 30);
-    y += 6;
     doc.setFont("helvetica", "bold");
     doc.text("Red-flag savollar", MARGIN, y);
     y += LINE_HEIGHT;
@@ -163,14 +193,17 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
     y += 5;
   }
 
-  if ((result.topOverall ?? []).length > 0) {
+  // ——— 5. Autizmga moyilligi bor savollar va javoblari ———
+  const topWithBall = (result.topOverall ?? []).filter(
+    (issue) => (issue.risk ?? 0) > 0 && (issue.answer ?? 0) > 0
+  );
+  if (topWithBall.length > 0) {
     y = ensurePage(doc, y, 25);
-    y += 4;
     doc.setFont("helvetica", "bold");
     doc.text("Autizmga moyilligi bor savollar va javoblari", MARGIN, y);
     y += LINE_HEIGHT;
     doc.setFont("helvetica", "normal");
-    for (const issue of result.topOverall ?? []) {
+    for (const issue of topWithBall) {
       y = ensurePage(doc, y, LINE_HEIGHT * 3);
       const ansStr =
         typeof issue.answer === "number"

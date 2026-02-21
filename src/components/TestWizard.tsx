@@ -199,6 +199,21 @@ export default function TestWizard({
             {q.explanation}
           </p>
         )}
+        {q.isRedFlag && (
+          <div className="mt-4 flex gap-3 rounded-2xl border border-amber-200/80 dark:border-amber-700/50 bg-amber-50/90 dark:bg-amber-900/20 p-4">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-800/40 text-amber-600 dark:text-amber-400">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </span>
+            <div>
+              <p className="text-sm font-bold text-amber-800 dark:text-amber-200">Ota-onalar uchun eslatma</p>
+              <p className="mt-0.5 text-sm text-amber-700 dark:text-amber-300/90 leading-relaxed">
+                Bu savol skriningda muhim hisoblanadi. Iltimos, oxirgi 2–4 haftadagi kuzatuvingizga asosan to‘g‘ri javob bering.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="space-y-3">
