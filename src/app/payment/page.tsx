@@ -26,11 +26,30 @@ function PaymentContent() {
       .catch(() => {});
   }, []);
 
+  // OTP tasdiqlangan raqamni avtomatik olish: avval sessionStorage, bo‘lmasa sessiyadan (/api/auth/me)
   React.useEffect(() => {
+    let done = false;
     try {
       const stored = sessionStorage.getItem("asds_phone");
-      if (stored) setPhone(stored);
+      if (stored && /^\+998\d{9}$/.test(stored.replace(/\s+/g, ""))) {
+        setPhone(stored);
+        done = true;
+      }
     } catch {}
+    if (!done) {
+      fetch("/api/auth/me")
+        .then((r) => r.json())
+        .then((d) => {
+          const p = d?.user?.phone;
+          if (p && /^\+998\d{9}$/.test(String(p).replace(/\s+/g, ""))) {
+            setPhone(String(p));
+            try {
+              sessionStorage.setItem("asds_phone", p);
+            } catch {}
+          }
+        })
+        .catch(() => {});
+    }
   }, []);
 
   React.useEffect(() => {
@@ -138,12 +157,15 @@ function PaymentContent() {
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
             Autizm skrining testi uchun to'lov — {amountText} so'm
           </p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            OTP tasdiqlangan raqamingizga Click orqali to'lov yuborish yoki karta raqami bilan to'lash mumkin.
+          </p>
 
           {!merchantTransId ? (
             <>
               <div className="mt-6">
                 <label className="block text-sm font-bold text-slate-900 dark:text-slate-100 mb-1">
-                  Telefon raqam
+                  Telefon raqam (OTP tasdiqlangan raqam)
                 </label>
                 <input
                   type="tel"
@@ -168,7 +190,7 @@ function PaymentContent() {
                 disabled={loading}
                 className="mt-6 w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-6 py-4 text-base font-bold text-white shadow-lg shadow-emerald-500/30 transition-all hover:from-emerald-700 hover:to-emerald-600 disabled:opacity-60"
               >
-                {loading ? "Yuborilmoqda..." : "Click orqali to'lash"}
+                {loading ? "Yuborilmoqda..." : "Click orqali to'lash (shu raqamga to'lov yuboriladi)"}
               </button>
               <button
                 type="button"
@@ -176,7 +198,7 @@ function PaymentContent() {
                 disabled={loading}
                 className="mt-3 w-full rounded-2xl bg-slate-800 dark:bg-slate-700 text-white px-6 py-4 text-base font-bold shadow-lg transition-all hover:bg-slate-700 dark:hover:bg-slate-600 disabled:opacity-60"
               >
-                Karta orqali to'lash (Click sahifasida)
+                Karta raqami bilan to'lash (Click sahifasida)
               </button>
             </>
           ) : (

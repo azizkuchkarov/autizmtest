@@ -1,10 +1,12 @@
 "use client";
 
 import React from "react";
+import { ABA_REGIONS, TOSHKENT_SHAHAR_DISTRICTS, isToshkentShahar } from "@/data/regions";
 
 type AbaCenter = {
   id: string;
   region: string;
+  district?: string | null;
   name: string;
   phone?: string;
   address?: string;
@@ -13,21 +15,6 @@ type AbaCenter = {
   note?: string;
   imageUrl?: string;
 };
-
-const REGIONS = [
-  "Andijon",
-  "Buxoro",
-  "Farg‘ona",
-  "Jizzax",
-  "Namangan",
-  "Navoiy",
-  "Qashqadaryo",
-  "Samarqand",
-  "Sirdaryo",
-  "Surxondaryo",
-  "Toshkent",
-  "Xorazm",
-];
 
 export default function AdminAbaCenters() {
   const [items, setItems] = React.useState<AbaCenter[]>([]);
@@ -42,9 +29,10 @@ export default function AdminAbaCenters() {
           setItems(existing);
           return;
         }
-        const seeded = REGIONS.map((region, idx) => ({
+        const seeded = ABA_REGIONS.map((region, idx) => ({
           id: `new-${idx}`,
           region,
+          district: null as string | null,
           name: "",
           phone: "",
           address: "",
@@ -67,6 +55,7 @@ export default function AdminAbaCenters() {
       {
         id: `new-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         region,
+        district: isToshkentShahar(region) ? "" : null,
         name: "",
         phone: "",
         address: "",
@@ -120,7 +109,7 @@ export default function AdminAbaCenters() {
       </p>
 
       <div className="mt-4 space-y-6">
-        {REGIONS.map((region) => {
+        {ABA_REGIONS.map((region) => {
           const list = items.filter((x) => x.region === region);
           return (
             <div key={region} className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
@@ -154,6 +143,23 @@ export default function AdminAbaCenters() {
                           </button>
                         </div>
                         <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {isToshkentShahar(it.region) && (
+                            <div className="md:col-span-2">
+                              <label className="block text-xs font-medium text-slate-600 mb-1">Tuman</label>
+                              <select
+                                className="rounded-xl border border-slate-300 px-3 py-2 text-sm w-full"
+                                value={it.district || ""}
+                                onChange={(e) => update(idx, { district: e.target.value || null })}
+                              >
+                                <option value="">Tumanni tanlang</option>
+                                {TOSHKENT_SHAHAR_DISTRICTS.map((d) => (
+                                  <option key={d} value={d}>
+                                    {d}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
                           <input
                             className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
                             placeholder="Markaz nomi"

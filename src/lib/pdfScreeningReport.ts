@@ -155,8 +155,9 @@ export type PdfScreeningParams = {
   domains: Array<{ id: string; title: string }>;
   answers: Record<string, number> | null;
   aiPayload: AiSummaryPayload | null | undefined;
-  /** Tanlangan viloyat va ABA markazlar — PDF da chiqadi */
+  /** Tanlangan viloyat (va Toshkent shahar uchun tuman) — PDF da chiqadi */
   selectedAbaRegion?: string;
+  selectedAbaDistrict?: string;
   abaCenters?: Array<{
     name: string;
     phone?: string | null;
@@ -187,6 +188,7 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
     answers,
     aiPayload,
     selectedAbaRegion,
+    selectedAbaDistrict,
     abaCenters,
   } = params;
 
@@ -393,7 +395,10 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
     y += LINE_HEIGHT;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(FONT_SIZE_BODY);
-    doc.text(`Viloyat: ${selectedAbaRegion}`, MARGIN, y);
+    const regionLabel = selectedAbaDistrict
+      ? `${selectedAbaRegion}, ${selectedAbaDistrict}`
+      : selectedAbaRegion;
+    doc.text(`Viloyat: ${regionLabel}`, MARGIN, y);
     y += LINE_HEIGHT + 3;
     for (const c of abaCenters) {
       y = ensurePage(doc, y, LINE_HEIGHT * 6);

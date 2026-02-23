@@ -82,6 +82,7 @@ model Feedback {
 model AbaCenter {
   id        String   @id @default(uuid())
   region    String
+  district  String?  // Toshkent shahar tanlanganida: tuman
   name      String
   phone     String?
   address   String?

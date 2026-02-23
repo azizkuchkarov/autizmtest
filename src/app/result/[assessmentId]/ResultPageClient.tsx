@@ -9,6 +9,7 @@ import { DOMAIN_LABELS_UZ, RISK_LABELS_UZ } from "@/lib/scoring";
 import { BLOCK_LABELS_UZ, STATUS_LABELS_UZ } from "@/lib/monitoringScoring";
 import DarkModeToggle from "@/components/DarkModeToggle";
 import { DonutRisk, RadarProfile, BarList } from "@/components/Charts";
+import { ABA_REGIONS, TOSHKENT_SHAHAR_DISTRICTS, isToshkentShahar } from "@/data/regions";
 
 function isMonitoringResult(scoring: ScoreResponse["scoring"]): scoring is MonitoringResult {
   return "overallPercent" in scoring && "blocks" in scoring && "recommendations" in scoring;
@@ -28,24 +29,10 @@ function isOverallResult(scoring: ScoreResponse["scoring"]): scoring is OverallR
   return "overall" in scoring && "domains" in scoring && "insights" in scoring;
 }
 
-const ABA_REGIONS = [
-  "Andijon",
-  "Buxoro",
-  "Farg‘ona",
-  "Jizzax",
-  "Namangan",
-  "Navoiy",
-  "Qashqadaryo",
-  "Samarqand",
-  "Sirdaryo",
-  "Surxondaryo",
-  "Toshkent",
-  "Xorazm",
-];
-
 export type AbaCenterItem = {
   id: string;
   region: string;
+  district?: string | null;
   name: string;
   phone?: string | null;
   address?: string | null;
@@ -58,11 +45,15 @@ export type AbaCenterItem = {
 function AbaCentersSection({
   region,
   setRegion,
+  district,
+  setDistrict,
   centers,
   setCenters,
 }: {
   region: string;
   setRegion: (v: string) => void;
+  district: string;
+  setDistrict: (v: string) => void;
   centers: AbaCenterItem[];
   setCenters: (v: AbaCenterItem[]) => void;
 }) {
@@ -73,14 +64,20 @@ function AbaCentersSection({
       setCenters([]);
       return;
     }
+    if (isToshkentShahar(region) && !district) {
+      setCenters([]);
+      return;
+    }
     setLoading(true);
-    fetch(`/api/aba-centers?region=${encodeURIComponent(region)}`)
+    const params = new URLSearchParams({ region });
+    if (district) params.set("district", district);
+    fetch(`/api/aba-centers?${params.toString()}`)
       .then((r) => r.json())
       .then((data) => {
         setCenters(Array.isArray(data?.items) ? data.items : []);
       })
       .finally(() => setLoading(false));
-  }, [region]);
+  }, [region, district]);
 
   return (
     <section className="mt-8 rounded-3xl border border-indigo-200/60 dark:border-indigo-800/50 bg-white dark:bg-slate-900/95 shadow-xl shadow-slate-200/20 dark:shadow-black/20 p-6 sm:p-8">
@@ -91,27 +88,48 @@ function AbaCentersSection({
         ABA markazlar — viloyatingizni tanlang
       </h3>
       <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-        O‘zingizga qulay viloyatni tanlang, shu viloyatdagi ABA terapiya markazlari ro‘yxati chiqadi.
+        O‘zingizga qulay viloyatni tanlang, shu viloyatdagi ABA terapiya markazlari ro‘yxati chiqadi. Toshkent shahar uchun tumanni ham tanlang.
       </p>
-      <select
-        value={region}
-        onChange={(e) => setRegion(e.target.value)}
-        className="rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-      >
-        <option value="">Viloyatni tanlang</option>
-        {ABA_REGIONS.map((r) => (
-          <option key={r} value={r}>
-            {r}
-          </option>
-        ))}
-      </select>
+      <div className="flex flex-col sm:flex-row gap-3">
+        <select
+          value={region}
+          onChange={(e) => {
+            setRegion(e.target.value);
+            if (!isToshkentShahar(e.target.value)) setDistrict("");
+          }}
+          className="rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+        >
+          <option value="">Viloyatni tanlang</option>
+          {ABA_REGIONS.map((r) => (
+            <option key={r} value={r}>
+              {r}
+            </option>
+          ))}
+        </select>
+        {isToshkentShahar(region) && (
+          <select
+            value={district}
+            onChange={(e) => setDistrict(e.target.value)}
+            className="rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          >
+            <option value="">Tumanni tanlang</option>
+            {TOSHKENT_SHAHAR_DISTRICTS.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
 
       {loading && (
         <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Yuklanmoqda...</p>
       )}
-      {!loading && region && centers.length === 0 && (
+      {!loading && region && (isToshkentShahar(region) ? district : true) && centers.length === 0 && (
         <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
-          Ushbu viloyatda hozircha markazlar ro‘yxati kiritilmagan.
+          {isToshkentShahar(region) && !district
+            ? "Tumanni tanlang."
+            : "Ushbu viloyatda (tumanda) hozircha markazlar ro‘yxati kiritilmagan."}
         </p>
       )}
       {!loading && centers.length > 0 && (
@@ -192,6 +210,7 @@ export default function ResultPageClient({ assessmentId }: Props) {
   const [error, setError] = React.useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = React.useState(false);
   const [abaRegion, setAbaRegion] = React.useState("");
+  const [abaDistrict, setAbaDistrict] = React.useState("");
   const [abaCenters, setAbaCenters] = React.useState<AbaCenterItem[]>([]);
 
   React.useEffect(() => {
@@ -317,6 +336,7 @@ export default function ResultPageClient({ assessmentId }: Props) {
         answers: data.answers ?? null,
         aiPayload: data.aiSummary.payload ?? null,
         selectedAbaRegion: abaRegion || undefined,
+        selectedAbaDistrict: abaDistrict || undefined,
         abaCenters: abaCenters.length > 0 ? abaCenters : undefined,
       });
     } catch (e) {
@@ -477,6 +497,8 @@ export default function ResultPageClient({ assessmentId }: Props) {
           <AbaCentersSection
             region={abaRegion}
             setRegion={setAbaRegion}
+            district={abaDistrict}
+            setDistrict={setAbaDistrict}
             centers={abaCenters}
             setCenters={setAbaCenters}
           />

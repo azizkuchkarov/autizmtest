@@ -3,8 +3,7 @@ import { prisma } from "@/lib/db";
 
 export async function GET() {
   const items = await prisma.abaCenter.findMany({
-    where: { active: true },
-    orderBy: { order: "asc" },
+    orderBy: [{ region: "asc" }, { order: "asc" }],
   });
   return NextResponse.json({ items });
 }
@@ -13,12 +12,13 @@ export async function PUT(req: Request) {
   const body = await req.json();
   const items = Array.isArray(body?.items) ? body.items : [];
 
-  const tx = items.map((c: any, idx: number) =>
+  const tx = items.map((c: { id?: string; region?: string; district?: string | null; name?: string; phone?: string | null; address?: string | null; url?: string | null; instagram?: string | null; note?: string | null; imageUrl?: string | null; order?: number; active?: boolean }, idx: number) =>
     prisma.abaCenter.upsert({
       where: { id: String(c.id ?? "") },
       create: {
         id: String(c.id ?? crypto.randomUUID()),
         region: String(c.region ?? ""),
+        district: c.district ? String(c.district) : null,
         name: String(c.name ?? ""),
         phone: c.phone ? String(c.phone) : null,
         address: c.address ? String(c.address) : null,
@@ -31,6 +31,7 @@ export async function PUT(req: Request) {
       },
       update: {
         region: String(c.region ?? ""),
+        district: c.district ? String(c.district) : null,
         name: String(c.name ?? ""),
         phone: c.phone ? String(c.phone) : null,
         address: c.address ? String(c.address) : null,

@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-/** Ota-onalar uchun: viloyat tanlab, shu viloyatdagi ABA markazlarni olish. ?region=Toshkent */
+/** Ota-onalar uchun: viloyat tanlab, shu viloyatdagi ABA markazlarni olish. ?region=Toshkent shahar&district=Chilonzor */
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const region = searchParams.get("region")?.trim();
-  const where: { active: boolean; region?: string } = { active: true };
+  const district = searchParams.get("district")?.trim();
+  const where: { active: boolean; region?: string; district?: string | null } = { active: true };
   if (region) where.region = region;
+  if (district) where.district = district;
 
   const items = await prisma.abaCenter.findMany({
     where,
@@ -14,6 +16,7 @@ export async function GET(req: Request) {
     select: {
       id: true,
       region: true,
+      district: true,
       name: true,
       phone: true,
       address: true,

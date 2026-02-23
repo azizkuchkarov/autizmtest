@@ -62,6 +62,9 @@ export default function StartRegisterPage() {
         setError(data?.error ?? "Tasdiqlashda xatolik.");
         return;
       }
+      try {
+        sessionStorage.setItem("asds_phone", cleanedPhone);
+      } catch {}
       router.push("/payment");
       router.refresh();
     } finally {
