@@ -26,7 +26,7 @@ export async function PUT(req: Request) {
         instagram: c.instagram ? String(c.instagram) : null,
         note: c.note ? String(c.note) : null,
         imageUrl: c.imageUrl ? String(c.imageUrl) : null,
-        order: Number.isFinite(c.order) ? c.order : idx,
+        order: typeof c.order === "number" && Number.isFinite(c.order) ? c.order : idx,
         active: c.active !== false,
       },
       update: {
@@ -39,7 +39,7 @@ export async function PUT(req: Request) {
         instagram: c.instagram ? String(c.instagram) : null,
         note: c.note ? String(c.note) : null,
         imageUrl: c.imageUrl ? String(c.imageUrl) : null,
-        order: Number.isFinite(c.order) ? c.order : idx,
+        order: typeof c.order === "number" && Number.isFinite(c.order) ? c.order : idx,
         active: c.active !== false,
       },
     })
