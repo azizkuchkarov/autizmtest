@@ -554,7 +554,6 @@ export default function ResultPageClient({ assessmentId }: Props) {
   const [abaRegion, setAbaRegion] = React.useState("");
   const [abaDistrict, setAbaDistrict] = React.useState("");
   const [abaCenters, setAbaCenters] = React.useState<AbaCenterItem[]>([]);
-  const pendingAiRequestedRef = React.useRef<string | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -579,23 +578,7 @@ export default function ResultPageClient({ assessmentId }: Props) {
     };
   }, [assessmentId]);
 
-  // Agar xulosa boshqa tilda bo‘lsa (masalan, RU tanlangan lekin DB da UZ), qayta so‘rash
-  const shouldRequestOtherLocale = Boolean(
-    data && isScreeningV2Result(data.scoring) && data.aiSummary.status === "ready" && (data.aiSummaryLocale ?? "uz") !== locale
-  );
-  React.useEffect(() => {
-    if (!shouldRequestOtherLocale) return;
-    requestAiSummary();
-  }, [shouldRequestOtherLocale]);
-
-  // Screening v2: status "pending" bo'lsa (o'zbek yoki boshqa til) AI xulosasini avtomatik so'rash
-  React.useEffect(() => {
-    if (!data || !isScreeningV2Result(data.scoring) || data.aiSummary.status !== "pending") return;
-    if (pendingAiRequestedRef.current === assessmentId) return;
-    pendingAiRequestedRef.current = assessmentId;
-    requestAiSummary();
-  }, [data, assessmentId]);
-
+  // AI xulosa faqat foydalanuvchi "AI xulosa olish" tugmasini bosganda so'raladi (avtomatik so'rov yo'q).
   async function requestAiSummary() {
     if (!data) return;
     const storedLocale = data.aiSummaryLocale ?? null;
@@ -613,7 +596,9 @@ export default function ResultPageClient({ assessmentId }: Props) {
 
       const json: AiSummaryResponse & { payload?: AiSummaryPayload } = await res.json();
       if (!res.ok || (!json.ok && json.status !== "pending")) {
-        throw new Error(json.error ?? t("result.aiError"));
+        const err = json.error ?? t("result.aiError");
+        const friendly = err === "AI javobi JSON emas." ? t("result.aiErrorJson") : err;
+        throw new Error(friendly);
       }
 
       if (json.status === "ready" && json.payload) {
@@ -673,17 +658,39 @@ export default function ResultPageClient({ assessmentId }: Props) {
           : [],
       };
 
-      const AGE_GROUP_LABELS_LOCAL: Record<string, string> = {
+      const AGE_GROUP_LABELS_UZ: Record<string, string> = {
         AGE_1_5_2: "1,5–2 yosh",
         AGE_3_4: "3–4 yosh",
         AGE_5_6: "5–6 yosh",
         AGE_7_9: "7–9 yosh",
       };
-
+      const AGE_GROUP_LABELS_RU: Record<string, string> = {
+        AGE_1_5_2: "1,5–2 года",
+        AGE_3_4: "3–4 года",
+        AGE_5_6: "5–6 лет",
+        AGE_7_9: "7–9 лет",
+      };
+      const ageLabels = locale === "ru" ? AGE_GROUP_LABELS_RU : AGE_GROUP_LABELS_UZ;
       const ageLabel =
-        data.ageGroup && AGE_GROUP_LABELS_LOCAL[data.ageGroup]
-          ? AGE_GROUP_LABELS_LOCAL[data.ageGroup]
+        data.ageGroup && ageLabels[data.ageGroup]
+          ? ageLabels[data.ageGroup]
           : data.ageGroup ?? null;
+
+      let fontBase64: string | undefined;
+      if (locale === "ru") {
+        try {
+          const fontRes = await fetch("/fonts/Roboto-Regular.ttf");
+          if (fontRes.ok) {
+            const fontBuf = await fontRes.arrayBuffer();
+            const bytes = new Uint8Array(fontBuf);
+            let binary = "";
+            for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+            fontBase64 = btoa(binary);
+          }
+        } catch {
+          // Shrift yuklanmasa ruscha PDF da matn buzilgan chiqadi
+        }
+      }
 
       generateScreeningPdf({
         result: normalizedResult,
@@ -697,6 +704,8 @@ export default function ResultPageClient({ assessmentId }: Props) {
         selectedAbaRegion: abaRegion || undefined,
         selectedAbaDistrict: abaDistrict || undefined,
         abaCenters: abaCenters.length > 0 ? abaCenters : undefined,
+        locale,
+        fontBase64,
       });
     } catch (e) {
       console.error(e);
@@ -760,7 +769,7 @@ export default function ResultPageClient({ assessmentId }: Props) {
               <AiReportView payload={data.aiSummary.payload} />
             ) : data.aiSummary.status === "failed" ? (
               <div className="text-sm text-rose-600 dark:text-rose-400">
-                AI xulosa yaratilmadi: {data.aiSummary.error ?? "noma’lum xatolik"}
+                {data.aiSummary.error === "AI javobi JSON emas." ? t("result.aiErrorJson") : `${t("result.aiError")}: ${data.aiSummary.error ?? t("result.aiErrorUnknown")}`}
               </div>
             ) : (
               <button
@@ -818,6 +827,7 @@ export default function ResultPageClient({ assessmentId }: Props) {
             assessmentId={assessmentId}
             completedAt={data.completedAt ?? undefined}
             ageGroup={data.ageGroup ?? undefined}
+            locale={locale}
           />
 
           <section className="mt-8 rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/95 shadow-xl shadow-slate-200/20 dark:shadow-black/20 p-6 sm:p-8">
@@ -828,7 +838,7 @@ export default function ResultPageClient({ assessmentId }: Props) {
               <AiReportView payload={data.aiSummary.payload} />
             ) : data.aiSummary.status === "failed" ? (
               <div className="text-sm text-rose-600 dark:text-rose-400">
-                {t("result.aiError")}: {data.aiSummary.error ?? t("result.aiErrorUnknown")}
+                {data.aiSummary.error === "AI javobi JSON emas." ? t("result.aiErrorJson") : `${t("result.aiError")}: ${data.aiSummary.error ?? t("result.aiErrorUnknown")}`}
               </div>
             ) : (
               <button
@@ -976,7 +986,7 @@ export default function ResultPageClient({ assessmentId }: Props) {
             <AiReportView payload={data.aiSummary.payload} />
           ) : data.aiSummary.status === "failed" ? (
             <div className="text-sm text-rose-600 dark:text-rose-400">
-              AI xulosa yaratilmadi: {data.aiSummary.error ?? "noma’lum xatolik"}
+              {data.aiSummary.error === "AI javobi JSON emas." ? t("result.aiErrorJson") : `${t("result.aiError")}: ${data.aiSummary.error ?? t("result.aiErrorUnknown")}`}
             </div>
           ) : (
             <button
@@ -1029,18 +1039,65 @@ function getXulosaRaqami(assessmentId: string | undefined, completedAt: string |
   return `XL-${year}-${short}`;
 }
 
+type LocalizedQuestionsMap = {
+  questionText: Record<string, string>;
+  blockTitle: Record<string, string>;
+  questionHelp: Record<string, string>;
+};
+
 function ScreeningV2ResultView({
   result,
   assessmentId,
   completedAt,
   ageGroup,
+  locale,
 }: {
   result: ScreeningV2Result;
   assessmentId?: string;
   completedAt?: string | null;
   ageGroup?: string | null;
+  locale?: "uz" | "ru";
 }) {
   const t = useTranslations();
+  const [localizedMap, setLocalizedMap] = React.useState<LocalizedQuestionsMap | null>(null);
+
+  // Ruscha (yoki boshqa til) tanlanganida savol/blok matnlarini shu tilga yuklash — "Autizmga moyilligi" va red-flag bo'limida
+  React.useEffect(() => {
+    if (!ageGroup || locale !== "ru") {
+      setLocalizedMap(null);
+      return;
+    }
+    const ageId = ageGroup as "AGE_1_5_2" | "AGE_3_4" | "AGE_5_6" | "AGE_7_9";
+    if (ageId !== "AGE_1_5_2" && ageId !== "AGE_3_4" && ageId !== "AGE_5_6" && ageId !== "AGE_7_9") return;
+    let cancelled = false;
+    fetch(`/api/screening/questions?ageGroup=${encodeURIComponent(ageGroup)}&locale=ru`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: {
+        questions?: Array<{ id: string; text: string; domain: string; example?: string; explanation?: string }>;
+        domains?: Array<{ id: string; title: string }>;
+      } | null) => {
+        if (cancelled || !data) return;
+        const questionText: Record<string, string> = {};
+        const blockTitle: Record<string, string> = {};
+        const questionHelp: Record<string, string> = {};
+        (data.questions ?? []).forEach((q) => {
+          questionText[q.id] = q.text;
+          const parts = [];
+          if (q.example) parts.push(q.example);
+          if (q.explanation) parts.push(q.explanation);
+          if (parts.length) questionHelp[q.id] = parts.join("\n\n");
+        });
+        (data.domains ?? []).forEach((d) => {
+          blockTitle[d.id] = d.title;
+        });
+        if (!cancelled) setLocalizedMap({ questionText, blockTitle, questionHelp });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [ageGroup, locale]);
+
   const riskTier =
     result.riskLabel === "Past xavf"
       ? "LOW"
@@ -1160,41 +1217,69 @@ function ScreeningV2ResultView({
         </div>
 
         <h3 className="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100 mb-4">{t("result.conclusion")}</h3>
-        <div className="space-y-3 text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+        <div className="space-y-4 text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
           {result.riskLabel === "Past xavf" && (
-            <>
-              <p>
-                {ageGroup === "AGE_1_5_2"
-                  ? t("result.screening.lowRiskDesc1_5_2")
-                  : ageGroup === "AGE_3_4" || ageGroup === "AGE_5_6"
-                    ? t("result.screening.lowRiskDesc3_6")
-                    : t("result.screening.lowRiskDesc7_9")}
-              </p>
-              <p className="text-slate-600 dark:text-slate-400">
-                <strong>{t("result.recommendation")}:</strong> {t("result.screening.lowRiskAdvice")}
-                {result.totalScore > 40 && " " + t("result.screening.lowRiskAdvice40")}
-              </p>
-            </>
+            <p>
+              {ageGroup === "AGE_1_5_2"
+                ? t("result.screening.lowRiskDesc1_5_2")
+                : ageGroup === "AGE_3_4" || ageGroup === "AGE_5_6"
+                  ? t("result.screening.lowRiskDesc3_6")
+                  : t("result.screening.lowRiskDesc7_9")}
+            </p>
           )}
           {result.riskLabel === "O'rtacha xavf" && (
-            <>
-              <p>
-                {ageLabel ? ageLabel + " " + t("result.screening.moderateRiskDesc") : t("result.screening.moderateRiskDescNoAge")}
-              </p>
-              <p className="text-slate-600 dark:text-slate-400">
-                <strong>{t("result.recommendation")}:</strong> {t("result.screening.moderateAdvice")}
-                {result.totalScore > 40 && " " + t("result.screening.moderateAdvice40")}</p>
-            </>
+            <p>
+              {ageLabel ? ageLabel + " " + t("result.screening.moderateRiskDesc") : t("result.screening.moderateRiskDescNoAge")}
+            </p>
           )}
           {result.riskLabel === "Yuqori xavf" && (
-            <>
-              <p>
-                {t("result.screening.highRiskDesc")}
-              </p>
-              <p className="text-slate-600 dark:text-slate-400">
-                <strong>{t("result.recommendation")}:</strong> {t("result.screening.highRiskAdvice")}</p>
-            </>
+            <p>{t("result.screening.highRiskDesc")}</p>
           )}
+
+          {/* Har bir blok bo'yicha foiz va professional tushuntirish — ota-onaga aniq ma'lumot */}
+          {blocks.length > 0 && (
+            <div className="mt-5 pt-4 border-t border-slate-200 dark:border-slate-700">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
+                {t("result.screening.blocksConclusionTitle")}
+              </p>
+              <ul className="space-y-3">
+                {blocks.map((b) => {
+                  const score = Math.round(b.score);
+                  const interpretation =
+                    score <= 30
+                      ? t("result.screening.blockScoreLow")
+                      : score <= 60
+                        ? t("result.screening.blockScoreMid")
+                        : t("result.screening.blockScoreHigh");
+                  return (
+                    <li key={b.blockId} className="flex flex-col gap-1">
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        {getBlockTitle(b.blockId)} — {score}%
+                      </span>
+                      <span className="text-slate-600 dark:text-slate-400">{interpretation}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
+          <p className="text-slate-600 dark:text-slate-400 pt-2">
+            <strong>{t("result.recommendation")}:</strong>{" "}
+            {result.riskLabel === "Past xavf" && (
+              <>
+                {t("result.screening.lowRiskAdvice")}
+                {result.totalScore > 40 && " " + t("result.screening.lowRiskAdvice40")}
+              </>
+            )}
+            {result.riskLabel === "O'rtacha xavf" && (
+              <>
+                {t("result.screening.moderateAdvice")}
+                {result.totalScore > 40 && " " + t("result.screening.moderateAdvice40")}
+              </>
+            )}
+            {result.riskLabel === "Yuqori xavf" && t("result.screening.highRiskAdvice")}
+          </p>
         </div>
         <p className="mt-4 text-xs text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-700 pt-4">
           {t("result.screeningDocDisclaimer")}</p>
@@ -1230,17 +1315,17 @@ function ScreeningV2ResultView({
             {(result.redFlags ?? []).map((rf) => (
               <li key={rf.questionId} className="flex gap-3 rounded-xl bg-rose-50/80 dark:bg-rose-900/20 border border-rose-200/60 dark:border-rose-800/40 px-4 py-3 text-rose-800 dark:text-rose-200 font-medium">
                 <span className="text-rose-500 dark:text-rose-400 shrink-0">•</span>
-                {rf.text}
+                {localizedMap?.questionText[rf.questionId] ?? rf.text}
               </li>
             ))}
           </ul>
         </section>
       )}
 
-      {/* Autizmga moyilligi bor savollar va javoblari — faqat ball olgan (risk > 0, javob > 0) */}
+      {/* Autizmga moyilligi bor savollar va javoblari — risk > 0 bo‘lgan barcha savollar (javob 0 bo‘lsa ham, masalan A/B da "Yo‘q" = yuqori risk) */}
       {(() => {
         const withBall = (result.topOverall ?? []).filter(
-          (issue) => (issue.risk ?? 0) > 0 && (issue.answer ?? 0) > 0
+          (issue) => (issue.risk ?? 0) > 0
         );
         return withBall.length > 0 && (
         <section className="mt-8 rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/95 shadow-xl shadow-slate-200/20 dark:shadow-black/20 p-6 sm:p-8">
@@ -1249,29 +1334,38 @@ function ScreeningV2ResultView({
             {t("result.tendencyQuestions")}
           </h3>
           <div className="space-y-3">
-            {withBall.map((issue) => (
+            {withBall.map((issue) => {
+              const r = issue.risk ?? 0;
+              const riskTier = r >= 2.5 ? "red" : r >= 1 && r < 2.5 ? "yellow" : "green";
+              const cardClass =
+                riskTier === "red"
+                  ? "bg-rose-50/60 dark:bg-rose-900/15 border-rose-200/70 dark:border-rose-800/50"
+                  : riskTier === "yellow"
+                    ? "bg-amber-50/60 dark:bg-amber-900/15 border-amber-200/70 dark:border-amber-800/50"
+                    : "bg-emerald-50/60 dark:bg-emerald-900/15 border-emerald-200/70 dark:border-emerald-800/50";
+              const badgeClass =
+                riskTier === "red"
+                  ? "bg-rose-200/80 text-rose-800 dark:bg-rose-800/50 dark:text-rose-200"
+                  : riskTier === "yellow"
+                    ? "bg-amber-200/80 text-amber-800 dark:bg-amber-800/50 dark:text-amber-200"
+                    : "bg-emerald-200/80 text-emerald-800 dark:bg-emerald-800/50 dark:text-emerald-200";
+              return (
               <div
                 key={issue.questionId}
-                className={`rounded-2xl border p-4 sm:p-5 transition-colors ${
-                  issue.isRedFlag
-                    ? "bg-rose-50/60 dark:bg-rose-900/15 border-rose-200/70 dark:border-rose-800/50"
-                    : "bg-slate-50/80 dark:bg-slate-800/40 border-slate-200/60 dark:border-slate-700/60"
-                }`}
+                className={`rounded-2xl border p-4 sm:p-5 transition-colors ${cardClass}`}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <span className="font-semibold text-slate-900 dark:text-slate-100 leading-snug">{issue.text}</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100 leading-snug">
+                    {localizedMap?.questionText[issue.questionId] ?? issue.text}
+                  </span>
                   <span
-                    className={`rounded-full px-2.5 py-1 text-xs font-bold shrink-0 ${
-                      issue.isRedFlag
-                        ? "bg-rose-200/80 text-rose-800 dark:bg-rose-800/50 dark:text-rose-200"
-                        : "bg-slate-200/80 text-slate-700 dark:bg-slate-600 dark:text-slate-200"
-                    }`}
+                    className={`rounded-full px-2.5 py-1 text-xs font-bold shrink-0 ${badgeClass}`}
                   >
                     {issue.risk.toFixed(1)}
                   </span>
                 </div>
                 <div className="mt-2 text-xs font-medium text-slate-600 dark:text-slate-400">
-                  {issue.blockTitle}
+                  {localizedMap?.blockTitle[issue.blockId] ?? issue.blockTitle}
                 </div>
                 {typeof issue.answer === "number" && (
                   <div className="mt-1 text-xs text-slate-600 dark:text-slate-400">
@@ -1281,11 +1375,14 @@ function ScreeningV2ResultView({
                     </span>
                   </div>
                 )}
-                {issue.help && (
-                  <div className="mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{issue.help}</div>
+                {(localizedMap?.questionHelp[issue.questionId] ?? issue.help) && (
+                  <div className="mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    {localizedMap?.questionHelp[issue.questionId] ?? issue.help}
+                  </div>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       );

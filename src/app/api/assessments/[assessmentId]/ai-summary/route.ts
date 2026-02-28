@@ -97,7 +97,8 @@ export async function POST(
     // Screening V2: totalScore, riskLabel, blocks, redFlags, topOverall
     if (isScreeningV2Result(scoring)) {
       try {
-        const payload = await generateAiSummaryForScreeningV2(scoring, locale);
+        const ageGroupId = (assessment.ageGroup as string | null) ?? null;
+        const payload = await generateAiSummaryForScreeningV2(scoring, locale, ageGroupId);
         await prisma.assessment.update({
           where: { id: assessmentId },
           data: {

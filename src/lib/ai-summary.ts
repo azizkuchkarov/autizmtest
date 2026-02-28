@@ -13,21 +13,42 @@ const OPENAI_CHAT_URL = () => `${getOpenAiBaseUrl()}/v1/chat/completions`;
 const DEFAULT_DISCLAIMER =
   "Bu skrining natijasi — tibbiy tashxis emas. Yakuniy baho va tavsiyalar uchun mutaxassis (pediatr, bolalar nevrologi yoki rivoj mutaxassisi) bilan muloqot qilishingiz tavsiya etiladi.";
 
+const AI_JSON_ERROR = "AI javobi JSON emas.";
+
+/** Birinchi { dan boshlanib, mos } gacha bo‘lgan qatorni topadi (ichki qavslar hisobga olinadi). */
+function extractFirstJsonObject(s: string): string | null {
+  const start = s.indexOf("{");
+  if (start === -1) return null;
+  let depth = 0;
+  for (let i = start; i < s.length; i++) {
+    if (s[i] === "{") depth++;
+    else if (s[i] === "}") {
+      depth--;
+      if (depth === 0) return s.slice(start, i + 1);
+    }
+  }
+  return null;
+}
+
 /** AI dan kelgan matndan JSON obyektini ajratib parse qiladi (markdown, izohlar yoki ortiqcha matn bo'lsa ham). */
 function parseAiJson(raw: string): unknown {
   let s = raw.trim();
+  // Markdown code block
   s = s.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+  // Boshqa til (masalan ru) da "Вот JSON:" kabi matn olib tashlanadi — faqat birinchi { ... } qismi
+  const extracted = extractFirstJsonObject(s);
+  const toParse = extracted ?? s;
   try {
-    return JSON.parse(s);
+    return JSON.parse(toParse);
   } catch {
-    const start = s.indexOf("{");
-    if (start === -1) throw new Error("AI javobi JSON emas.");
-    const end = s.lastIndexOf("}");
-    if (end === -1 || end <= start) throw new Error("AI javobi JSON emas.");
+    // Trailing comma yoki boshqa kichik xatolarni tuzatishga urinish
+    const fixed = toParse
+      .replace(/,(\s*[}\]])/g, "$1")
+      .replace(/\r\n/g, "\n");
     try {
-      return JSON.parse(s.slice(start, end + 1));
+      return JSON.parse(fixed);
     } catch {
-      throw new Error("AI javobi JSON emas.");
+      throw new Error(AI_JSON_ERROR);
     }
   }
 }
@@ -155,13 +176,81 @@ JSON — HAR BIR MAYDON TO'LIQ TO'LDIRILSIN:
   }
 }`;
 
+const SCREENING_V2_SYSTEM_PROMPT_RU = `Вы — профессиональный помощник по скринингу развития ребёнка и признаков аутизма. Ваша задача — дать родителям ПОЛНОЕ, ТОЧНОЕ и ПРОФЕССИОНАЛЬНОЕ заключение по результатам скрининга. Заключение не должно быть кратким или сухим: родитель должен полностью понимать результат и что делать дальше.
+
+СТИЛЬ: Профессиональный, но понятный язык. Медицинских терминов минимум. Достаточный объём в каждом разделе.
+
+ДАННЫЕ: riskLabel (уровень риска), totalScore (0–100), blocks — название блока и score (0–100). score = показатель риска по блоку: высокий score = выраженные признаки в этой сфере.
+
+"Направления, требующие внимания" (needsFocus): Указывайте только блоки с score 50+. При низком риске и низких score — пустой [] или одна общая фраза.
+
+"Сильные стороны" (strengths): Не включайте блоки с высоким score. При низком риске — 3–5 предложений о сильных сторонах.
+
+КРИТИЧЕСКИ ВАЖНО: Не ставьте диагноз, не пугайте. Язык ответа: ТОЛЬКО РУССКИЙ. Весь текст во всех полях JSON должен быть на русском языке. Ответ — СТРОГО в формате JSON ниже.
+
+JSON — ВСЕ ПОЛЯ ЗАПОЛНИТЕ НА РУССКОМ:
+{
+  "summary": {
+    "shortConclusion": "2–4 предложения: уровень риска, общая оценка, главный вывод для родителей.",
+    "whyThisLevel": "4–7 предложений: почему такой уровень риска, как оценены сферы, что это значит, что важно знать родителям."
+  },
+  "strengths": {
+    "examples": ["Каждый пункт 1–2 предложения. При низком риске 3–5 пунктов; при высоком — [] или одна поддерживающая фраза."]
+  },
+  "needsFocus": {
+    "priority": ["Только блоки с высоким score. 1–2 предложения на сферу. При низком риске — []."]
+  },
+  "nextSteps": {
+    "homePlan": [
+      { "title": "Название", "why": "2–4 предложения зачем важно", "how": ["Шаг 1", "Шаг 2", "… 4–6 конкретных шагов"] }
+    ]
+  },
+  "disclaimer": {
+    "text": "Результат скрининга не является медицинским диагнозом. Для окончательной оценки и плана рекомендована консультация детского невролога или специалиста по развитию."
+  }
+}
+В homePlan 4–6 элементов, в каждом how — 4–6 конкретных шагов. ВСЕ ТЕКСТЫ СТРОГО НА РУССКОМ.`;
+
+const AGE_GROUP_LABELS_UZ: Record<string, string> = {
+  AGE_1_5_2: "1,5–2 yosh",
+  AGE_3_4: "3–4 yosh",
+  AGE_5_6: "5–6 yosh",
+  AGE_7_9: "7–9 yosh",
+};
+const AGE_GROUP_LABELS_RU: Record<string, string> = {
+  AGE_1_5_2: "1,5–2 года",
+  AGE_3_4: "3–4 года",
+  AGE_5_6: "5–6 лет",
+  AGE_7_9: "7–9 лет",
+};
+
+const RISK_LABELS_RU: Record<string, string> = {
+  "Past xavf": "Низкий риск",
+  "O'rtacha xavf": "Средний риск",
+  "Yuqori xavf": "Высокий риск",
+};
+
+const BLOCK_TITLES_RU: Record<string, string> = {
+  A: "Социальное взаимодействие и общение",
+  B: "Общение и речь",
+  C: "Ограниченные и повторяющиеся модели поведения",
+};
+
+function getAgeGroupLabel(ageGroupId: string | null | undefined, locale: Locale): string | null {
+  if (!ageGroupId) return null;
+  const labels = locale === "ru" ? AGE_GROUP_LABELS_RU : AGE_GROUP_LABELS_UZ;
+  return labels[ageGroupId] ?? ageGroupId;
+}
+
 /**
  * Screening V2 natijasi uchun AI xulosa.
  * locale === "ru" bo'lsa, barcha matn rus tilida qaytariladi.
+ * ageGroupId berilsa, xulosa bolaning yoshiga moslashtiriladi.
  */
 export async function generateAiSummaryForScreeningV2(
   result: ScreeningV2Result,
-  locale?: Locale
+  locale?: Locale,
+  ageGroupId?: string | null
 ): Promise<AiSummaryPayload> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -177,34 +266,55 @@ export async function generateAiSummaryForScreeningV2(
     };
   }
 
+  const ageLabel = getAgeGroupLabel(ageGroupId, locale ?? "uz");
+  const ageLine =
+    locale === "ru"
+      ? ageLabel
+        ? `\nВозраст ребёнка: ${ageLabel}. Формулируйте заключение и рекомендации строго с учётом этого возраста (нормы развития, формулировки и советы должны соответствовать возрасту).\n`
+        : ""
+      : ageLabel
+        ? `\nBola yoshi (yosh guruhi): ${ageLabel}. Xulosani va tavsiyalarni shu yoshga moslashtiring — rivojlanish normasi va tushuntirishlar bolaning yoshiga mos bo'lsin.\n`
+        : "";
+
+  const isRu = locale === "ru";
+
   const facts = {
-    riskLabel: result.riskLabel,
+    riskLabel: isRu ? (RISK_LABELS_RU[result.riskLabel] ?? result.riskLabel) : result.riskLabel,
     totalScore: result.totalScore,
     redFlagCount: result.redFlagCount,
     redFlags: (result.redFlags ?? []).slice(0, 10).map((r) => r.text),
     blocks: (result.blocks ?? []).map((b) => ({
-      title: b.title,
+      title: isRu ? (BLOCK_TITLES_RU[b.blockId] ?? b.title) : b.title,
       score: b.score,
       redFlagsCount: (b.redFlags ?? []).length,
     })),
     topOverall: (result.topOverall ?? []).slice(0, 8).map((t) => ({
       text: t.text,
-      blockTitle: t.blockTitle,
+      blockTitle: isRu ? (BLOCK_TITLES_RU[t.blockId] ?? t.blockTitle) : t.blockTitle,
       risk: t.risk,
       isRedFlag: t.isRedFlag,
     })),
   };
 
-  const langInstruction =
-    locale === "ru"
-      ? "\n\nВАЖНО: Ответьте полностью на русском языке. Все поля JSON (summary.shortConclusion, summary.whyThisLevel, strengths.examples, needsFocus.priority, nextSteps.homePlan, disclaimer.text) должны быть на русском."
-      : "\n\nMUHIM: Barcha javobni faqat o'zbek tilida (lotin) yozing. JSON dagi barcha maydonlar (summary.shortConclusion, summary.whyThisLevel, strengths.examples, needsFocus.priority, nextSteps.homePlan, disclaimer.text) o'zbekcha bo'lsin.";
+  const systemPrompt = isRu ? SCREENING_V2_SYSTEM_PROMPT_RU : SCREENING_V2_SYSTEM_PROMPT;
 
-  const userContent = `Quyidagi skrining natijasi asosida TO'LIQ va PROFESSIONAL JSON xulosa yozing. Faqat JSON qaytaring.
+  const userContentRu = `Составьте ПОЛНОЕ и ПРОФЕССИОНАЛЬНОЕ заключение по результатам скрининга. Ответ — ТОЛЬКО валидный JSON.
+
+КРИТИЧЕСКИ ВАЖНО: Весь ваш ответ (все поля JSON: summary.shortConclusion, summary.whyThisLevel, strengths.examples, needsFocus.priority, nextSteps.homePlan, disclaimer.text) должен быть написан СТРОГО на русском языке. Не используйте узбекский язык в ответе. Входные данные ниже могут содержать узбекские названия — переводите смысл на русский в своём ответе.${ageLine}
+
+Требования: shortConclusion — 2–4 предложения; whyThisLevel — 4–7 предложений; strengths — при низком риске 3–5 пунктов; homePlan — 4–6 планов, в каждом title, why (2–4 предложения), how (4–6 конкретных шагов). Блоки score 0–100. При низком riskLabel и низких score — needsFocus пустой [].
+
+Данные скрининга:\n${JSON.stringify(facts, null, 2)}`;
+
+  const userContentUz = `Quyidagi skrining natijasi asosida TO'LIQ va PROFESSIONAL JSON xulosa yozing. Faqat JSON qaytaring.${ageLine}
 
 Talablar: shortConclusion 2–4 jumla; whyThisLevel 4–7 jumla to'liq tushuntirish; strengths da risk past bo'lsa 3–5 ta band; homePlan da 4–6 ta reja, har birida title, why (2–4 jumla), how (4–6 ta aniq qadam). Ota-ona natijani to'liq tushunishi kerak.
 
-Esda tuting: blocks da score 0–100. riskLabel "Past xavf" va barcha score past bo'lsa, needsFocus ni bo'sh [] qoldiring.${langInstruction}\n\n${JSON.stringify(facts, null, 2)}`;
+MUHIM: Barcha javobni faqat o'zbek tilida (lotin) yozing. JSON dagi barcha maydonlar o'zbekcha bo'lsin. Esda tuting: blocks da score 0–100. riskLabel "Past xavf" va barcha score past bo'lsa, needsFocus ni bo'sh [] qoldiring.
+
+\n${JSON.stringify(facts, null, 2)}`;
+
+  const userContent = isRu ? userContentRu : userContentUz;
 
   const res = await fetch(OPENAI_CHAT_URL(), {
     method: "POST",
@@ -217,7 +327,7 @@ Esda tuting: blocks da score 0–100. riskLabel "Past xavf" va barcha score past
       temperature: 0.3,
       max_tokens: 2048,
       messages: [
-        { role: "system", content: SCREENING_V2_SYSTEM_PROMPT },
+        { role: "system", content: systemPrompt },
         { role: "user", content: userContent },
       ],
     }),

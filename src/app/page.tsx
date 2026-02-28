@@ -2,13 +2,44 @@
 
 import Link from "next/link";
 import { useTranslations } from "@/lib/translations";
+import { useLocale } from "@/contexts/LocaleContext";
 
 export default function Home() {
   const t = useTranslations();
+  const { locale, setLocale } = useLocale();
 
   return (
     <div className="min-h-dvh bg-slate-50/80 dark:bg-slate-950 transition-colors duration-300">
       <main className="mx-auto max-w-4xl px-4 sm:px-6 pb-20 pt-10 sm:pt-12">
+        {/* Til tanlash — asosiy kirish; tanlangan til barcha sahifalarda qo‘llanadi */}
+        <div className="flex justify-end mb-4">
+          <div className="inline-flex rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/95 shadow-sm p-1 gap-0.5">
+            <span className="px-3 py-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">{t("home.languageLabel")}</span>
+            <button
+              type="button"
+              onClick={() => setLocale("uz")}
+              className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
+                locale === "uz"
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+              }`}
+            >
+              {t("home.lang.uz")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setLocale("ru")}
+              className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
+                locale === "ru"
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+              }`}
+            >
+              {t("home.lang.ru")}
+            </button>
+          </div>
+        </div>
+
         {/* Hero — ota-onalarni jalb qiluvchi matn */}
         <section className="relative overflow-hidden rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/95 shadow-xl shadow-slate-200/20 dark:shadow-black/20 p-8 md:p-12 mb-10">
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-indigo-200/30 dark:bg-indigo-900/20 blur-3xl" />

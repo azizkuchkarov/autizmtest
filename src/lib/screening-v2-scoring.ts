@@ -120,7 +120,7 @@ export function scoreTest(
 
     const blockScore = wSum > 0 ? (wrSum / wSum) * 100 : 0;
 
-    // top issues inside block (highest weightedRisk first)
+    // Barcha javob berilgan savollar (weightedRisk bo‘yicha kamayish tartibida) — "Autizmga moyilligi bor" bo‘limida to‘liq ko‘rsatish uchun
     issues.sort((x, y) => y.weightedRisk - x.weightedRisk);
 
     return {
@@ -128,7 +128,7 @@ export function scoreTest(
       title: b.title,
       score: clamp(blockScore, 0, 100),
       redFlags,
-      topIssues: issues.slice(0, 5),
+      topIssues: issues,
     };
   });
 
@@ -152,13 +152,12 @@ export function scoreTest(
   const riskLabel =
     totalScore <= 30 ? "Past xavf" : totalScore <= 60 ? "O'rtacha xavf" : "Yuqori xavf";
 
-  // top issues overall
+  // Barcha bloklardagi barcha ball olgan savollar (cheklovsiz) — natija sahifasida "Autizmga moyilligi bor savollar va javoblari" to‘liq chiqishi uchun
   const topOverall = blockResults
     .flatMap((b) =>
       b.topIssues.map((i) => ({ ...i, blockId: b.blockId, blockTitle: b.title }))
     )
-    .sort((a, b) => b.weightedRisk - a.weightedRisk)
-    .slice(0, 8);
+    .sort((a, b) => b.weightedRisk - a.weightedRisk);
 
   return {
     ageGroupId,
