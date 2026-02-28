@@ -8,6 +8,8 @@ import TestWizard from "@/components/TestWizard";
 import type { AgeGroupId } from "@/data";
 import type { AnswerValue } from "@/lib/scoring";
 import type { TestType } from "@/lib/test-types";
+import { useLocale } from "@/contexts/LocaleContext";
+import { useTranslations } from "@/lib/translations";
 import {
   getStoredInitialData,
   getStoredPaymentId,
@@ -26,6 +28,8 @@ const DEFAULT_ANSWER_SCALE = [
 function TestContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { locale } = useLocale();
+  const t = useTranslations();
   const [ageGroup, setAgeGroup] = React.useState<AgeGroupId | null>(null);
   const [config, setConfig] = React.useState<{
     questions: { id: string; domain: string; weight: number; isRedFlag: boolean; text: string; example: string; explanation: string }[];
@@ -81,7 +85,7 @@ function TestContent() {
     if (!ageGroup) return;
     setLoading(true);
     setError(null);
-    fetch(`${questionsApi}?ageGroup=${encodeURIComponent(ageGroup)}`)
+    fetch(`${questionsApi}?ageGroup=${encodeURIComponent(ageGroup)}&locale=${locale}`)
       .then((r) => {
         if (!r.ok) throw new Error("Savollar yuklanmadi");
         return r.json();
@@ -94,9 +98,13 @@ function TestContent() {
           domains: data.domains ?? [],
         });
       })
-      .catch((e) => setError(e?.message ?? "Xatolik"))
+      .catch((e) => {
+        const msg = e?.message ?? "";
+        const isNetworkError = msg === "Failed to fetch" || e?.name === "TypeError";
+        setError(isNetworkError ? t("common.fetchFailed") : (msg || t("common.error")));
+      })
       .finally(() => setLoading(false));
-  }, [ageGroup, questionsApi]);
+  }, [ageGroup, questionsApi, locale, t]);
 
   const handleComplete = async (answers: Record<string, AnswerValue>) => {
     if (!ageGroup) return;
@@ -133,7 +141,10 @@ function TestContent() {
         setError("Assessment ID topilmadi");
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Xatolik yuz berdi");
+      const err = e instanceof Error ? e : null;
+      const msg = err?.message ?? "";
+      const isNetworkError = msg === "Failed to fetch" || (err && "name" in err && err.name === "TypeError");
+      setError(isNetworkError ? t("common.fetchFailed") : (msg || "Xatolik yuz berdi"));
     }
   };
 

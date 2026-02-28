@@ -5,30 +5,18 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import DarkModeToggle from "@/components/DarkModeToggle";
 import type { AgeGroupId } from "@/data";
+import { useTranslations } from "@/lib/translations";
 import { INITIAL_DATA_KEY, type Respondent, type ChildGender, type InitialData } from "@/lib/initial-data";
 
-const AGE_OPTIONS: { id: AgeGroupId; label: string }[] = [
-  { id: "AGE_1_5_2", label: "1,5–2 yosh" },
-  { id: "AGE_3_4", label: "3–4 yosh" },
-  { id: "AGE_5_6", label: "5–6 yosh" },
-  { id: "AGE_7_9", label: "7–9 yosh" },
-];
-
-const RESPONDENT_OPTIONS: { value: Respondent; label: string }[] = [
-  { value: "Ota", label: "Ota" },
-  { value: "Ona", label: "Ona" },
-  { value: "Vasiy", label: "Vasiy" },
-];
-
-const GENDER_OPTIONS: { value: ChildGender; label: string }[] = [
-  { value: "Qiz", label: "Qiz" },
-  { value: "O'g'il", label: "O'g'il" },
-];
+const AGE_IDS: AgeGroupId[] = ["AGE_1_5_2", "AGE_3_4", "AGE_5_6", "AGE_7_9"];
+const RESPONDENT_VALUES: Respondent[] = ["Ota", "Ona", "Vasiy"];
+const GENDER_VALUES: ChildGender[] = ["Qiz", "O'g'il"];
 
 const TEST_PHONE = "+998000000001";
 
 export default function StartPage() {
   const router = useRouter();
+  const t = useTranslations();
   const [ageGroup, setAgeGroup] = React.useState<AgeGroupId | null>(null);
   const [respondent, setRespondent] = React.useState<Respondent | null>(null);
   const [childGender, setChildGender] = React.useState<ChildGender | null>(null);
@@ -45,7 +33,7 @@ export default function StartPage() {
 
   function handleRegister() {
     if (!ageGroup || !respondent || !childGender) {
-      setError("Iltimos, barcha maydonlarni to'ldiring.");
+      setError(t("start.fillAll"));
       return;
     }
     setError("");
@@ -60,7 +48,7 @@ export default function StartPage() {
 
   async function handleTestMode() {
     if (!ageGroup || !respondent || !childGender) {
-      setError("Iltimos, barcha maydonlarni to'ldiring.");
+      setError(t("start.fillAll"));
       return;
     }
     setError("");
@@ -79,7 +67,7 @@ export default function StartPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data?.error ?? "Test rejimida to'lov yaratilmadi.");
+        setError(data?.error ?? t("start.testModePaymentError"));
         return;
       }
       const params = new URLSearchParams();
@@ -113,14 +101,14 @@ export default function StartPage() {
                 1
               </span>
               <p className="text-xs font-semibold uppercase tracking-widest">
-                Boshlashdan oldin
+                {t("start.beforeStart")}
               </p>
             </div>
             <h1 className="mt-4 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-              Dastlabki ma&apos;lumotlar
+              {t("start.pageTitle")}
             </h1>
             <p className="mt-3 text-slate-600 dark:text-slate-400 leading-relaxed max-w-md">
-              Quyidagi ma&apos;lumotlarni to&apos;ldiring. Keyin ro&apos;yxatdan o&apos;tib, to&apos;lovni amalga oshirib testni boshlaysiz.
+              {t("start.pageDescription")}
             </p>
 
             <div className="mt-8 space-y-8">
@@ -133,23 +121,23 @@ export default function StartPage() {
                     </svg>
                   </span>
                   <label className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                    Bolaning yoshi (testga nisbatan)
+                    {t("start.ageLabelFull")}
                   </label>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {AGE_OPTIONS.map((opt) => (
+                  {AGE_IDS.map((id) => (
                     <button
-                      key={opt.id}
+                      key={id}
                       type="button"
-                      onClick={() => setAgeGroup(opt.id)}
+                      onClick={() => setAgeGroup(id)}
                       className={`relative rounded-xl px-4 py-3.5 text-sm font-semibold transition-all duration-200 ${
-                        ageGroup === opt.id
+                        ageGroup === id
                           ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 ring-2 ring-indigo-400 ring-offset-2 dark:ring-offset-slate-900"
                           : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:border-indigo-300 dark:hover:border-indigo-600 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20"
                       }`}
                     >
-                      {opt.label}
-                      {ageGroup === opt.id && (
+                      {t(`start.age.${id}`)}
+                      {ageGroup === id && (
                         <span className="absolute top-2 right-2 text-white/80">
                           <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -170,23 +158,23 @@ export default function StartPage() {
                     </svg>
                   </span>
                   <label className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                    Testni to&apos;ldirayotgan shaxs
+                    {t("start.respondentLabelFull")}
                   </label>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
-                  {RESPONDENT_OPTIONS.map((opt) => (
+                  {RESPONDENT_VALUES.map((value) => (
                     <button
-                      key={opt.value}
+                      key={value}
                       type="button"
-                      onClick={() => setRespondent(opt.value)}
+                      onClick={() => setRespondent(value)}
                       className={`relative rounded-xl px-4 py-3.5 text-sm font-semibold transition-all duration-200 ${
-                        respondent === opt.value
+                        respondent === value
                           ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/25 ring-2 ring-emerald-400 ring-offset-2 dark:ring-offset-slate-900"
                           : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:border-emerald-300 dark:hover:border-emerald-600 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/20"
                       }`}
                     >
-                      {opt.label}
-                      {respondent === opt.value && (
+                      {t(`start.respondent.${value}`)}
+                      {respondent === value && (
                         <span className="absolute top-2 right-2 text-white/80">
                           <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -207,23 +195,23 @@ export default function StartPage() {
                     </svg>
                   </span>
                   <label className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                    Farzandning jinsi
+                    {t("start.genderLabelFull")}
                   </label>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  {GENDER_OPTIONS.map((opt) => (
+                  {GENDER_VALUES.map((value) => (
                     <button
-                      key={opt.value}
+                      key={value}
                       type="button"
-                      onClick={() => setChildGender(opt.value)}
+                      onClick={() => setChildGender(value)}
                       className={`relative rounded-xl px-4 py-3.5 text-sm font-semibold transition-all duration-200 ${
-                        childGender === opt.value
+                        childGender === value
                           ? "bg-violet-600 text-white shadow-lg shadow-violet-500/25 ring-2 ring-violet-400 ring-offset-2 dark:ring-offset-slate-900"
                           : "bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:border-violet-300 dark:hover:border-violet-600 hover:bg-violet-50/50 dark:hover:bg-violet-900/20"
                       }`}
                     >
-                      {opt.label}
-                      {childGender === opt.value && (
+                      {t(`start.gender.${value}`)}
+                      {childGender === value && (
                         <span className="absolute top-2 right-2 text-white/80">
                           <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -253,7 +241,7 @@ export default function StartPage() {
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                 </svg>
-                Orqaga
+                {t("start.back")}
               </Link>
               <button
                 type="button"
@@ -261,7 +249,7 @@ export default function StartPage() {
                 disabled={!allFilled}
                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-8 py-4 text-base font-bold text-white shadow-lg shadow-indigo-500/25 transition-all duration-200 hover:bg-indigo-700 hover:shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:pointer-events-none disabled:translate-y-0"
               >
-                Ro&apos;yxatdan o&apos;tish
+                {t("start.register")}
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
@@ -274,19 +262,19 @@ export default function StartPage() {
                   disabled={!allFilled || testLoading}
                   className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-amber-400 bg-amber-50 dark:bg-amber-900/20 px-6 py-3.5 text-sm font-bold text-amber-800 dark:text-amber-200 transition-all hover:bg-amber-100 dark:hover:bg-amber-900/30 disabled:opacity-50 disabled:pointer-events-none"
                 >
-                  {testLoading ? "Yuklanmoqda..." : "Test rejimida davom etish (OTP va to'lovsiz)"}
+                  {testLoading ? t("start.loading") : t("start.testModeButton")}
                 </button>
               )}
             </div>
 
             {allFilled && !isTestMode && (
               <p className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
-                Keyingi qadam: telefon raqam va tasdiqlash kodi
+                {t("start.nextStepHint")}
               </p>
             )}
             {allFilled && isTestMode && (
               <p className="mt-4 text-center text-xs text-amber-600 dark:text-amber-400">
-                Test rejimi: OTP va to&apos;lovni o&apos;tkazib, to&apos;g&apos;ridan-to&apos;g&apos;ri testga o&apos;ting
+                {t("start.testModeHint")}
               </p>
             )}
           </section>

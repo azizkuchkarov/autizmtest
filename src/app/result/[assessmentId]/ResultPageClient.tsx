@@ -9,6 +9,8 @@ import type { OverallResult } from "@/lib/scoring";
 import { DOMAIN_LABELS_UZ, RISK_LABELS_UZ } from "@/lib/scoring";
 import { BLOCK_LABELS_UZ, STATUS_LABELS_UZ } from "@/lib/monitoringScoring";
 import DarkModeToggle from "@/components/DarkModeToggle";
+import { useLocale } from "@/contexts/LocaleContext";
+import { useTranslations } from "@/lib/translations";
 import { DonutRisk, RadarProfile, BarList } from "@/components/Charts";
 import { ABA_REGIONS, TOSHKENT_SHAHAR_DISTRICTS, isToshkentShahar } from "@/data/regions";
 
@@ -356,6 +358,7 @@ function AbaCentersSection({
   centers: AbaCenterItem[];
   setCenters: (v: AbaCenterItem[]) => void;
 }) {
+  const t = useTranslations();
   const [loading, setLoading] = React.useState(false);
   const [portfolioCenter, setPortfolioCenter] = React.useState<AbaCenterItem | null>(null);
 
@@ -393,12 +396,12 @@ function AbaCentersSection({
               Yordam
             </p>
             <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-              ABA markazlar
+              {t("aba.title")}
             </h3>
           </div>
         </div>
         <p className="mt-3 text-sm text-slate-600 dark:text-slate-400 max-w-xl">
-          Viloyatingizni tanlang — shu viloyatdagi ABA terapiya markazlari ro‘yxati chiqadi. Toshkent shahar uchun tumanni ham tanlang.
+          {t("aba.selectRegionHint")}
         </p>
         <div className="mt-5 flex flex-col sm:flex-row gap-3">
           <select
@@ -409,7 +412,7 @@ function AbaCentersSection({
             }}
             className="rounded-2xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3.5 text-sm font-medium text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition-shadow"
           >
-            <option value="">Viloyatni tanlang</option>
+            <option value="">{t("aba.selectRegion")}</option>
             {ABA_REGIONS.map((r) => (
               <option key={r} value={r}>
                 {r}
@@ -422,7 +425,7 @@ function AbaCentersSection({
               onChange={(e) => setDistrict(e.target.value)}
               className="rounded-2xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3.5 text-sm font-medium text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition-shadow"
             >
-              <option value="">Tumanni tanlang</option>
+              <option value="">{t("aba.selectDistrict")}</option>
               {TOSHKENT_SHAHAR_DISTRICTS.map((d) => (
                 <option key={d} value={d}>
                   {d}
@@ -541,6 +544,8 @@ function AbaCentersSection({
 type Props = { assessmentId: string };
 
 export default function ResultPageClient({ assessmentId }: Props) {
+  const { locale } = useLocale();
+  const t = useTranslations();
   const [data, setData] = React.useState<ScoreResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [aiLoading, setAiLoading] = React.useState(false);
@@ -549,6 +554,7 @@ export default function ResultPageClient({ assessmentId }: Props) {
   const [abaRegion, setAbaRegion] = React.useState("");
   const [abaDistrict, setAbaDistrict] = React.useState("");
   const [abaCenters, setAbaCenters] = React.useState<AbaCenterItem[]>([]);
+  const pendingAiRequestedRef = React.useRef<string | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -557,11 +563,11 @@ export default function ResultPageClient({ assessmentId }: Props) {
       try {
         setLoading(true);
         const res = await fetch(`/api/assessments/${assessmentId}`, { cache: "no-store" });
-        if (!res.ok) throw new Error("Natijani yuklab bo‘lmadi");
+        if (!res.ok) throw new Error(t("result.error"));
         const json: ScoreResponse = await res.json();
         if (!cancelled) setData(json);
       } catch (e: unknown) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Xatolik");
+        if (!cancelled) setError(e instanceof Error ? e.message : t("result.error"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -573,9 +579,27 @@ export default function ResultPageClient({ assessmentId }: Props) {
     };
   }, [assessmentId]);
 
+  // Agar xulosa boshqa tilda bo‘lsa (masalan, RU tanlangan lekin DB da UZ), qayta so‘rash
+  const shouldRequestOtherLocale = Boolean(
+    data && isScreeningV2Result(data.scoring) && data.aiSummary.status === "ready" && (data.aiSummaryLocale ?? "uz") !== locale
+  );
+  React.useEffect(() => {
+    if (!shouldRequestOtherLocale) return;
+    requestAiSummary();
+  }, [shouldRequestOtherLocale]);
+
+  // Screening v2: status "pending" bo'lsa (o'zbek yoki boshqa til) AI xulosasini avtomatik so'rash
+  React.useEffect(() => {
+    if (!data || !isScreeningV2Result(data.scoring) || data.aiSummary.status !== "pending") return;
+    if (pendingAiRequestedRef.current === assessmentId) return;
+    pendingAiRequestedRef.current = assessmentId;
+    requestAiSummary();
+  }, [data, assessmentId]);
+
   async function requestAiSummary() {
     if (!data) return;
-    if (data.aiSummary.status === "ready") return;
+    const storedLocale = data.aiSummaryLocale ?? null;
+    if (data.aiSummary.status === "ready" && storedLocale === locale) return;
 
     setAiLoading(true);
     setError(null);
@@ -584,15 +608,12 @@ export default function ResultPageClient({ assessmentId }: Props) {
       const res = await fetch(`/api/assessments/${assessmentId}/ai-summary`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          assessmentId,
-          context: { mainLanguageAtHome: "uzbek" },
-        }),
+        body: JSON.stringify({ locale }),
       });
 
       const json: AiSummaryResponse & { payload?: AiSummaryPayload } = await res.json();
       if (!res.ok || (!json.ok && json.status !== "pending")) {
-        throw new Error(json.error ?? "AI xulosa yaratilmadi");
+        throw new Error(json.error ?? t("result.aiError"));
       }
 
       if (json.status === "ready" && json.payload) {
@@ -601,6 +622,7 @@ export default function ResultPageClient({ assessmentId }: Props) {
             ? {
                 ...prev,
                 aiSummary: { ...prev.aiSummary, status: "ready", payload: json.payload ?? null, error: null },
+                aiSummaryLocale: locale,
               }
             : prev
         );
@@ -610,7 +632,7 @@ export default function ResultPageClient({ assessmentId }: Props) {
         );
       }
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Xatolik");
+      setError(e instanceof Error ? e.message : t("result.error"));
     } finally {
       setAiLoading(false);
     }
@@ -620,7 +642,7 @@ export default function ResultPageClient({ assessmentId }: Props) {
     if (!data || !data.ageGroup || !isScreeningV2Result(data.scoring)) return;
     setPdfLoading(true);
     try {
-      const res = await fetch(`/api/screening/questions?ageGroup=${encodeURIComponent(data.ageGroup)}`);
+      const res = await fetch(`/api/screening/questions?ageGroup=${encodeURIComponent(data.ageGroup)}&locale=${locale}`);
       if (!res.ok) throw new Error("Savollar yuklanmadi");
       const { questions: qList, domains: domainList } = await res.json();
       const questions = Array.isArray(qList)
@@ -689,7 +711,7 @@ export default function ResultPageClient({ assessmentId }: Props) {
         <div className="fixed top-4 right-4 z-50">
           <DarkModeToggle />
         </div>
-        <div className="mx-auto max-w-md text-center py-12">Yuklanmoqda...</div>
+        <div className="mx-auto max-w-md text-center py-12">{t("result.loading")}</div>
       </div>
     );
   }
@@ -711,7 +733,7 @@ export default function ResultPageClient({ assessmentId }: Props) {
         <div className="fixed top-4 right-4 z-50">
           <DarkModeToggle />
         </div>
-        <div className="mx-auto max-w-md text-center py-12">Ma’lumot topilmadi</div>
+        <div className="mx-auto max-w-md text-center py-12">{t("result.noData")}</div>
       </div>
     );
   }
@@ -747,7 +769,7 @@ export default function ResultPageClient({ assessmentId }: Props) {
                 disabled={aiLoading}
                 className="rounded-2xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {aiLoading ? "AI xulosa tayyorlanmoqda..." : "AI xulosa olish"}
+                {aiLoading ? t("result.aiGenerating") : t("result.getAiSummary")}
               </button>
             )}
           </section>
@@ -779,14 +801,14 @@ export default function ResultPageClient({ assessmentId }: Props) {
         </div>
         <div className="mx-auto max-w-[920px] px-4 sm:px-6 py-8 sm:py-10">
           <div className="mb-8">
-            <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">Skrining natijasi</p>
-            <h1 className="mt-1 text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Natija</h1>
+            <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">{t("result.screeningTitle")}</p>
+            <h1 className="mt-1 text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{t("result.resultTitle")}</h1>
             {data.paidAmount != null && data.paidAmount > 0 && (
               <div className="mt-4 flex flex-wrap items-center gap-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm">
                 <span className="font-semibold text-slate-700 dark:text-slate-300">
-                  To&apos;langan summa: {String(data.paidAmount).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} so&apos;m
+                  {t("result.paidAmount")}: {String(data.paidAmount).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} {t("payment.currency")}
                 </span>
-                <span className="font-semibold text-slate-600 dark:text-slate-400">Balans: 0 so&apos;m</span>
+                <span className="font-semibold text-slate-600 dark:text-slate-400">{t("result.balance")}: 0 {t("payment.currency")}</span>
               </div>
             )}
           </div>
@@ -800,13 +822,13 @@ export default function ResultPageClient({ assessmentId }: Props) {
 
           <section className="mt-8 rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/95 shadow-xl shadow-slate-200/20 dark:shadow-black/20 p-6 sm:p-8">
             <h3 className="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100 mb-4">
-              AI xulosa
+              {t("result.aiSummary")}
             </h3>
             {data.aiSummary.status === "ready" && data.aiSummary.payload ? (
               <AiReportView payload={data.aiSummary.payload} />
             ) : data.aiSummary.status === "failed" ? (
               <div className="text-sm text-rose-600 dark:text-rose-400">
-                AI xulosa yaratilmadi: {data.aiSummary.error ?? "noma'lum xatolik"}
+                {t("result.aiError")}: {data.aiSummary.error ?? t("result.aiErrorUnknown")}
               </div>
             ) : (
               <button
@@ -815,7 +837,7 @@ export default function ResultPageClient({ assessmentId }: Props) {
                 disabled={aiLoading}
                 className="rounded-2xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {aiLoading ? "AI xulosa tayyorlanmoqda..." : "AI xulosa olish"}
+                {aiLoading ? t("result.aiGenerating") : t("result.getAiSummary")}
               </button>
             )}
             <div className="mt-6">
@@ -825,7 +847,7 @@ export default function ResultPageClient({ assessmentId }: Props) {
                 disabled={pdfLoading}
                 className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-5 py-3 text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity"
               >
-                {pdfLoading ? "PDF tayyorlanmoqda..." : "PDF yuklab olish (A4)"}
+                {pdfLoading ? t("result.pdfPreparing") : t("result.pdfDownload")}
               </button>
             </div>
           </section>
@@ -905,8 +927,7 @@ export default function ResultPageClient({ assessmentId }: Props) {
               <DonutRisk
                 value={riskPercent}
                 tier={chartTier as "LOW" | "WATCH" | "MODERATE" | "HIGH"}
-                label="Umumiy risk"
-                size="md"
+                label={t("result.riskIndicator")} size="md"
               />
             </div>
             <div className="w-full flex-1 max-w-sm">
@@ -964,7 +985,7 @@ export default function ResultPageClient({ assessmentId }: Props) {
               disabled={aiLoading}
               className="rounded-2xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {aiLoading ? "AI xulosa tayyorlanmoqda..." : "AI xulosa olish"}
+              {aiLoading ? t("result.aiGenerating") : t("result.getAiSummary")}
             </button>
           )}
         </section>
@@ -979,7 +1000,7 @@ export default function ResultPageClient({ assessmentId }: Props) {
       <div className="fixed top-4 right-4 z-50">
         <DarkModeToggle />
       </div>
-      <div className="mx-auto max-w-md text-center py-12">Natija formati aniqlanmadi</div>
+      <div className="mx-auto max-w-md text-center py-12">{t("result.formatUnknown")}</div>
     </div>
   );
 }
@@ -1019,6 +1040,7 @@ function ScreeningV2ResultView({
   completedAt?: string | null;
   ageGroup?: string | null;
 }) {
+  const t = useTranslations();
   const riskTier =
     result.riskLabel === "Past xavf"
       ? "LOW"
@@ -1027,11 +1049,15 @@ function ScreeningV2ResultView({
         : "HIGH";
 
   const blocks = result.blocks ?? [];
-  const ageLabel = ageGroup ? AGE_GROUP_LABELS[ageGroup] ?? ageGroup : null;
+  const ageLabel = ageGroup ? (t(`start.age.${ageGroup}`) !== `start.age.${ageGroup}` ? t(`start.age.${ageGroup}`) : AGE_GROUP_LABELS[ageGroup] ?? ageGroup) : null;
+  const getBlockTitle = (blockId: string) => {
+    const key = `result.block${blockId}`;
+    return t(key) !== key ? t(key) : (result.blocks ?? []).find((x) => x.blockId === blockId)?.title ?? blockId;
+  };
   const barListData = blocks.map((b) => {
     const color = b.score <= 30 ? "emerald" : b.score <= 60 ? "amber" : "rose";
     return {
-      label: `${b.title} (${Math.round(b.score)}%)`,
+      label: `${getBlockTitle(b.blockId)} (${Math.round(b.score)}%)`,
       value: b.score,
       max: 100,
       color: color as "indigo" | "emerald" | "amber" | "rose" | "slate",
@@ -1039,10 +1065,10 @@ function ScreeningV2ResultView({
   });
 
   const ANSWER_LABELS: Record<number, string> = {
-    0: "Yo‘q / hech qachon",
-    1: "Kamdan-kam",
-    2: "Ko‘pincha",
-    3: "Doim / barqaror",
+    0: t("answer.0"),
+    1: t("answer.1"),
+    2: t("answer.2"),
+    3: t("answer.3"),
   };
 
   const riskAccent =
@@ -1059,27 +1085,27 @@ function ScreeningV2ResultView({
         className={`mt-0 rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/95 shadow-xl shadow-slate-200/20 dark:shadow-black/20 overflow-hidden border-l-4 ${riskAccent}`}
       >
         <div className="p-6 sm:p-8">
-          <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">Umumiy xulosa</p>
-          <h2 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{result.riskLabel}</h2>
+          <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">{t("result.overallSummary")}</p>
+          <h2 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{riskTier === "LOW" ? t("result.riskLabelLow") : riskTier === "MODERATE" ? t("result.riskLabelModerate") : t("result.riskLabelHigh")}</h2>
           <div className="mt-6 flex flex-wrap items-start gap-6 sm:gap-8">
             <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/60 p-6 border border-slate-200/60 dark:border-slate-700/60">
               <DonutRisk
                 value={Math.round(result.totalScore)}
                 tier={riskTier as "LOW" | "WATCH" | "MODERATE" | "HIGH"}
-                label="Umumiy risk"
+                label={t("result.riskIndicator")}
                 size="md"
               />
             </div>
             <div className="flex-1 min-w-0 space-y-2">
               <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                Risk ko‘rsatkichi: <span className="font-bold tabular-nums text-slate-900 dark:text-slate-100">{result.totalScore.toFixed(1)}%</span>
+                {t("result.riskIndicator")}: <span className="font-bold tabular-nums text-slate-900 dark:text-slate-100">{result.totalScore.toFixed(1)}%</span>
               </p>
               <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                Bu skrining bo‘yicha autizm belgilari ehtimoli. Diagnoz emas; aniq tashxis bolalar nevrologi yoki rivojlanish mutaxassisi tomonidan to‘liq baholashdan keyin qo‘yiladi.
+                {t("result.screeningDisclaimerShort")}
               </p>
               {result.redFlagCount > 0 && (
                 <div className="inline-flex items-center gap-2 rounded-full bg-rose-50 dark:bg-rose-900/30 px-3 py-1.5 text-sm font-semibold text-rose-700 dark:text-rose-300">
-                  Red-flag: {result.redFlagCount} ta
+                  {t("result.redFlagCount")}: {result.redFlagCount}
                 </div>
               )}
             </div>
@@ -1087,23 +1113,23 @@ function ScreeningV2ResultView({
           {/* Risk ko'rsatkichlari shkalasi — 0–20% … 80–100% ranglar bilan */}
           <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
-              Risk ko'rsatkichlari
+              {t("result.riskScale")}
             </p>
             <div className="flex flex-wrap gap-2 sm:gap-3">
               <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 px-3 py-1.5 text-xs font-semibold text-emerald-800 dark:text-emerald-200">
-                <span className="h-2 w-4 rounded-sm bg-emerald-500" /> 0–20% — Juda past
+                <span className="h-2 w-4 rounded-sm bg-emerald-500" /> {t("result.riskVeryLow")}
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-lg bg-green-100 dark:bg-green-900/40 px-3 py-1.5 text-xs font-semibold text-green-800 dark:text-green-200">
-                <span className="h-2 w-4 rounded-sm bg-green-500" /> 20–40% — Past
+                <span className="h-2 w-4 rounded-sm bg-green-500" /> {t("result.riskLow")}
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/40 px-3 py-1.5 text-xs font-semibold text-amber-800 dark:text-amber-200">
-                <span className="h-2 w-4 rounded-sm bg-amber-500" /> 40–60% — O'rta
+                <span className="h-2 w-4 rounded-sm bg-amber-500" /> {t("result.riskMid")}
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-lg bg-orange-100 dark:bg-orange-900/40 px-3 py-1.5 text-xs font-semibold text-orange-800 dark:text-orange-200">
-                <span className="h-2 w-4 rounded-sm bg-orange-500" /> 60–80% — Yuqori
+                <span className="h-2 w-4 rounded-sm bg-orange-500" /> {t("result.riskHigh")}
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-lg bg-rose-100 dark:bg-rose-900/40 px-3 py-1.5 text-xs font-semibold text-rose-800 dark:text-rose-200">
-                <span className="h-2 w-4 rounded-sm bg-rose-500" /> 80–100% — Juda yuqori
+                <span className="h-2 w-4 rounded-sm bg-rose-500" /> {t("result.riskVeryHigh")}
               </span>
             </div>
           </div>
@@ -1114,76 +1140,71 @@ function ScreeningV2ResultView({
       <section className="mt-8 rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/95 shadow-xl shadow-slate-200/20 dark:shadow-black/20 p-6 sm:p-8">
         <div className="mb-6 flex flex-wrap items-center gap-3 sm:gap-4">
           <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 px-4 py-3 border border-slate-200/60 dark:border-slate-700/60">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Xulosa raqami</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t("result.conclusionNumber")}</span>
             <p className="mt-0.5 font-mono text-sm font-bold text-slate-900 dark:text-slate-100 tracking-tight">
               {getXulosaRaqami(assessmentId, completedAt ?? undefined)}
             </p>
           </div>
           <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 px-4 py-3 border border-slate-200/60 dark:border-slate-700/60">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Test sanasi</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t("result.testDate")}</span>
             <p className="mt-0.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
               {formatTestDate(completedAt ?? undefined)}
             </p>
           </div>
           {ageLabel && (
             <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 px-4 py-3 border border-slate-200/60 dark:border-slate-700/60">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Yosh guruhi</span>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t("result.ageGroupLabel")}</span>
               <p className="mt-0.5 text-sm font-semibold text-slate-900 dark:text-slate-100">{ageLabel}</p>
             </div>
           )}
         </div>
 
-        <h3 className="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100 mb-4">Xulosa</h3>
+        <h3 className="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100 mb-4">{t("result.conclusion")}</h3>
         <div className="space-y-3 text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
           {result.riskLabel === "Past xavf" && (
             <>
               <p>
-                {ageLabel === "1,5–2 yosh"
-                  ? "Ushbu yoshdagi bolada skrining bo‘yicha autizm belgilari ehtimoli past baholandi. Erta yoshda ijtimoiy va muloqot ko‘nikmalari hali rivojlanayotgan bo‘lgani uchun kuzatishni davom ettirish, oilada ijtimoiy o‘yin va muloqotga vaqt ajratish tavsiya etiladi."
-                  : ageLabel === "3–4 yosh" || ageLabel === "5–6 yosh"
-                    ? "Skrining bo‘yicha autizm belgilari ehtimoli past. Bolaning ijtimoiy aloqa, muloqot va moslashuv ko‘rsatkichlari hozircha normativ rivojlanish doirasida baholandi. Maktabgacha yoki maktab yoshida kuzatishni davom ettirish va kerak bo‘lsa keyinchalik qayta tekshirish mumkin."
-                    : "Skrining natijasiga ko‘ra autizm belgilari ehtimoli past. Bolaning javoblari asosida hozircha qo‘shimcha tekshiruv talab qilinmaydi. Rivojlanishni kuzatish va ota-ona savollari paydo bo‘lsa mutaxassisga murojaat qilish tavsiya etiladi."}
+                {ageGroup === "AGE_1_5_2"
+                  ? t("result.screening.lowRiskDesc1_5_2")
+                  : ageGroup === "AGE_3_4" || ageGroup === "AGE_5_6"
+                    ? t("result.screening.lowRiskDesc3_6")
+                    : t("result.screening.lowRiskDesc7_9")}
               </p>
               <p className="text-slate-600 dark:text-slate-400">
-                <strong>Tavsiya:</strong> Kuzatishni davom ettiring. Agar keyinchalik ota-ona tashvishlansa yoki bolada o‘zgarishlar sezilsa, qayta skrining yoki bolalar nevrologi yoki rivojlanish mutaxassisi bilan konsultatsiya qilish mumkin.
-                {result.totalScore > 40 && " 40% dan yuqori bo‘lgan hollarda ABA mutaxassislari bilan ham konsultatsiya qilish tavsiya etiladi."}
+                <strong>{t("result.recommendation")}:</strong> {t("result.screening.lowRiskAdvice")}
+                {result.totalScore > 40 && " " + t("result.screening.lowRiskAdvice40")}
               </p>
             </>
           )}
           {result.riskLabel === "O'rtacha xavf" && (
             <>
               <p>
-                {ageLabel
-                  ? `${ageLabel} guruhidagi bolada skrining bo‘yicha ba’zi belgilar qayd etildi. Bu mutlaqo autizm borligini anglatmaydi; boshqa sabablar ham bo‘lishi mumkin. To‘liq klinik baholash orqali aniqroq yo‘nalish olish mumkin.`
-                  : "Skrining bo‘yicha ba’zi belgilar qayd etildi. To‘liq klinik baholash orqali aniqroq yo‘nalish olish mumkin."}
+                {ageLabel ? ageLabel + " " + t("result.screening.moderateRiskDesc") : t("result.screening.moderateRiskDescNoAge")}
               </p>
               <p className="text-slate-600 dark:text-slate-400">
-                <strong>Tavsiya:</strong> Bolalar nevrologi yoki rivojlanish bo‘yicha mutaxassis bilan konsultatsiya qilish tavsiya etiladi. Mutaxassis bolani ko‘rib, anamnez va qo‘shimcha tekshiruvlar asosida keyingi qadamni aniqlaydi.
-                {result.totalScore > 40 && " 40% dan yuqori bo‘lgani uchun ABA mutaxassislari bilan ham konsultatsiya qilish tavsiya etiladi."}
-              </p>
+                <strong>{t("result.recommendation")}:</strong> {t("result.screening.moderateAdvice")}
+                {result.totalScore > 40 && " " + t("result.screening.moderateAdvice40")}</p>
             </>
           )}
           {result.riskLabel === "Yuqori xavf" && (
             <>
               <p>
-                Skrining bo‘yicha belgilar sezilarli darajada qayd etildi. Bu natija <strong>diagnoz emas</strong>; faqat keyingi tekshiruv va mutaxassis bilan uchrashuvni rejalash uchun asos hisoblanadi. Aniq tashxis faqat mutaxassis tomonidan to‘liq klinik va kerak bo‘lsa instrumental baholashdan keyin qo‘yiladi.
+                {t("result.screening.highRiskDesc")}
               </p>
               <p className="text-slate-600 dark:text-slate-400">
-                <strong>Tavsiya:</strong> Tezroq bolalar nevrologi yoki rivojlanish/autizm bo‘yicha ixtisoslashtirilgan markazga murojaat qilish va diagnostik baholashdan o‘tish tavsiya etiladi. Erta yordam va qo‘llab-quvvatlash natijani yaxshilashda muhim rol o‘ynaydi. ABA mutaxassislari bilan ham konsultatsiya qilish tavsiya etiladi.
-              </p>
+                <strong>{t("result.recommendation")}:</strong> {t("result.screening.highRiskAdvice")}</p>
             </>
           )}
         </div>
         <p className="mt-4 text-xs text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-700 pt-4">
-          Bu hujjat faqat skrining natijasidir va diagnoz qo‘yish uchun ishlatilmaydi. Keyingi qadamni rejalashda va bolalar nevrologi yoki rivojlanish mutaxassisi bilan muloqotda yordam beradi.
-        </p>
+          {t("result.screeningDocDisclaimer")}</p>
       </section>
 
       {/* Bloklar bo'yicha */}
       <section className="mt-8 rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/95 shadow-xl shadow-slate-200/20 dark:shadow-black/20 p-6 sm:p-8">
-        <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">Ko'rsatkichlar</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">{t("result.indicators")}</p>
         <h3 className="mt-1 text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100 mb-5">
-          Bloklar bo'yicha (%)
+          {t("result.blocksByPercent")}
         </h3>
         <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 p-5 sm:p-6">
           <BarList data={barListData} title="" maxValue={100} showValue={false} />
@@ -1191,7 +1212,7 @@ function ScreeningV2ResultView({
         <ul className="mt-5 space-y-2.5 text-sm text-slate-700 dark:text-slate-300">
           {blocks.map((b) => (
             <li key={b.blockId} className="flex justify-between items-center gap-3 py-1.5 border-b border-slate-100 dark:border-slate-800 last:border-0">
-              <span className="font-medium text-slate-800 dark:text-slate-200">{b.title}</span>
+              <span className="font-medium text-slate-800 dark:text-slate-200">{getBlockTitle(b.blockId)}</span>
               <span className="font-bold tabular-nums text-slate-900 dark:text-slate-100">{Math.round(b.score)}%</span>
             </li>
           ))}
@@ -1201,9 +1222,9 @@ function ScreeningV2ResultView({
       {/* Red-flag savollar */}
       {(result.redFlags ?? []).length > 0 && (
         <section className="mt-8 rounded-3xl border border-rose-200/60 dark:border-rose-800/50 bg-white dark:bg-slate-900/95 shadow-xl shadow-slate-200/20 dark:shadow-black/20 p-6 sm:p-8">
-          <p className="text-xs font-semibold uppercase tracking-widest text-rose-600 dark:text-rose-400">Muhim</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-rose-600 dark:text-rose-400">{t("result.important")}</p>
           <h3 className="mt-1 text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100 mb-4">
-            Red-flag savollar ({(result.redFlags ?? []).length} ta)
+            {t("result.redFlagQuestions")} ({(result.redFlags ?? []).length})
           </h3>
           <ul className="space-y-2.5 text-sm">
             {(result.redFlags ?? []).map((rf) => (
@@ -1223,9 +1244,9 @@ function ScreeningV2ResultView({
         );
         return withBall.length > 0 && (
         <section className="mt-8 rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/95 shadow-xl shadow-slate-200/20 dark:shadow-black/20 p-6 sm:p-8">
-          <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">Savol va javoblar</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">{t("result.questionsAndAnswers")}</p>
           <h3 className="mt-1 text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100 mb-4">
-            Autizmga moyilligi bor savollar va javoblari
+            {t("result.tendencyQuestions")}
           </h3>
           <div className="space-y-3">
             {withBall.map((issue) => (
@@ -1254,7 +1275,7 @@ function ScreeningV2ResultView({
                 </div>
                 {typeof issue.answer === "number" && (
                   <div className="mt-1 text-xs text-slate-600 dark:text-slate-400">
-                    Ota-onaning javobi:{" "}
+                    {t("result.parentAnswer")}:{" "}
                     <span className="font-semibold text-slate-900 dark:text-slate-100">
                       {ANSWER_LABELS[issue.answer] ?? `Javob ${issue.answer}`}
                     </span>
@@ -1377,28 +1398,34 @@ function MonitoringResultView({ result }: { result: MonitoringResult }) {
 }
 
 function AiReportView({ payload }: { payload: AiSummaryPayload }) {
+  const t = useTranslations();
   return (
     <div className="mt-4 space-y-4 text-sm text-slate-700 dark:text-slate-300">
       <div>
         <h4 className="font-bold text-slate-900 dark:text-slate-100">
-          {payload?.summary?.shortConclusion ?? "AI xulosa"}
+          {payload?.summary?.shortConclusion ?? t("result.aiSummary")}
         </h4>
         <p className="mt-1">{payload?.summary?.whyThisLevel}</p>
       </div>
 
-      <div>
-        <h4 className="font-bold text-slate-900 dark:text-slate-100">Kuchli tomonlar</h4>
-        <ul className="mt-1 list-disc list-inside space-y-0.5">
-          {(payload?.strengths?.examples ?? []).map((x: string, i: number) => (
-            <li key={i}>{x}</li>
-          ))}
-        </ul>
-      </div>
+      {(payload?.strengths?.examples?.length ?? 0) > 0 && (
+        <div>
+          <h4 className="font-bold text-slate-900 dark:text-slate-100">{t("result.strengths")}</h4>
+          <ul className="mt-1 list-disc list-inside space-y-0.5">
+            {(payload?.strengths?.examples ?? []).map((x: string, i: number) => (
+              <li key={i}>{x}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div>
         <h4 className="font-bold text-slate-900 dark:text-slate-100">
-          E’tibor kerak bo‘lgan yo‘nalishlar
+          {t("result.needsFocus")}
         </h4>
+        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+          {t("result.needsFocusHint")}
+        </p>
         <ul className="mt-1 list-disc list-inside space-y-0.5">
           {(payload?.needsFocus?.priority ?? []).map((x: string, i: number) => (
             <li key={i}>{x}</li>
@@ -1407,7 +1434,7 @@ function AiReportView({ payload }: { payload: AiSummaryPayload }) {
       </div>
 
       <div>
-        <h4 className="font-bold text-slate-900 dark:text-slate-100">Uy sharoitida reja</h4>
+        <h4 className="font-bold text-slate-900 dark:text-slate-100">{t("result.homePlan")}</h4>
         <div className="mt-2 space-y-3">
           {(payload?.nextSteps?.homePlan ?? []).map(
             (p: { title?: string; why?: string; how?: string[] }, i: number) => (

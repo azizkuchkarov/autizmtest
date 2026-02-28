@@ -4,9 +4,11 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import DarkModeToggle from "@/components/DarkModeToggle";
+import { useTranslations } from "@/lib/translations";
 
 export default function StartRegisterPage() {
   const router = useRouter();
+  const t = useTranslations();
   const [phone, setPhone] = React.useState("+998");
   const [code, setCode] = React.useState("");
   const [step, setStep] = React.useState<"phone" | "otp">("phone");
@@ -20,7 +22,7 @@ export default function StartRegisterPage() {
     e.preventDefault();
     setError("");
     if (!/^\+998\d{9}$/.test(cleanedPhone)) {
-      setError("Telefon raqam +998 XX XXX XX XX ko'rinishida bo'lishi kerak.");
+      setError(t("register.errorPhone"));
       return;
     }
     setLoading(true);
@@ -32,7 +34,7 @@ export default function StartRegisterPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data?.error ?? "Kod yuborilmadi.");
+        setError(data?.error ?? t("register.errorSend"));
         return;
       }
       setDevCode(data?.devCode ?? null);
@@ -47,7 +49,7 @@ export default function StartRegisterPage() {
     e.preventDefault();
     setError("");
     if (!/^\d{6}$/.test(code)) {
-      setError("Kod 6 raqamdan iborat bo'lishi kerak.");
+      setError(t("register.errorCode"));
       return;
     }
     setLoading(true);
@@ -59,7 +61,7 @@ export default function StartRegisterPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data?.error ?? "Tasdiqlashda xatolik.");
+        setError(data?.error ?? t("register.errorVerify"));
         return;
       }
       try {
@@ -81,22 +83,22 @@ export default function StartRegisterPage() {
 
         <section className="rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/95 shadow-xl p-6 sm:p-8">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-            Ro'yxatdan o'tish
+            {t("register.title")}
           </h1>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-            Mobil raqamingizni kiriting. SMS orqali 6 xonali kod yuboriladi. Kodni tasdiqlagandan so'ng to'lovga o'tasiz.
+            {t("register.description")}
           </p>
 
           {step === "phone" && (
             <form onSubmit={handleSendCode} className="mt-6 space-y-4">
               <div>
                 <label className="block text-sm font-bold text-slate-900 dark:text-slate-100 mb-1">
-                  Mobil raqam
+                  {t("register.phoneLabel")}
                 </label>
                 <input
                   type="tel"
                   inputMode="tel"
-                  placeholder="+998 XX XXX XX XX"
+                  placeholder={t("register.phonePlaceholder")}
                   value={phone}
                   onChange={(e) => {
                     setPhone(e.target.value);
@@ -113,7 +115,7 @@ export default function StartRegisterPage() {
                 disabled={loading}
                 className="w-full rounded-2xl bg-indigo-600 px-6 py-4 text-base font-bold text-white shadow-lg transition hover:bg-indigo-700 disabled:opacity-60"
               >
-                {loading ? "Yuborilmoqda..." : "Kod olish"}
+                {loading ? t("register.sending") : t("register.sendCode")}
               </button>
             </form>
           )}
@@ -122,18 +124,18 @@ export default function StartRegisterPage() {
             <form onSubmit={handleVerify} className="mt-6 space-y-4">
               {devCode && (
                 <p className="rounded-xl bg-amber-100 dark:bg-amber-900/30 px-3 py-2 text-sm font-bold text-amber-800 dark:text-amber-200">
-                  Test rejim: kod <span className="font-mono">{devCode}</span>
+                  {t("register.devCodeHint")} <span className="font-mono">{devCode}</span>
                 </p>
               )}
               <div>
                 <label className="block text-sm font-bold text-slate-900 dark:text-slate-100 mb-1">
-                  6 xonali kod
+                  {t("register.codeLabel")}
                 </label>
                 <input
                   type="text"
                   inputMode="numeric"
                   maxLength={6}
-                  placeholder="000000"
+                  placeholder={t("register.codePlaceholder")}
                   value={code}
                   onChange={(e) => {
                     const v = e.target.value.replace(/\D/g, "").slice(0, 6);
@@ -151,14 +153,14 @@ export default function StartRegisterPage() {
                 disabled={loading}
                 className="w-full rounded-2xl bg-indigo-600 px-6 py-4 text-base font-bold text-white shadow-lg transition hover:bg-indigo-700 disabled:opacity-60"
               >
-                {loading ? "Tekshirilmoqda..." : "Tasdiqlash va to'lovga o'tish"}
+                {loading ? t("register.checking") : t("register.verifyAndPay")}
               </button>
               <button
                 type="button"
                 onClick={() => setStep("phone")}
                 className="w-full text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-indigo-600"
               >
-                Boshqa raqam
+                {t("register.otherNumber")}
               </button>
             </form>
           )}
@@ -167,7 +169,7 @@ export default function StartRegisterPage() {
             href="/start"
             className="mt-6 inline-block text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-indigo-600"
           >
-            ← Orqaga
+            ← {t("register.back")}
           </Link>
         </section>
       </main>

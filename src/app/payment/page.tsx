@@ -3,10 +3,12 @@
 import React, { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import DarkModeToggle from "@/components/DarkModeToggle";
+import { useTranslations } from "@/lib/translations";
 
 function PaymentContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useTranslations();
   const [phone, setPhone] = React.useState("+998");
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
@@ -84,7 +86,7 @@ function PaymentContent() {
     setError("");
     const cleaned = phone.replace(/\s+/g, "").trim();
     if (!/^\+998\d{9}$/.test(cleaned)) {
-      setError("Telefon raqam +998XXXXXXXXX ko'rinishida bo'lishi kerak.");
+      setError(t("payment.errorPhone"));
       return;
     }
     setLoading(true);
@@ -96,7 +98,7 @@ function PaymentContent() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data?.error ?? "To'lov yaratilmadi.");
+        setError(data?.error ?? t("payment.errorCreate"));
         return;
       }
       try {
@@ -113,7 +115,7 @@ function PaymentContent() {
     setError("");
     const cleaned = phone.replace(/\s+/g, "").trim();
     if (!/^\+998\d{9}$/.test(cleaned)) {
-      setError("Telefon raqam +998XXXXXXXXX ko'rinishida bo'lishi kerak.");
+      setError(t("payment.errorPhone"));
       return;
     }
     setLoading(true);
@@ -126,7 +128,7 @@ function PaymentContent() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data?.error ?? "Xatolik.");
+        setError(data?.error ?? t("common.error"));
         return;
       }
       try {
@@ -152,25 +154,25 @@ function PaymentContent() {
 
         <section className="rounded-3xl bg-white/80 dark:bg-slate-900/70 backdrop-blur-xl p-8 md:p-10 shadow-xl ring-1 ring-slate-200/60 dark:ring-slate-700/60">
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">
-            To'lov
+            {t("payment.title")}
           </h1>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-            Autizm skrining testi uchun to'lov — {amountText} so'm
+            {t("payment.forTest")} — {amountText} {t("payment.currency")}
           </p>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            OTP tasdiqlangan raqamingizga Click orqali to'lov yuborish yoki karta raqami bilan to'lash mumkin.
+            {t("payment.hint")}
           </p>
 
           {!merchantTransId ? (
             <>
               <div className="mt-6">
                 <label className="block text-sm font-bold text-slate-900 dark:text-slate-100 mb-1">
-                  Telefon raqam (OTP tasdiqlangan raqam)
+                  {t("payment.phoneLabel")}
                 </label>
                 <input
                   type="tel"
                   inputMode="tel"
-                  placeholder="+998 90 123 45 67"
+                  placeholder={t("payment.phonePlaceholder")}
                   value={phone}
                   onChange={(e) => {
                     setPhone(e.target.value);
@@ -190,7 +192,7 @@ function PaymentContent() {
                 disabled={loading}
                 className="mt-6 w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-6 py-4 text-base font-bold text-white shadow-lg shadow-emerald-500/30 transition-all hover:from-emerald-700 hover:to-emerald-600 disabled:opacity-60"
               >
-                {loading ? "Yuborilmoqda..." : "Click orqali to'lash (shu raqamga to'lov yuboriladi)"}
+                {loading ? t("payment.sending") : t("payment.btnClick")}
               </button>
               <button
                 type="button"
@@ -198,19 +200,19 @@ function PaymentContent() {
                 disabled={loading}
                 className="mt-3 w-full rounded-2xl bg-slate-800 dark:bg-slate-700 text-white px-6 py-4 text-base font-bold shadow-lg transition-all hover:bg-slate-700 dark:hover:bg-slate-600 disabled:opacity-60"
               >
-                Karta raqami bilan to'lash (Click sahifasida)
+                {t("payment.btnCard")}
               </button>
             </>
           ) : (
             <div className="mt-6 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 p-4 ring-1 ring-emerald-200/60 dark:ring-emerald-800/40">
               <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">
-                Telefoningizga to'lov yuborildi.
+                {t("payment.sentTitle")}
               </p>
               <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">
-                Click ilovasida yoki <strong>click.uz</strong> saytida to'lang. To'lovdan keyin avtomatik ravishda test sahifasiga o'tkazamiz.
+                {t("payment.sentText")}
               </p>
               <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">
-                To'lovni tekshiryapmiz...
+                {t("payment.checking")}
               </p>
             </div>
           )}
@@ -220,18 +222,21 @@ function PaymentContent() {
   );
 }
 
+function PaymentFallback() {
+  const t = useTranslations();
+  return (
+    <div className="min-h-dvh bg-gradient-to-br from-indigo-50 via-white to-emerald-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center">
+      <div className="fixed top-4 right-4 z-50">
+        <DarkModeToggle />
+      </div>
+      <p className="text-slate-600 dark:text-slate-400">{t("payment.loading")}</p>
+    </div>
+  );
+}
+
 export default function PaymentPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-dvh bg-gradient-to-br from-indigo-50 via-white to-emerald-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center">
-          <div className="fixed top-4 right-4 z-50">
-            <DarkModeToggle />
-          </div>
-          <p className="text-slate-600 dark:text-slate-400">Yuklanmoqda...</p>
-        </div>
-      }
-    >
+    <Suspense fallback={<PaymentFallback />}>
       <PaymentContent />
     </Suspense>
   );

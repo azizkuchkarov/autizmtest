@@ -59,7 +59,7 @@ export const professionalQuestions: ScreeningQuestion[] = [
     weight: 1,
     isRedFlag: false,
     text: "Bola sizning yuz ifodangizdagi farqlarni (xursand, xafa, g‘azablangan, hayron) idrok qiladimi va ularga ma’no beradimi?",
-    example: "Siz jiddiy chetni tortsangiz, bola biror narsa noto‘g‘ri deb tushunadi; siz tabassum qilsangiz, xavfsiz his qiladi va javoban kuladi.",
+    example: "Masalan: siz yuzingizni jiddiy qilsangiz yoki g‘azablangan ko‘rinsangiz, bola biror narsa noto‘g‘ri bo‘lganini sezadi; tabassum qilsangiz — xavfsiz his qiladi va javoban kuladi.",
     explanation: "Yuz ifodalarini ajratish va ularga ma’no berish (emotsional tushunish) ijtimoiy kognitsiya va xavfsiz bog‘lanishning asosiy ko‘rsatkichidir.",
   },
   {
@@ -103,8 +103,8 @@ export const professionalQuestions: ScreeningQuestion[] = [
     domain: "A",
     weight: 1,
     isRedFlag: false,
-    text: "Bola xafa, qo‘rqqan yoki bezovta bo‘lganda sizdan tinchlik, quchoq yoki yordam izlaydimi?",
-    example: "Biri yoki narsa qo‘rqitganda sizga yuguradi; tushganida yoki og‘riq sezganda sizdan «puf» qilish yoki quchoq so‘raydi.",
+    text: "Bola qo‘rqganda, yig‘laganda yoki og‘riq sezganda sizga kelib quchoq yoki yordam so‘raydimi?",
+    example: "Masalan: baland ovoz, it yoki noma’lum kishi qo‘rqitganda sizga yuguradi; tushganda yoki og‘riq teganda sizdan quchoq yoki og‘riq joyiga «puf» qilishni so‘raydi.",
     explanation: "Stress vaqtida yaqin kishidan yordam va qulaylik so‘rash xavfsiz bog‘lanish va emotsional tartibga solishning muhim belgisidir.",
   },
   {

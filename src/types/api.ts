@@ -76,6 +76,7 @@ export interface ScoreResponse {
     payload?: AiSummaryPayload | null;
     error?: string | null;
   };
+  aiSummaryLocale?: string | null;
   /** Test to‘ldirilgan sana (ISO string) */
   completedAt?: string | null;
   /** Yosh guruhi (AGE_1_5_2, AGE_3_4, …) */

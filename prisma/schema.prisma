@@ -159,6 +159,7 @@ model Assessment {
   scoring           Json     // OverallResult from scoring.ts
   aiSummaryStatus   String   @default("pending") // pending | ready | failed
   aiSummaryPayload  Json?    // AI structured output
+  aiSummaryLocale   String?  // uz | ru — qaysi tilda yaratilgan
   aiSummaryError    String?
   respondent        String?  // Ota | Ona | Vasiy
   childGender       String?  // Qiz | O'g'il

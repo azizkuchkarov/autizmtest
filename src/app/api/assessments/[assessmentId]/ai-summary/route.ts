@@ -25,11 +25,17 @@ function isScreeningV2Result(s: unknown): s is ScreeningV2Result {
 }
 
 export async function POST(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ assessmentId: string }> }
 ) {
   try {
     const { assessmentId } = await params;
+    let locale: "uz" | "ru" = "uz";
+    try {
+      const body = await req.json().catch(() => ({}));
+      if (body?.locale === "ru") locale = "ru";
+    } catch {}
+
     const assessment = await prisma.assessment.findUnique({
       where: { id: assessmentId },
     });
@@ -38,11 +44,16 @@ export async function POST(
       return NextResponse.json({ ok: false, status: "failed" as const, error: "Assessment topilmadi." }, { status: 404 });
     }
 
-    if (assessment.aiSummaryStatus === "ready" && assessment.aiSummaryPayload) {
+    const storedLocale = (assessment.aiSummaryLocale as "uz" | "ru" | null) ?? null;
+    const wantLocale = locale;
+    const needRegenerate = assessment.aiSummaryStatus === "ready" && storedLocale !== null && storedLocale !== wantLocale;
+
+    if (assessment.aiSummaryStatus === "ready" && assessment.aiSummaryPayload && !needRegenerate) {
       return NextResponse.json({
         ok: true,
         status: "ready" as const,
-      } satisfies AiSummaryResponse);
+        payload: assessment.aiSummaryPayload as object,
+      } satisfies AiSummaryResponse & { payload?: object });
     }
 
     await prisma.assessment.update({
@@ -86,12 +97,13 @@ export async function POST(
     // Screening V2: totalScore, riskLabel, blocks, redFlags, topOverall
     if (isScreeningV2Result(scoring)) {
       try {
-        const payload = await generateAiSummaryForScreeningV2(scoring);
+        const payload = await generateAiSummaryForScreeningV2(scoring, locale);
         await prisma.assessment.update({
           where: { id: assessmentId },
           data: {
             aiSummaryStatus: "ready",
             aiSummaryPayload: payload as object,
+            aiSummaryLocale: locale,
             aiSummaryError: null,
           },
         });

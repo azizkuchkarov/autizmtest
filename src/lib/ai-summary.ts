@@ -1,5 +1,6 @@
 import type { AiSummaryPayload, ScreeningV2Result } from "@/types/api";
 import type { MonitoringResult } from "./monitoringScoring";
+import type { Locale } from "@/lib/locale";
 
 /** OpenAI API bazasi. Region bloklangan bo'lsa proxy yoki boshqa endpoint .env da OPENAI_BASE_URL qilib o'rnating. */
 function getOpenAiBaseUrl(): string {
@@ -12,45 +13,50 @@ const OPENAI_CHAT_URL = () => `${getOpenAiBaseUrl()}/v1/chat/completions`;
 const DEFAULT_DISCLAIMER =
   "Bu skrining natijasi — tibbiy tashxis emas. Yakuniy baho va tavsiyalar uchun mutaxassis (pediatr, bolalar nevrologi yoki rivoj mutaxassisi) bilan muloqot qilishingiz tavsiya etiladi.";
 
+/** AI dan kelgan matndan JSON obyektini ajratib parse qiladi (markdown, izohlar yoki ortiqcha matn bo'lsa ham). */
+function parseAiJson(raw: string): unknown {
+  let s = raw.trim();
+  s = s.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+  try {
+    return JSON.parse(s);
+  } catch {
+    const start = s.indexOf("{");
+    if (start === -1) throw new Error("AI javobi JSON emas.");
+    const end = s.lastIndexOf("}");
+    if (end === -1 || end <= start) throw new Error("AI javobi JSON emas.");
+    try {
+      return JSON.parse(s.slice(start, end + 1));
+    } catch {
+      throw new Error("AI javobi JSON emas.");
+    }
+  }
+}
+
 const MONITORING_DISCLAIMER =
   "Bu progress monitoring xulosasi — tibbiy tashxis emas. Reja va davolash uchun mutaxassis bilan hamkorlik qilishingiz tavsiya etiladi.";
 
-const SYSTEM_PROMPT = `Siz autizm skriningi natijalarini tushuntiradigan professional yordamchisiz.
-Vazifa: ota-onaga natijani aniq, ehtiyotkor va tushunarli qilib berish.
+const SYSTEM_PROMPT = `Siz autizm skriningi natijalarini tushuntiradigan professional yordamchisiz. Vazifa: ota-onaga natijani TO'LIQ, ANIQ va PROFESSIONAL tarzda berish — qisqa va sust xulosa yozmang.
 
-QAT'IY QOIDALAR:
-1) TASHXIS qo'ymang. "Autizm bor/yo'q" demang. Faqat risk darajasi va kuzatish haqida yozing.
-2) Vahima uyg'otmang. Balansli, professional tilda yozing.
-3) Har doim disclaimer bo'lsin: tibbiy tashxis emas, mutaxassis bilan muloqot tavsiya.
-4) Tavsiyalar aniq bo'lsin: kimga murojaat, qanday kuzatish, uy sharoitida qilish mumkin bo'lgan qadamlari.
-5) Til: o'zbek (lotin). Tibbiy terminlar minimal.
-6) Javobni FAQAT quyidagi JSON formatida qaytaring, boshqa matn yozmang.
+MUHIM: Yuqori ball = autizm belgilari kuchli (xavf), "kuchli tomon" emas. Yuqori balllarni "Kuchli tomonlar" ga yozmang; faqat haqiqiy kuchli tomonlarni strengths ga, yuqori balli sohalarni needsFocus ga "Belgilar kuchli kuzatilgan soha: ..." deb yozing.
 
-JSON STRUKTURASI (strict):
+QAT'IY: Tashxis qo'ymang, vahima uyg'otmang. Til: o'zbek (lotin). Javobni FAQAT quyidagi JSON da qaytaring. Har bir maydon to'liq to'ldirilsin.
+
+JSON (to'liq va professional):
 {
   "summary": {
-    "shortConclusion": "1-2 jumla qisqa xulosa",
-    "whyThisLevel": "Nima uchun shu daraja (2-3 jumla)"
+    "shortConclusion": "2–4 jumla to'liq xulosa",
+    "whyThisLevel": "4–7 jumla: nima uchun shu daraja, natija nimani anglatadi"
   },
-  "strengths": {
-    "examples": ["kuchli tomon 1", "kuchli tomon 2", "..."]
-  },
-  "needsFocus": {
-    "priority": ["e'tibor kerak yo'nalish 1", "yo'nalish 2", "..."]
-  },
+  "strengths": { "examples": ["3–5 ta to'liq jumla, faqat haqiqiy kuchli tomonlar"] },
+  "needsFocus": { "priority": ["Yuqori balli sohalar 1–2 jumla bilan; past risk bo'lsa bo'sh []"] },
   "nextSteps": {
     "homePlan": [
-      {
-        "title": "Qisqa sarlavha",
-        "why": "Nima uchun muhim",
-        "how": ["Qadam 1", "Qadam 2"]
-      }
+      { "title": "Sarlavha", "why": "2–4 jumla", "how": ["4–6 ta aniq qadam"] }
     ]
   },
-  "disclaimer": {
-    "text": "Bu skrining natijasi — tibbiy tashxis emas. Mutaxassis bilan muloqot tavsiya etiladi."
-  }
-}`;
+  "disclaimer": { "text": "Bu skrining natijasi — tibbiy tashxis emas. Mutaxassis bilan muloqot tavsiya etiladi." }
+}
+— homePlan da 4–6 ta element, har birida how da 4–6 ta qadam.`;
 
 export async function generateAiSummary(aiFacts: Record<string, unknown>): Promise<AiSummaryPayload> {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -67,7 +73,7 @@ export async function generateAiSummary(aiFacts: Record<string, unknown>): Promi
     };
   }
 
-  const userContent = `Quyidagi skrining natijasi (aiFacts) asosida JSON xulosa yozing. Faqat JSON qaytaring.\n\n${JSON.stringify(aiFacts, null, 2)}`;
+  const userContent = `Quyidagi skrining natijasi asosida TO'LIQ va PROFESSIONAL JSON xulosa yozing. Faqat JSON. shortConclusion 2–4 jumla, whyThisLevel 4–7 jumla, strengths 3–5 ta, homePlan 4–6 ta element (har birida how da 4–6 ta qadam).\n\n${JSON.stringify(aiFacts, null, 2)}`;
 
   const res = await fetch(OPENAI_CHAT_URL(), {
     method: "POST",
@@ -78,6 +84,7 @@ export async function generateAiSummary(aiFacts: Record<string, unknown>): Promi
     body: JSON.stringify({
       model: "gpt-4o-mini",
       temperature: 0.3,
+      max_tokens: 2048,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: userContent },
@@ -96,15 +103,7 @@ export async function generateAiSummary(aiFacts: Record<string, unknown>): Promi
     throw new Error("AI javobi bo'sh.");
   }
 
-  const trimmed = raw.trim().replace(/^```json\s*/i, "").replace(/\s*```$/i, "");
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(trimmed);
-  } catch {
-    throw new Error("AI javobi JSON emas.");
-  }
-
-  const p = parsed as Record<string, unknown>;
+  const p = parseAiJson(raw) as Record<string, unknown>;
   const payload: AiSummaryPayload = {
     summary: p.summary as AiSummaryPayload["summary"],
     strengths: p.strengths as AiSummaryPayload["strengths"],
@@ -121,49 +120,48 @@ export async function generateAiSummary(aiFacts: Record<string, unknown>): Promi
   return payload;
 }
 
-const SCREENING_V2_SYSTEM_PROMPT = `Siz autizm skriningi (screening v2) natijalarini tushuntiradigan professional yordamchisiz.
-Vazifa: ota-onaga natijani aniq, ehtiyotkor va tushunarli qilib berish — risk darajasi, qaysi bloklar (ijtimoiy, muloqot, takroriy/sezgi) qanday, qanday tavsiyalar.
+const SCREENING_V2_SYSTEM_PROMPT = `Siz bolalar rivojlanishi va autizm skriningi bo'yicha professional yordamchisiz. Vazifangiz — ota-onaga skrining natijasini TO'LIQ, ANIQ va PROFESSIONAL tarzda tushuntirish. Xulosa qisqa va sust bo'lmasin: ota-ona natijani to'liq tushunishi, qanday harakat qilish kerakligini aniq bilishi kerak.
 
-QAT'IY QOIDALAR:
-1) TASHXIS qo'ymang. "Autizm bor/yo'q" demang. Faqat risk darajasi va kuzatish haqida yozing.
-2) Vahima uyg'otmang. Balansli, professional tilda yozing.
-3) Har doim disclaimer: tibbiy tashxis emas, bolalar nevrologi yoki rivojlanish mutaxassisi bilan muloqot tavsiya.
-4) Tavsiyalar aniq bo'lsin: kimga murojaat, qanday kuzatish, uy sharoitida qilish mumkin bo'lgan qadamlari.
-5) Til: o'zbek (lotin). Tibbiy terminlar minimal.
-6) Javobni FAQAT quyidagi JSON formatida qaytaring, boshqa matn yozmang.
+USLUB: Professional, ammo tushunarli til. Tibbiy terminlar kam, lekin matn qisqa va umuman yozilmasin. Har bir bo'limda yetarli hajmda ma'lumot bering.
 
-JSON STRUKTURASI (strict):
+SIZGA BERILADIGAN MA'LUMOT: riskLabel ("Past xavf" / "O'rtacha xavf" / "Yuqori xavf"), totalScore (0–100), blocks — har biri uchun title va score (0–100). score = xavf ko'rsatkichi: yuqori score = shu sohada autizm belgilari kuchli.
+
+"E'tibor kerak" (needsFocus): Faqat score 50+ bo'lgan bloklarni "belgilar kuchli kuzatilgan" deb yozing. riskLabel "Past xavf" va barcha blok score lari past (40 dan past) bo'lsa — needsFocus ni bo'sh [] qoldiring yoki bitta umumiy band (masalan "Rivojlanishni kuzatishda davom eting").
+
+"Kuchli tomonlar" (strengths): Yuqori ball olgan bloklarni bu yerga yozmang. Past risk/past ball bo'lsa — 3–5 ta to'liq jumla bilan kuchli tomonlarni (qaysi sohalar yaxshi) yozing.
+
+QAT'IY: Tashxis qo'ymang, vahima uyg'otmang. Til: o'zbek (lotin). Javobni FAQAT quyidagi JSON da qaytaring.
+
+JSON — HAR BIR MAYDON TO'LIQ TO'LDIRILSIN:
 {
   "summary": {
-    "shortConclusion": "1-2 jumla qisqa xulosa (risk darajasi asosida)",
-    "whyThisLevel": "Nima uchun shu risk darajasi (2-3 jumla)"
+    "shortConclusion": "2–4 jumladan iborat to'liq xulosa: risk darajasi, umumiy baho, ota-ona uchun asosiy xabar. Qisqa 1 jumla emas — to'liq professional xulosa.",
+    "whyThisLevel": "4–7 jumla: Nima uchun shu risk darajasi chiqdi, qaysi sohalar qanday baholangan, bu natija nimani anglatadi, ota-ona nima bilishi kerak. Paragraf shaklida, to'liq tushuntirish."
   },
   "strengths": {
-    "examples": ["kuchli tomon yoki yaxshi ko'rsatkich 1", "2", "..."]
+    "examples": ["Har biri 1–2 jumla. Risk past bo'lsa 3–5 ta: ijtimoiy aloqa/muloqot/takroriy sohalar bo'yicha ijobiy tomonlar. Yuqori risk bo'lsa bo'sh [] yoki 1 qo'llab-quvvatlovchi jumla."]
   },
   "needsFocus": {
-    "priority": ["e'tibor kerak yo'nalish 1", "yo'nalish 2", "..."]
+    "priority": ["Faqat yuqori score li bloklar uchun. Har biri 1–2 jumla: soha nomi va qisqacha nima uchun e'tibor kerak. Past risk bo'lsa bo'sh []."]
   },
   "nextSteps": {
     "homePlan": [
-      {
-        "title": "Qisqa sarlavha",
-        "why": "Nima uchun muhim",
-        "how": ["Qadam 1", "Qadam 2"]
-      }
+      { "title": "Sarlavha", "why": "2–4 jumla nima uchun muhim", "how": ["Qadam 1", "Qadam 2", "… 4–6 ta aniq qadam"] }
     ]
-  },
+  }
+  — homePlan da 4–6 ta element bo'lsin, har birida how da 4–6 ta aniq qadam.
   "disclaimer": {
-    "text": "Bu skrining natijasi — tibbiy tashxis emas. Mutaxassis bilan muloqot tavsiya etiladi."
+    "text": "Bu skrining natijasi — tibbiy tashxis emas. Yakuniy baho va davolash rejasi uchun bolalar nevrologi yoki rivojlanish mutaxassisi bilan muloqot qilishingiz tavsiya etiladi."
   }
 }`;
 
 /**
  * Screening V2 natijasi uchun AI xulosa.
- * totalScore, riskLabel, blocks, redFlags, topOverall asosida xulosa yaratadi.
+ * locale === "ru" bo'lsa, barcha matn rus tilida qaytariladi.
  */
 export async function generateAiSummaryForScreeningV2(
-  result: ScreeningV2Result
+  result: ScreeningV2Result,
+  locale?: Locale
 ): Promise<AiSummaryPayload> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -197,7 +195,16 @@ export async function generateAiSummaryForScreeningV2(
     })),
   };
 
-  const userContent = `Quyidagi skrining (screening v2) natijasi asosida JSON xulosa yozing. Faqat JSON qaytaring.\n\n${JSON.stringify(facts, null, 2)}`;
+  const langInstruction =
+    locale === "ru"
+      ? "\n\nВАЖНО: Ответьте полностью на русском языке. Все поля JSON (summary.shortConclusion, summary.whyThisLevel, strengths.examples, needsFocus.priority, nextSteps.homePlan, disclaimer.text) должны быть на русском."
+      : "\n\nMUHIM: Barcha javobni faqat o'zbek tilida (lotin) yozing. JSON dagi barcha maydonlar (summary.shortConclusion, summary.whyThisLevel, strengths.examples, needsFocus.priority, nextSteps.homePlan, disclaimer.text) o'zbekcha bo'lsin.";
+
+  const userContent = `Quyidagi skrining natijasi asosida TO'LIQ va PROFESSIONAL JSON xulosa yozing. Faqat JSON qaytaring.
+
+Talablar: shortConclusion 2–4 jumla; whyThisLevel 4–7 jumla to'liq tushuntirish; strengths da risk past bo'lsa 3–5 ta band; homePlan da 4–6 ta reja, har birida title, why (2–4 jumla), how (4–6 ta aniq qadam). Ota-ona natijani to'liq tushunishi kerak.
+
+Esda tuting: blocks da score 0–100. riskLabel "Past xavf" va barcha score past bo'lsa, needsFocus ni bo'sh [] qoldiring.${langInstruction}\n\n${JSON.stringify(facts, null, 2)}`;
 
   const res = await fetch(OPENAI_CHAT_URL(), {
     method: "POST",
@@ -208,6 +215,7 @@ export async function generateAiSummaryForScreeningV2(
     body: JSON.stringify({
       model: "gpt-4o-mini",
       temperature: 0.3,
+      max_tokens: 2048,
       messages: [
         { role: "system", content: SCREENING_V2_SYSTEM_PROMPT },
         { role: "user", content: userContent },
@@ -226,15 +234,7 @@ export async function generateAiSummaryForScreeningV2(
     throw new Error("AI javobi bo'sh.");
   }
 
-  const trimmed = raw.trim().replace(/^```json\s*/i, "").replace(/\s*```$/i, "");
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(trimmed);
-  } catch {
-    throw new Error("AI javobi JSON emas.");
-  }
-
-  const p = parsed as Record<string, unknown>;
+  const p = parseAiJson(raw) as Record<string, unknown>;
   const payload: AiSummaryPayload = {
     summary: p.summary as AiSummaryPayload["summary"],
     strengths: p.strengths as AiSummaryPayload["strengths"],
@@ -251,42 +251,32 @@ export async function generateAiSummaryForScreeningV2(
   return payload;
 }
 
-const MONITORING_SYSTEM_PROMPT = `Siz autizm rivojlanishini monitoring qilish (progress test) natijalarini tushuntiradigan professional yordamchisiz.
-Vazifa: ota-onaga monitoring natijasini aniq, ehtiyotkor va tushunarli qilib berish — qaysi bloklar yaxshi, qaysi bloklarda e'tibor kerak, uyda qanday mashqlar qilish mumkin.
+const MONITORING_SYSTEM_PROMPT = `Siz bolalar rivojlanishi monitoringi (progress test) natijalarini tushuntiradigan professional yordamchisiz. Vazifa: ota-onaga natijani TO'LIQ va PROFESSIONAL tarzda berish — qisqa va sust xulosa yozmang.
 
-QAT'IY QOIDALAR:
-1) TASHXIS qo'ymang. Faqat rivojlanish ko'rsatkichlari va tavsiyalar haqida yozing.
-2) Vahima uyg'otmang. Ijobiy va qo'llab-quvvatlovchi tilda yozing.
-3) Har doim disclaimer bo'lsin: tibbiy tashxis emas, mutaxassis bilan muloqot tavsiya.
-4) Kuchli tomonlarni va e'tibor kerak yo'nalishlarni tizimli qiling. Uy rejasi aniq qadamlardan iborat bo'lsin.
-5) Til: o'zbek (lotin). Tibbiy terminlar minimal.
-6) Javobni FAQAT quyidagi JSON formatida qaytaring, boshqa matn yozmang.
+QAT'IY: Tashxis qo'ymang, vahima uyg'otmang. Ijobiy, qo'llab-quvvatlovchi til. O'zbek (lotin). Javobni FAQAT quyidagi JSON da qaytaring. Har bir maydon to'liq to'ldirilsin.
 
-JSON STRUKTURASI (strict):
+JSON (to'liq va professional):
 {
   "summary": {
-    "shortConclusion": "1-2 jumla qisqa xulosa (umumiy foiz va status asosida)",
-    "whyThisLevel": "Nima uchun shu umumiy natija (2-3 jumla)"
+    "shortConclusion": "2–4 jumla: umumiy foiz, status, asosiy xulosa",
+    "whyThisLevel": "4–7 jumla: nima uchun shu natija, qaysi bloklar qanday, ota-ona nima bilishi kerak"
   },
   "strengths": {
-    "examples": ["kuchli tomon / yaxshi rivojlangan blok 1", "2", "..."]
+    "examples": ["3–5 ta to'liq jumla — yaxshi rivojlangan bloklar va kuchli tomonlar"]
   },
   "needsFocus": {
-    "priority": ["e'tibor kerak yo'nalish 1", "yo'nalish 2", "..."]
+    "priority": ["E'tibor kerak yo'nalishlar 1–2 jumla bilan; 2–4 ta band"]
   },
   "nextSteps": {
     "homePlan": [
-      {
-        "title": "Qisqa sarlavha",
-        "why": "Nima uchun muhim",
-        "how": ["Qadam 1", "Qadam 2"]
-      }
+      { "title": "Sarlavha", "why": "2–4 jumla nima uchun muhim", "how": ["4–6 ta aniq qadam"] }
     ]
   },
   "disclaimer": {
-    "text": "Bu progress monitoring xulosasi — tibbiy tashxis emas. Mutaxassis bilan muloqot tavsiya etiladi."
+    "text": "Bu progress monitoring xulosasi — tibbiy tashxis emas. Reja va davolash uchun mutaxassis bilan hamkorlik qilishingiz tavsiya etiladi."
   }
-}`;
+}
+— homePlan da 4–6 ta element, har birida how da 4–6 ta aniq, bajariladigan qadam.`;
 
 /**
  * Progress monitoring natijasi uchun AI xulosa.
@@ -329,7 +319,7 @@ export async function generateAiSummaryForMonitoring(
     })),
   };
 
-  const userContent = `Quyidagi progress monitoring natijasi asosida JSON xulosa yozing. Faqat JSON qaytaring.\n\n${JSON.stringify(facts, null, 2)}`;
+  const userContent = `Quyidagi progress monitoring natijasi asosida TO'LIQ va PROFESSIONAL JSON xulosa yozing. Faqat JSON. shortConclusion 2–4 jumla, whyThisLevel 4–7 jumla, strengths 3–5 ta, homePlan 4–6 ta element (har birida how da 4–6 ta aniq qadam).\n\n${JSON.stringify(facts, null, 2)}`;
 
   const res = await fetch(OPENAI_CHAT_URL(), {
     method: "POST",
@@ -340,6 +330,7 @@ export async function generateAiSummaryForMonitoring(
     body: JSON.stringify({
       model: "gpt-4o-mini",
       temperature: 0.3,
+      max_tokens: 2048,
       messages: [
         { role: "system", content: MONITORING_SYSTEM_PROMPT },
         { role: "user", content: userContent },
@@ -358,15 +349,7 @@ export async function generateAiSummaryForMonitoring(
     throw new Error("AI javobi bo'sh.");
   }
 
-  const trimmed = raw.trim().replace(/^```json\s*/i, "").replace(/\s*```$/i, "");
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(trimmed);
-  } catch {
-    throw new Error("AI javobi JSON emas.");
-  }
-
-  const p = parsed as Record<string, unknown>;
+  const p = parseAiJson(raw) as Record<string, unknown>;
   const payload: AiSummaryPayload = {
     summary: p.summary as AiSummaryPayload["summary"],
     strengths: p.strengths as AiSummaryPayload["strengths"],

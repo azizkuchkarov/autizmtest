@@ -355,7 +355,7 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
     if (Array.isArray(aiPayload.strengths?.examples) && aiPayload.strengths.examples.length > 0) {
       y += 2;
       doc.setFont("helvetica", "bold");
-      doc.text("Kuchli tomonlar:", MARGIN, y);
+      doc.text("Kuchli tomonlar (haqiqiy ijobiy tomonlar):", MARGIN, y);
       y += LINE_HEIGHT;
       doc.setFont("helvetica", "normal");
       for (const ex of aiPayload.strengths.examples) {
@@ -367,7 +367,7 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
     if (Array.isArray(aiPayload.needsFocus?.priority) && aiPayload.needsFocus.priority.length > 0) {
       y += 2;
       doc.setFont("helvetica", "bold");
-      doc.text("E'tibor kerak:", MARGIN, y);
+      doc.text("E'tibor kerak (belgilar kuchli kuzatilgan sohalar):", MARGIN, y);
       y += LINE_HEIGHT;
       doc.setFont("helvetica", "normal");
       for (const p of aiPayload.needsFocus.priority) {

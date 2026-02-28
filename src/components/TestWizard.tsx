@@ -3,6 +3,7 @@
 import React from "react";
 import type { ScreeningQuestion } from "@/lib/screening-types";
 import type { AnswerValue } from "@/lib/scoring";
+import { useTranslations } from "@/lib/translations";
 
 type AnswerScaleItem = { value: number; label: string };
 
@@ -65,6 +66,7 @@ export default function TestWizard({
   domainSubtitles,
   onComplete,
 }: Props) {
+  const t = useTranslations();
   const steps = React.useMemo(
     () => buildSteps(questions, domainLabels, domainSubtitles),
     [questions, domainLabels, domainSubtitles]
@@ -111,7 +113,7 @@ export default function TestWizard({
   if (!step) {
     return (
       <div className="rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/95 shadow-xl p-8 text-center text-slate-600 dark:text-slate-400">
-        Savollar topilmadi.
+        {t("test.noQuestions")}
       </div>
     );
   }
@@ -122,7 +124,7 @@ export default function TestWizard({
     return (
       <div className="rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/95 shadow-xl shadow-slate-200/20 dark:shadow-black/20 p-6 sm:p-8">
         <div className="mb-4 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-          <span>Blok {step.blockIndex} / {step.totalBlocks}</span>
+          <span>{t("test.block")} {step.blockIndex} / {step.totalBlocks}</span>
         </div>
         <div className="mb-6 h-2 w-full overflow-hidden rounded-full bg-slate-200/80 dark:bg-slate-700/80">
           <div
@@ -144,7 +146,7 @@ export default function TestWizard({
             </p>
           )}
           <p className="mt-4 text-sm text-slate-600 dark:text-slate-400">
-            Quyida bu blok bo‘yicha savollar beriladi. Har bir savolga bitta javobni tanlang.
+            {t("test.blockIntroText")}
           </p>
         </div>
 
@@ -155,14 +157,14 @@ export default function TestWizard({
             disabled={stepIndex === 0}
             className="rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 disabled:opacity-40 transition-colors hover:bg-slate-200 dark:hover:bg-slate-700"
           >
-            Orqaga
+            {t("test.back")}
           </button>
           <button
             type="button"
             onClick={handleNext}
             className="flex-1 rounded-2xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/25"
           >
-            {isFirstBlock ? "Testni boshlash" : "Keyingi blokni boshlash"}
+            {isFirstBlock ? t("test.startTest") : t("test.startNextBlock")}
           </button>
         </div>
       </div>
@@ -175,8 +177,8 @@ export default function TestWizard({
   return (
     <div className="rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/95 shadow-xl shadow-slate-200/20 dark:shadow-black/20 p-6 sm:p-8">
       <div className="mb-4 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-        <span>Savol {step.questionIndex} / {step.totalQuestions}</span>
-        <span>Javoblar: {answeredCount}</span>
+        <span>{t("test.question")} {step.questionIndex} / {step.totalQuestions}</span>
+        <span>{t("test.answers")}: {answeredCount}</span>
       </div>
       <div className="mb-6 h-2 w-full overflow-hidden rounded-full bg-slate-200/80 dark:bg-slate-700/80">
         <div
@@ -191,11 +193,11 @@ export default function TestWizard({
         </p>
         <h2 className="mt-2 text-lg sm:text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100 leading-snug">{q.text}</h2>
         {q.example && (
-          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Misol: {q.example}</p>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{t("test.example")}: {q.example}</p>
         )}
         {q.explanation && (
           <p className="mt-3 text-sm text-slate-600 dark:text-slate-400 border-l-2 border-indigo-300 dark:border-indigo-600 pl-4 py-1 rounded-r-lg bg-indigo-50/50 dark:bg-indigo-900/20">
-            <span className="font-semibold text-slate-700 dark:text-slate-300">Izoh: </span>
+            <span className="font-semibold text-slate-700 dark:text-slate-300">{t("test.note")}: </span>
             {q.explanation}
           </p>
         )}
@@ -207,9 +209,9 @@ export default function TestWizard({
               </svg>
             </span>
             <div>
-              <p className="text-sm font-bold text-amber-800 dark:text-amber-200">Ota-onalar uchun eslatma</p>
+              <p className="text-sm font-bold text-amber-800 dark:text-amber-200">{t("test.redFlagTitle")}</p>
               <p className="mt-0.5 text-sm text-amber-700 dark:text-amber-300/90 leading-relaxed">
-                Bu savol skriningda muhim hisoblanadi. Iltimos, oxirgi 2–4 haftadagi kuzatuvingizga asosan to‘g‘ri javob bering.
+                {t("test.redFlagText")}
               </p>
             </div>
           </div>
@@ -243,7 +245,7 @@ export default function TestWizard({
           onClick={handleBack}
           className="rounded-2xl border border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-200 dark:hover:bg-slate-700"
         >
-          Orqaga
+          {t("test.back")}
         </button>
         {isLastQuestion ? (
           <button
@@ -252,7 +254,7 @@ export default function TestWizard({
             disabled={submitting || answeredCount < questions.length}
             className="flex-1 rounded-2xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-lg shadow-indigo-500/25"
           >
-            {submitting ? "Yuborilmoqda..." : "Natijani ko‘rish"}
+            {submitting ? t("test.submitting") : t("test.submitResult")}
           </button>
         ) : (
           <button
@@ -261,7 +263,7 @@ export default function TestWizard({
             disabled={currentAnswer === undefined}
             className="flex-1 rounded-2xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-indigo-500/25"
           >
-            Keyingi
+            {t("test.next")}
           </button>
         )}
       </div>

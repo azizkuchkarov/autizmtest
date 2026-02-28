@@ -39,6 +39,7 @@ export async function GET(
         payload: (assessment.aiSummaryPayload as ScoreResponse["aiSummary"]["payload"]) ?? null,
         error: assessment.aiSummaryError ?? null,
       },
+      aiSummaryLocale: assessment.aiSummaryLocale ?? null,
       completedAt: assessment.createdAt?.toISOString?.() ?? null,
       ageGroup: assessment.ageGroup ?? null,
       answers,
