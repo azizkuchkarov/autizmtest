@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 
 export async function GET() {
@@ -30,6 +31,7 @@ type AbaCenterPayload = {
 
 function toPrismaCenter(c: AbaCenterPayload, idx: number) {
   const id = String(c.id ?? crypto.randomUUID());
+  const amenitiesValue = Array.isArray(c.amenities) ? (c.amenities as Prisma.InputJsonValue) : Prisma.JsonNull;
   const base = {
     region: String(c.region ?? ""),
     district: c.district ? String(c.district) : null,
@@ -43,7 +45,7 @@ function toPrismaCenter(c: AbaCenterPayload, idx: number) {
     directorName: c.directorName ? String(c.directorName) : null,
     directorImageUrl: c.directorImageUrl ? String(c.directorImageUrl) : null,
     directorBio: c.directorBio ? String(c.directorBio) : null,
-    amenities: Array.isArray(c.amenities) ? (c.amenities as object) : null,
+    amenities: amenitiesValue,
     portfolioDescription: c.portfolioDescription ? String(c.portfolioDescription) : null,
     order: typeof c.order === "number" && Number.isFinite(c.order) ? c.order : idx,
     active: c.active !== false,
@@ -73,7 +75,7 @@ export async function PUT(req: Request) {
         directorName: data.directorName,
         directorImageUrl: data.directorImageUrl,
         directorBio: data.directorBio,
-        amenities: data.amenities,
+        amenities: data.amenities as Prisma.InputJsonValue,
         portfolioDescription: data.portfolioDescription,
         order: data.order,
         active: data.active,
