@@ -87,8 +87,18 @@ export async function POST(req: Request) {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Server xatoligi.";
     console.error("[OTP request]", message);
+
+    // Foydalanuvchiga tushunarli xabar: sabab ma'lum bo'lsa
+    let userError = "SMS yuborilmadi.";
+    if (message.includes("ESKIZ_EMAIL") || message.includes("ESKIZ_PASSWORD")) {
+      userError =
+        "SMS sozlanmagan. Serverda .env da ESKIZ_EMAIL va ESKIZ_PASSWORD to'ldirilishi kerak (Eskiz.uz akkaunt).";
+    } else if (message.includes("Eskiz auth xato") || message.includes("Eskiz SMS xato")) {
+      userError = "SMS xizmati vaqtincha ishlamayapti. Keyinroq urinib ko'ring yoki administrator bilan bog'laning.";
+    }
+
     return NextResponse.json(
-      { error: "SMS yuborilmadi.", details: message },
+      { error: userError, details: message },
       { status: 500 }
     );
   }

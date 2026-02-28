@@ -34,7 +34,8 @@ export default function StartRegisterPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data?.error ?? t("register.errorSend"));
+        const detail = data?.details ? ` (${data.details})` : "";
+        setError((data?.error ?? t("register.errorSend")) + detail);
         return;
       }
       setDevCode(data?.devCode ?? null);

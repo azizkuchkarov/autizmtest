@@ -51,8 +51,8 @@ sudo -u postgres psql
 PostgreSQL ichida (bitta qatorda yozmaslik, har bir qatordan keyin Enter):
 
 ```sql
-CREATE USER autizm_user WITH PASSWORD 'SIZNING_PAROL';
-CREATE DATABASE autizmtest OWNER autizm_user;
+CREATE USER postgres WITH PASSWORD 'KuchkarovAzizShuxratovich';
+CREATE DATABASE autizmtest OWNER postgres;
 \q
 ```
 
@@ -96,6 +96,8 @@ CLICK_MERCHANT_USER_ID=...
 ```
 
 Saqlash: `Ctrl+O`, Enter, `Ctrl+X`.
+
+**SMS (ro'yxatdan o'tish kodi) ishlashi uchun:** `ESKIZ_EMAIL` va `ESKIZ_PASSWORD` majburiy — bu Eskiz.uz (notify.eskiz.uz) akkauntining email va paroli. Akkauntni [my.eskiz.uz](https://my.eskiz.uz) da ro'yxatdan o'tkazing va faollashtiring; test rejimida ixtiyoriy matn yuborish cheklangan bo‘lishi mumkin.
 
 ---
 
