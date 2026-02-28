@@ -3,10 +3,19 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 
 export async function GET() {
-  const items = await prisma.abaCenter.findMany({
-    orderBy: [{ region: "asc" }, { order: "asc" }],
-  });
-  return NextResponse.json({ items });
+  try {
+    const items = await prisma.abaCenter.findMany({
+      orderBy: [{ region: "asc" }, { order: "asc" }],
+    });
+    return NextResponse.json({ items });
+  } catch (e) {
+    console.error("[ABA centers GET]", e);
+    const msg = e instanceof Error ? e.message : String(e);
+    return NextResponse.json(
+      { error: "Ro'yxat yuklanmadi.", details: msg },
+      { status: 500 }
+    );
+  }
 }
 
 type AbaCenterPayload = {

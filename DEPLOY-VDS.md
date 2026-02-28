@@ -119,21 +119,19 @@ npx prisma db seed
 
 ## 8. Upload papkalari (ABA markazlar rasmlari uchun)
 
-Admin panelda ABA markazlariga rasm yuklash ishlashi uchun papka mavjud va yozishga ochiq bo‘lishi kerak:
+**Admin panelda rasm yuklaganda xato bo‘lmasligi uchun** loyiha papkasida quyidagilarni bajaring (PM2 ni qaysi user ishga tushirsangiz, shu user papkaga yozishi kerak):
 
 ```bash
+cd /var/www/autizmtest
 mkdir -p public/uploads/aba
-chmod 755 public/uploads
-chmod 755 public/uploads/aba
+chmod -R 755 public/uploads
+# PM2 ni siz (root emas, odatda) ishga tushirsangiz:
+chown -R $USER:$USER public/uploads
+# Agar PM2 ni root ishga tushirsangiz:
+# chown -R root:root public/uploads
 ```
 
-Keyinchalik Next.js (yoki PM2) qaysi foydalanuvchi ostida ishlasa, shu foydalanuvchi yozishi kerak. Masalan, `www-data` ishlatilsa:
-
-```bash
-sudo chown -R $USER:$USER public/uploads
-# yoki PM2 dan keyin:
-# sudo chown -R www-data:www-data /var/www/autizmtest/public/uploads
-```
+Rasm yuklashda "Rasm papkasiga yozish ruxsati yo'q" xabari chiqsa, `chown -R` va `chmod -R 755 public/uploads` ni qayta bajarib, `pm2 restart autizmtest` qiling.
 
 ---
 

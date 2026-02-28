@@ -33,8 +33,26 @@ export async function POST(req: Request) {
 
     const publicUrl = `/uploads/aba/${name}`;
     return NextResponse.json({ url: publicUrl });
-  } catch (e) {
-    console.error("ABA upload error:", e);
-    return NextResponse.json({ error: "Yuklash xatosi." }, { status: 500 });
+  } catch (e: unknown) {
+    const err = e as NodeJS.ErrnoException;
+    console.error("ABA upload error:", err?.code ?? err?.message ?? e);
+    // VDS da permission/papka xatolarini tushunarli qilish
+    if (err?.code === "EACCES") {
+      return NextResponse.json(
+        { error: "Rasm papkasiga yozish ruxsati yo'q. Serverda public/uploads/aba papkasiga chmod/chown bering." },
+        { status: 500 }
+      );
+    }
+    if (err?.code === "ENOENT" || err?.message?.includes("ENOENT")) {
+      return NextResponse.json(
+        { error: "Upload papkasi topilmadi. public/uploads/aba yarating va ruxsat bering." },
+        { status: 500 }
+      );
+    }
+    const msg = err?.message ?? String(e);
+    return NextResponse.json(
+      { error: msg.length > 120 ? "Yuklash xatosi." : msg },
+      { status: 500 }
+    );
   }
 }
