@@ -24,6 +24,11 @@ export async function GET(req: Request) {
       instagram: true,
       note: true,
       imageUrl: true,
+      directorName: true,
+      directorImageUrl: true,
+      directorBio: true,
+      amenities: true,
+      portfolioDescription: true,
     },
   });
   return NextResponse.json({ items });

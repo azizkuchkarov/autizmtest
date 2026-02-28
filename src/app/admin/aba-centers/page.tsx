@@ -3,6 +3,8 @@
 import React from "react";
 import { ABA_REGIONS, TOSHKENT_SHAHAR_DISTRICTS, isToshkentShahar } from "@/data/regions";
 
+type AbaCenterAmenity = { title: string; imageUrl: string };
+
 type AbaCenter = {
   id: string;
   region: string;
@@ -14,6 +16,11 @@ type AbaCenter = {
   instagram?: string;
   note?: string;
   imageUrl?: string;
+  directorName?: string;
+  directorImageUrl?: string;
+  directorBio?: string;
+  amenities?: AbaCenterAmenity[];
+  portfolioDescription?: string;
 };
 
 export default function AdminAbaCenters() {
@@ -40,6 +47,11 @@ export default function AdminAbaCenters() {
           instagram: "",
           note: "",
           imageUrl: "",
+          directorName: "",
+          directorImageUrl: "",
+          directorBio: "",
+          amenities: [] as AbaCenterAmenity[],
+          portfolioDescription: "",
         }));
         setItems(seeded);
       });
@@ -63,6 +75,11 @@ export default function AdminAbaCenters() {
         instagram: "",
         note: "",
         imageUrl: "",
+        directorName: "",
+        directorImageUrl: "",
+        directorBio: "",
+        amenities: [] as AbaCenterAmenity[],
+        portfolioDescription: "",
       },
     ]);
   }
@@ -78,6 +95,63 @@ export default function AdminAbaCenters() {
     }
     const data = await res.json();
     if (data?.url) update(index, { imageUrl: data.url });
+  }
+
+  async function uploadDirectorImage(index: number, file: File) {
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/admin/aba-centers/upload", { method: "POST", body: fd });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert(err?.error || "Rasm yuklanmadi");
+      return;
+    }
+    const data = await res.json();
+    if (data?.url) update(index, { directorImageUrl: data.url });
+  }
+
+  function updateAmenity(centerIdx: number, amenityIdx: number, patch: Partial<AbaCenterAmenity>) {
+    setItems((prev) =>
+      prev.map((it, i) => {
+        if (i !== centerIdx) return it;
+        const list = [...(it.amenities || [])];
+        list[amenityIdx] = { ...list[amenityIdx], ...patch };
+        return { ...it, amenities: list };
+      })
+    );
+  }
+
+  async function uploadAmenityImage(centerIdx: number, amenityIdx: number, file: File) {
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/admin/aba-centers/upload", { method: "POST", body: fd });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert(err?.error || "Rasm yuklanmadi");
+      return;
+    }
+    const data = await res.json();
+    if (data?.url) updateAmenity(centerIdx, amenityIdx, { imageUrl: data.url });
+  }
+
+  function addAmenity(centerIdx: number) {
+    setItems((prev) =>
+      prev.map((it, i) =>
+        i === centerIdx
+          ? { ...it, amenities: [...(it.amenities || []), { title: "", imageUrl: "" }] }
+          : it
+      )
+    );
+  }
+
+  function removeAmenity(centerIdx: number, amenityIdx: number) {
+    setItems((prev) =>
+      prev.map((it, i) =>
+        i === centerIdx
+          ? { ...it, amenities: (it.amenities || []).filter((_, j) => j !== amenityIdx) }
+          : it
+      )
+    );
   }
 
   function removeCenter(id: string) {
@@ -236,6 +310,127 @@ export default function AdminAbaCenters() {
                             value={it.note || ""}
                             onChange={(e) => update(idx, { note: e.target.value })}
                           />
+
+                          <div className="md:col-span-2 border-t border-slate-200 pt-4 mt-2">
+                            <div className="text-xs font-semibold text-slate-700 mb-3">Portfolio (Batafsil modal)</div>
+                            <div className="space-y-3">
+                              <input
+                                className="rounded-xl border border-slate-300 px-3 py-2 text-sm w-full"
+                                placeholder="Markaz rahbari (F.I.O)"
+                                value={it.directorName || ""}
+                                onChange={(e) => update(idx, { directorName: e.target.value })}
+                              />
+                              <textarea
+                                className="rounded-xl border border-slate-300 px-3 py-2 text-sm w-full min-h-[80px]"
+                                placeholder="Rahbar ish faoliyati / qisqacha tavsif"
+                                value={it.directorBio || ""}
+                                onChange={(e) => update(idx, { directorBio: e.target.value })}
+                              />
+                              <div>
+                                <span className="block text-xs font-medium text-slate-600 mb-1">Rahbar rasmi</span>
+                                {it.directorImageUrl ? (
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <img src={it.directorImageUrl} alt="" className="h-16 w-16 object-cover rounded-lg border border-slate-200" />
+                                    <label className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-medium cursor-pointer hover:bg-slate-200">
+                                      Almashtirish
+                                      <input
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/webp,image/gif"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                          const f = e.target.files?.[0];
+                                          if (f) uploadDirectorImage(idx, f);
+                                        }}
+                                      />
+                                    </label>
+                                    <button type="button" onClick={() => update(idx, { directorImageUrl: "" })} className="text-xs text-rose-600 hover:underline">
+                                      O‘chirish
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <label className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm cursor-pointer hover:bg-slate-50">
+                                    Rasm yuklash
+                                    <input
+                                      type="file"
+                                      accept="image/jpeg,image/png,image/webp,image/gif"
+                                      className="hidden"
+                                      onChange={(e) => {
+                                        const f = e.target.files?.[0];
+                                        if (f) uploadDirectorImage(idx, f);
+                                      }}
+                                    />
+                                  </label>
+                                )}
+                              </div>
+                              <textarea
+                                className="rounded-xl border border-slate-300 px-3 py-2 text-sm w-full min-h-[60px]"
+                                placeholder="Markaz haqida (portfolio matni)"
+                                value={it.portfolioDescription || ""}
+                                onChange={(e) => update(idx, { portfolioDescription: e.target.value })}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="md:col-span-2 border-t border-slate-200 pt-4 mt-2">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-semibold text-slate-700">Qulayliklar (sarlavha + rasm)</span>
+                              <button
+                                type="button"
+                                onClick={() => addAmenity(idx)}
+                                className="rounded-lg bg-indigo-100 text-indigo-700 px-2 py-1 text-xs font-medium hover:bg-indigo-200"
+                              >
+                                + Qo‘shish
+                              </button>
+                            </div>
+                            <div className="space-y-2">
+                              {(it.amenities || []).map((am, aIdx) => (
+                                <div key={aIdx} className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 p-2">
+                                  <input
+                                    className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm flex-1 min-w-[120px]"
+                                    placeholder="Qulaylik nomi"
+                                    value={am.title}
+                                    onChange={(e) => updateAmenity(idx, aIdx, { title: e.target.value })}
+                                  />
+                                  {am.imageUrl ? (
+                                    <>
+                                      <img src={am.imageUrl} alt="" className="h-10 w-10 object-cover rounded-lg border" />
+                                      <label className="text-xs text-slate-600 cursor-pointer hover:underline">Almashtirish
+                                        <input
+                                          type="file"
+                                          accept="image/jpeg,image/png,image/webp,image/gif"
+                                          className="hidden"
+                                          onChange={(e) => {
+                                            const f = e.target.files?.[0];
+                                            if (f) uploadAmenityImage(idx, aIdx, f);
+                                          }}
+                                        />
+                                      </label>
+                                    </>
+                                  ) : (
+                                    <label className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs cursor-pointer hover:bg-slate-50">
+                                      Rasm
+                                      <input
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/webp,image/gif"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                          const f = e.target.files?.[0];
+                                          if (f) uploadAmenityImage(idx, aIdx, f);
+                                        }}
+                                      />
+                                    </label>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => removeAmenity(idx, aIdx)}
+                                    className="text-xs text-rose-600 hover:underline"
+                                  >
+                                    O‘chirish
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     );

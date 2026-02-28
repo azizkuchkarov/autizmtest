@@ -80,20 +80,26 @@ model Feedback {
 }
 
 model AbaCenter {
-  id        String   @id @default(uuid())
-  region    String
-  district  String?  // Toshkent shahar tanlanganida: tuman
-  name      String
-  phone     String?
-  address   String?
-  url       String?  // Veb-sayt / sahifa manzili
-  instagram String?  // Instagram profil havolasi
-  note      String?
-  imageUrl  String?  // Yuklangan rasm yo‘li (upload)
-  order     Int
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String   @id @default(uuid())
+  region            String
+  district          String?  // Toshkent shahar tanlanganida: tuman
+  name              String
+  phone             String?
+  address           String?
+  url               String?  // Veb-sayt / sahifa manzili
+  instagram         String?  // Instagram profil havolasi
+  note              String?
+  imageUrl          String?  // Yuklangan rasm yo'li (upload)
+  // Portfolio — Batafsil modal uchun
+  directorName      String?  // Markaz rahbari
+  directorImageUrl  String?  // Rahbar rasmi
+  directorBio       String?  // Ish faoliyati / qisqacha tavsif
+  amenities         Json?   // [{ "title": "Qulaylik nomi", "imageUrl": "/uploads/..." }]
+  portfolioDescription String?  // Markaz haqida qo'shimcha matn
+  order             Int
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 model User {

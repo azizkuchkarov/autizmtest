@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import type { ScoreResponse, AiSummaryResponse, AiSummaryPayload, ScreeningV2Result } from "@/types/api";
 import { generateScreeningPdf } from "@/lib/pdfScreeningReport";
 import type { MonitoringResult } from "@/lib/monitoringScoring";
@@ -29,6 +30,8 @@ function isOverallResult(scoring: ScoreResponse["scoring"]): scoring is OverallR
   return "overall" in scoring && "domains" in scoring && "insights" in scoring;
 }
 
+export type AbaCenterAmenity = { title: string; imageUrl: string };
+
 export type AbaCenterItem = {
   id: string;
   region: string;
@@ -40,7 +43,303 @@ export type AbaCenterItem = {
   instagram?: string | null;
   note?: string | null;
   imageUrl?: string | null;
+  directorName?: string | null;
+  directorImageUrl?: string | null;
+  directorBio?: string | null;
+  amenities?: AbaCenterAmenity[] | null;
+  portfolioDescription?: string | null;
 };
+
+function AbaCenterPortfolioModal({
+  center,
+  onClose,
+}: {
+  center: AbaCenterItem;
+  onClose: () => void;
+}) {
+  const amenities = Array.isArray(center.amenities) ? center.amenities : [];
+  const hasDirector = center.directorName || center.directorImageUrl || center.directorBio;
+  const hasAmenities = amenities.length > 0;
+  const hasPortfolioText = center.portfolioDescription?.trim();
+  const hasAnyPortfolio = hasDirector || hasAmenities || hasPortfolioText;
+
+  React.useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [onClose]);
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.25 }}
+        className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-md"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          transition={{ type: "spring", damping: 26, stiffness: 280 }}
+          onClick={(e) => e.stopPropagation()}
+          className="relative w-full max-w-2xl max-h-[92vh] overflow-hidden rounded-3xl bg-white dark:bg-slate-900 shadow-2xl shadow-black/25 ring-1 ring-slate-200/80 dark:ring-slate-700 flex flex-col"
+        >
+          {/* Hero */}
+          <div className="relative shrink-0 overflow-hidden">
+            {center.imageUrl ? (
+              <div className="aspect-[2.4/1] w-full bg-slate-200 dark:bg-slate-800">
+                <img
+                  src={center.imageUrl}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(99,102,241,0.15),transparent)]" />
+              </div>
+            ) : (
+              <div className="aspect-[2.4/1] w-full bg-gradient-to-br from-indigo-500 via-indigo-600 to-violet-700 dark:from-indigo-600 dark:via-indigo-700 dark:to-slate-900">
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(255,255,255,0.15),transparent)]" />
+              </div>
+            )}
+            <div className="absolute bottom-0 left-0 right-0 p-6 pb-7">
+              <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">
+                {center.name}
+              </h2>
+              {(center.region || center.district) && (
+                <p className="mt-1.5 text-sm text-white/95 font-medium">
+                  {[center.region, center.district].filter(Boolean).join(" • ")}
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="absolute top-4 right-4 p-2.5 rounded-full bg-white/15 hover:bg-white/25 text-white backdrop-blur-md ring-1 ring-white/20 transition-all duration-200 hover:scale-105"
+              aria-label="Yopish"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="overflow-y-auto flex-1 p-6 sm:p-8 space-y-10 scroll-smooth">
+            {!hasAnyPortfolio && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col items-center justify-center py-10 px-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-dashed border-slate-200 dark:border-slate-700"
+              >
+                <div className="w-14 h-14 rounded-2xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-500 dark:text-indigo-400 mb-3">
+                  <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                </div>
+                <p className="text-sm text-slate-500 dark:text-slate-400 text-center max-w-xs">
+                  Markaz haqida batafsil ma’lumot hozircha kiritilmagan. Quyida aloqa ma’lumotlari mavjud.
+                </p>
+              </motion.div>
+            )}
+
+            {hasDirector && (
+              <motion.section
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.05 }}
+                className="space-y-4"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="h-px flex-1 max-w-12 bg-gradient-to-r from-indigo-500 to-transparent rounded-full" />
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400">
+                    Markaz rahbari
+                  </p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-6 items-start rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100/80 dark:from-slate-800/80 dark:to-slate-800/40 border border-slate-200/80 dark:border-slate-700/80 p-6 shadow-sm">
+                  {center.directorImageUrl && (
+                    <div className="shrink-0 relative">
+                      <div className="absolute -inset-1 rounded-[22px] bg-gradient-to-br from-indigo-400/40 to-violet-500/30 dark:from-indigo-500/30 dark:to-violet-600/20 blur-sm" />
+                      <img
+                        src={center.directorImageUrl}
+                        alt={center.directorName || "Rahbar"}
+                        className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-2xl object-cover ring-2 ring-white dark:ring-slate-700 shadow-xl"
+                      />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1 space-y-2">
+                    {center.directorName && (
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                        {center.directorName}
+                      </h3>
+                    )}
+                    {center.directorBio && (
+                      <p className="text-sm text-slate-600 dark:text-slate-400 leading-[1.7] whitespace-pre-line">
+                        {center.directorBio}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </motion.section>
+            )}
+
+            {hasAmenities && (
+              <motion.section
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.08 }}
+                className="space-y-4"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="h-px flex-1 max-w-12 bg-gradient-to-r from-indigo-500 to-transparent rounded-full" />
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400">
+                    Qulayliklar
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  {amenities.map((a, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.06 + i * 0.04 }}
+                      whileHover={{ y: -4 }}
+                      className="group rounded-2xl overflow-hidden border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-800/50 shadow-sm hover:shadow-xl hover:ring-2 hover:ring-indigo-500/20 dark:hover:ring-indigo-400/20 transition-all duration-300"
+                    >
+                      <div className="aspect-[4/3] bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                        {a.imageUrl ? (
+                          <img
+                            src={a.imageUrl}
+                            alt={a.title || ""}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-slate-400 dark:text-slate-500">
+                            <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14" />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                      {a.title && (
+                        <p className="p-3.5 text-sm font-semibold text-slate-800 dark:text-slate-200 text-center bg-white dark:bg-slate-800/80 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 transition-colors">
+                          {a.title}
+                        </p>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.section>
+            )}
+
+            {hasPortfolioText && (
+              <motion.section
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="space-y-4"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="h-px flex-1 max-w-12 bg-gradient-to-r from-indigo-500 to-transparent rounded-full" />
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400">
+                    Markaz haqida
+                  </p>
+                </div>
+                <div className="rounded-2xl border-l-4 border-indigo-500/60 dark:border-indigo-400/50 bg-slate-50/80 dark:bg-slate-800/40 p-5 sm:p-6">
+                  <p className="text-sm text-slate-700 dark:text-slate-300 leading-[1.75] whitespace-pre-line">
+                    {center.portfolioDescription}
+                  </p>
+                </div>
+              </motion.section>
+            )}
+
+            <motion.section
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.12 }}
+              className="rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-gradient-to-br from-slate-50/90 to-white dark:from-slate-800/60 dark:to-slate-900/80 p-6 shadow-sm"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <span className="h-px flex-1 max-w-12 bg-gradient-to-r from-indigo-500 to-transparent rounded-full" />
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+                  Aloqa
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {center.address && (
+                  <a
+                    href={`https://maps.google.com/?q=${encodeURIComponent(center.address)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-start gap-3 rounded-xl p-3 bg-white dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 hover:border-indigo-300 dark:hover:border-indigo-600/50 hover:shadow-md transition-all duration-200 group"
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/40 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                      📍
+                    </span>
+                    <span className="text-sm text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100 leading-snug">
+                      {center.address}
+                    </span>
+                  </a>
+                )}
+                {center.phone && (
+                  <a
+                    href={`tel:${center.phone.replace(/\s/g, "")}`}
+                    className="flex items-center gap-3 rounded-xl p-3 bg-white dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 hover:border-indigo-300 dark:hover:border-indigo-600/50 hover:shadow-md transition-all duration-200 group"
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/40 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                      📞
+                    </span>
+                    <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                      {center.phone}
+                    </span>
+                  </a>
+                )}
+                {center.url && (
+                  <a
+                    href={center.url.startsWith("http") ? center.url : `https://${center.url}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 rounded-xl p-3 bg-white dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 hover:border-indigo-300 dark:hover:border-indigo-600/50 hover:shadow-md transition-all duration-200 group"
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/40 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                      🔗
+                    </span>
+                    <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400 truncate">
+                      Veb-sayt
+                    </span>
+                  </a>
+                )}
+                {center.instagram && (
+                  <a
+                    href={center.instagram.startsWith("http") ? center.instagram : `https://instagram.com/${center.instagram.replace(/^@?\/?/, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 rounded-xl p-3 bg-white dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 hover:border-indigo-300 dark:hover:border-indigo-600/50 hover:shadow-md transition-all duration-200 group"
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/40 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                      📷
+                    </span>
+                    <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                      Instagram
+                    </span>
+                  </a>
+                )}
+              </div>
+              {center.note && (
+                <p className="mt-4 pt-4 text-xs text-slate-600 dark:text-slate-400 border-t border-slate-200 dark:border-slate-700 leading-relaxed">
+                  {center.note}
+                </p>
+              )}
+            </motion.section>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
 
 function AbaCentersSection({
   region,
@@ -58,6 +357,7 @@ function AbaCentersSection({
   setCenters: (v: AbaCenterItem[]) => void;
 }) {
   const [loading, setLoading] = React.useState(false);
+  const [portfolioCenter, setPortfolioCenter] = React.useState<AbaCenterItem | null>(null);
 
   React.useEffect(() => {
     if (!region) {
@@ -80,122 +380,159 @@ function AbaCentersSection({
   }, [region, district]);
 
   return (
-    <section className="mt-8 rounded-3xl border border-indigo-200/60 dark:border-indigo-800/50 bg-white dark:bg-slate-900/95 shadow-xl shadow-slate-200/20 dark:shadow-black/20 p-6 sm:p-8">
-      <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
-        Yordam
-      </p>
-      <h3 className="mt-1 text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100 mb-4">
-        ABA markazlar — viloyatingizni tanlang
-      </h3>
-      <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-        O‘zingizga qulay viloyatni tanlang, shu viloyatdagi ABA terapiya markazlari ro‘yxati chiqadi. Toshkent shahar uchun tumanni ham tanlang.
-      </p>
-      <div className="flex flex-col sm:flex-row gap-3">
-        <select
-          value={region}
-          onChange={(e) => {
-            setRegion(e.target.value);
-            if (!isToshkentShahar(e.target.value)) setDistrict("");
-          }}
-          className="rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-        >
-          <option value="">Viloyatni tanlang</option>
-          {ABA_REGIONS.map((r) => (
-            <option key={r} value={r}>
-              {r}
-            </option>
-          ))}
-        </select>
-        {isToshkentShahar(region) && (
+    <section className="mt-10 rounded-[1.75rem] border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/95 shadow-xl shadow-slate-200/25 dark:shadow-black/20 overflow-hidden">
+      <div className="p-6 sm:p-8">
+        <div className="flex items-center gap-3 mb-2">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+          </span>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-400">
+              Yordam
+            </p>
+            <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+              ABA markazlar
+            </h3>
+          </div>
+        </div>
+        <p className="mt-3 text-sm text-slate-600 dark:text-slate-400 max-w-xl">
+          Viloyatingizni tanlang — shu viloyatdagi ABA terapiya markazlari ro‘yxati chiqadi. Toshkent shahar uchun tumanni ham tanlang.
+        </p>
+        <div className="mt-5 flex flex-col sm:flex-row gap-3">
           <select
-            value={district}
-            onChange={(e) => setDistrict(e.target.value)}
-            className="rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            value={region}
+            onChange={(e) => {
+              setRegion(e.target.value);
+              if (!isToshkentShahar(e.target.value)) setDistrict("");
+            }}
+            className="rounded-2xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3.5 text-sm font-medium text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition-shadow"
           >
-            <option value="">Tumanni tanlang</option>
-            {TOSHKENT_SHAHAR_DISTRICTS.map((d) => (
-              <option key={d} value={d}>
-                {d}
+            <option value="">Viloyatni tanlang</option>
+            {ABA_REGIONS.map((r) => (
+              <option key={r} value={r}>
+                {r}
               </option>
             ))}
           </select>
+          {isToshkentShahar(region) && (
+            <select
+              value={district}
+              onChange={(e) => setDistrict(e.target.value)}
+              className="rounded-2xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3.5 text-sm font-medium text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition-shadow"
+            >
+              <option value="">Tumanni tanlang</option>
+              {TOSHKENT_SHAHAR_DISTRICTS.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+
+        {loading && (
+          <div className="mt-6 flex items-center gap-3 text-slate-500 dark:text-slate-400">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+            <span className="text-sm font-medium">Yuklanmoqda...</span>
+          </div>
+        )}
+        {!loading && region && (isToshkentShahar(region) ? district : true) && centers.length === 0 && (
+          <div className="mt-6 rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 bg-slate-50/80 dark:bg-slate-800/30 p-8 text-center">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              {isToshkentShahar(region) && !district
+                ? "Tumanni tanlang."
+                : "Ushbu viloyatda (tumanda) hozircha markazlar ro‘yxati kiritilmagan."}
+            </p>
+          </div>
+        )}
+        {!loading && centers.length > 0 && (
+          <div className="mt-6 space-y-5">
+            {centers.map((c, idx) => (
+              <motion.div
+                key={c.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.05 }}
+                className="group rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-gradient-to-br from-slate-50/80 to-white dark:from-slate-800/40 dark:to-slate-800/20 p-4 sm:p-5 flex flex-col sm:flex-row gap-4 sm:gap-5 shadow-sm hover:shadow-lg hover:border-indigo-200/60 dark:hover:border-indigo-800/40 transition-all duration-300"
+              >
+                {c.imageUrl && (
+                  <div className="shrink-0 overflow-hidden rounded-xl ring-1 ring-slate-200/80 dark:ring-slate-700/80">
+                    <img
+                      src={c.imageUrl}
+                      alt={c.name || "Markaz"}
+                      className="w-full sm:w-36 h-40 sm:h-28 object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1 flex flex-col">
+                  {c.name && (
+                    <h4 className="text-lg font-bold text-slate-900 dark:text-slate-100">{c.name}</h4>
+                  )}
+                  {c.address && (
+                    <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-400 flex items-start gap-2">
+                      <span className="shrink-0">📍</span>
+                      <span className="leading-snug">{c.address}</span>
+                    </p>
+                  )}
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                    {c.phone && (
+                      <a
+                        href={`tel:${c.phone.replace(/\s/g, "")}`}
+                        className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+                      >
+                        📞 {c.phone}
+                      </a>
+                    )}
+                    {c.url && (
+                      <a
+                        href={c.url.startsWith("http") ? c.url : `https://${c.url}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+                      >
+                        🔗 Sayt
+                      </a>
+                    )}
+                    {c.instagram && (
+                      <a
+                        href={c.instagram.startsWith("http") ? c.instagram : `https://instagram.com/${c.instagram.replace(/^@?\/?/, "")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+                      >
+                        📷 Instagram
+                      </a>
+                    )}
+                  </div>
+                  {c.note && (
+                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{c.note}</p>
+                  )}
+                  <div className="mt-4 sm:mt-auto">
+                    <button
+                      type="button"
+                      onClick={() => setPortfolioCenter(c)}
+                      className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 text-sm font-semibold shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+                    >
+                      Batafsil
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         )}
       </div>
 
-      {loading && (
-        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Yuklanmoqda...</p>
-      )}
-      {!loading && region && (isToshkentShahar(region) ? district : true) && centers.length === 0 && (
-        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
-          {isToshkentShahar(region) && !district
-            ? "Tumanni tanlang."
-            : "Ushbu viloyatda (tumanda) hozircha markazlar ro‘yxati kiritilmagan."}
-        </p>
-      )}
-      {!loading && centers.length > 0 && (
-        <div className="mt-6 space-y-4">
-          {centers.map((c) => (
-            <div
-              key={c.id}
-              className="rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-800/40 p-4 sm:p-5 flex flex-col sm:flex-row gap-4"
-            >
-              {c.imageUrl && (
-                <div className="shrink-0">
-                  <img
-                    src={c.imageUrl}
-                    alt={c.name || "Markaz"}
-                    className="rounded-xl object-cover w-full sm:w-32 h-32 sm:h-28 border border-slate-200 dark:border-slate-700"
-                  />
-                </div>
-              )}
-              <div className="min-w-0 flex-1">
-                {c.name && (
-                  <h4 className="font-bold text-slate-900 dark:text-slate-100">{c.name}</h4>
-                )}
-                {c.address && (
-                  <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">📍 {c.address}</p>
-                )}
-                {c.phone && (
-                  <p className="mt-1 text-sm">
-                    <a
-                      href={`tel:${c.phone.replace(/\s/g, "")}`}
-                      className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
-                    >
-                      📞 {c.phone}
-                    </a>
-                  </p>
-                )}
-                {c.url && (
-                  <p className="mt-1 text-sm">
-                    <a
-                      href={c.url.startsWith("http") ? c.url : `https://${c.url}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
-                    >
-                      🔗 {c.url}
-                    </a>
-                  </p>
-                )}
-                {c.instagram && (
-                  <p className="mt-1 text-sm">
-                    <a
-                      href={c.instagram.startsWith("http") ? c.instagram : `https://instagram.com/${c.instagram.replace(/^@?\/?/, "")}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
-                    >
-                      📷 Instagram
-                    </a>
-                  </p>
-                )}
-                {c.note && (
-                  <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">{c.note}</p>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+      {portfolioCenter && (
+        <AbaCenterPortfolioModal
+          center={portfolioCenter}
+          onClose={() => setPortfolioCenter(null)}
+        />
       )}
     </section>
   );
