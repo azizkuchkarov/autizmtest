@@ -65,11 +65,17 @@ export async function POST(req: Request) {
     }
 
     const payment = await prisma.payment.findUnique({
-      where: { merchantTransId, status: "pending" },
+      where: { merchantTransId },
     });
 
-    if (!payment || payment.amount !== amount) {
+    if (!payment) {
       return jsonResponse(clickTransId, merchantTransId, 0, -5, "Order not found");
+    }
+    if (payment.status !== "pending") {
+      return jsonResponse(clickTransId, merchantTransId, 0, -4, "Already processed");
+    }
+    if (payment.amount !== amount) {
+      return jsonResponse(clickTransId, merchantTransId, 0, -5, "Amount mismatch");
     }
 
     const merchantPrepareId = Date.now() % 100000000;
