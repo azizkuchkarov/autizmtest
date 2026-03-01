@@ -14,8 +14,35 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Autism Screening - Bola Rivojlanishi Skrining",
-  description: "2-7 yoshli bolalar uchun rivojlanish skrining testi. Grafik profil, AI izoh va PDF hisobot.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://autizmtest.uz"),
+  title: {
+    default: "Autizm skrining — Bola rivojlanishi va autizm belgilari",
+    template: "%s | Autizm skrining",
+  },
+  description:
+    "2–9 yoshli bolalar uchun professional autizm belgilari skrining testi. 3 soha: ijtimoiy aloqa, muloqot, cheklangan xatti-harakatlar. AI xulosa, PDF hisobot, ABA markazlar.",
+  keywords: [
+    "autizm skrining",
+    "bola rivojlanishi",
+    "autizm belgilari",
+    "skrining test",
+    "ota-ona so'rovnomasi",
+    "Uzbekistan",
+  ],
+  authors: [{ name: "Autizm skrining" }],
+  openGraph: {
+    type: "website",
+    locale: "uz_UZ",
+    title: "Autizm skrining — Bola rivojlanishi va autizm belgilari",
+    description:
+      "2–9 yoshli bolalar uchun professional autizm belgilari skrining testi. AI xulosa, PDF hisobot.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Autizm skrining — Bola rivojlanishi va autizm belgilari",
+    description: "2–9 yoshli bolalar uchun autizm belgilari skrining testi.",
+  },
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({
