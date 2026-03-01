@@ -174,12 +174,22 @@ export default function AdminAbaCenters() {
       order: idx,
       active: true,
     }));
-    const res = await fetch("/api/admin/aba-centers", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items: payload }),
-    });
-    setStatus(res.ok ? "Saqlandi" : "Xatolik");
+    try {
+      const res = await fetch("/api/admin/aba-centers", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: payload }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setStatus("Saqlandi");
+      } else {
+        const details = data?.details ?? data?.error ?? "Xatolik";
+        setStatus(`Xatolik: ${details}`);
+      }
+    } catch (e) {
+      setStatus("Xatolik: tarmoq yoki server javob bermadi.");
+    }
   }
 
   return (

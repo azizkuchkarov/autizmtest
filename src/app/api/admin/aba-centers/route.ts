@@ -65,35 +65,44 @@ function toPrismaCenter(c: AbaCenterPayload, idx: number) {
 }
 
 export async function PUT(req: Request) {
-  const body = await req.json();
-  const items = Array.isArray(body?.items) ? body.items : [];
+  try {
+    const body = await req.json().catch(() => ({}));
+    const items = Array.isArray(body?.items) ? body.items : [];
 
-  const tx = items.map((c: AbaCenterPayload, idx: number) => {
-    const data = toPrismaCenter(c, idx);
-    return prisma.abaCenter.upsert({
-      where: { id: data.id },
-      create: data,
-      update: {
-        region: data.region,
-        district: data.district,
-        name: data.name,
-        phone: data.phone,
-        address: data.address,
-        url: data.url,
-        instagram: data.instagram,
-        note: data.note,
-        imageUrl: data.imageUrl,
-        directorName: data.directorName,
-        directorImageUrl: data.directorImageUrl,
-        directorBio: data.directorBio,
-        amenities: data.amenities as Prisma.InputJsonValue,
-        portfolioDescription: data.portfolioDescription,
-        telegramId: data.telegramId,
-        order: data.order,
-        active: data.active,
-      },
+    const tx = items.map((c: AbaCenterPayload, idx: number) => {
+      const data = toPrismaCenter(c, idx);
+      return prisma.abaCenter.upsert({
+        where: { id: data.id },
+        create: data,
+        update: {
+          region: data.region,
+          district: data.district,
+          name: data.name,
+          phone: data.phone,
+          address: data.address,
+          url: data.url,
+          instagram: data.instagram,
+          note: data.note,
+          imageUrl: data.imageUrl,
+          directorName: data.directorName,
+          directorImageUrl: data.directorImageUrl,
+          directorBio: data.directorBio,
+          amenities: data.amenities as Prisma.InputJsonValue,
+          portfolioDescription: data.portfolioDescription,
+          telegramId: data.telegramId,
+          order: data.order,
+          active: data.active,
+        },
+      });
     });
-  });
-  await prisma.$transaction(tx);
-  return NextResponse.json({ ok: true });
+    await prisma.$transaction(tx);
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    console.error("[ABA centers PUT]", e);
+    const msg = e instanceof Error ? e.message : String(e);
+    return NextResponse.json(
+      { error: "Saqlash amalga oshmadi.", details: msg },
+      { status: 500 }
+    );
+  }
 }
