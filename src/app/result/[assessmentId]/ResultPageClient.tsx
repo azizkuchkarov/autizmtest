@@ -336,10 +336,10 @@ function AbaCenterPortfolioModal({
                     className="flex items-center gap-3 rounded-xl p-3 bg-white dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 hover:border-indigo-300 dark:hover:border-indigo-600/50 hover:shadow-md transition-all duration-200 group"
                   >
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/40 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                      🔗
+                      📍
                     </span>
                     <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400 truncate">
-                      Veb-sayt
+                      Lokatsiya
                     </span>
                   </a>
                 )}
@@ -580,7 +580,7 @@ function AbaCentersSection({
                         rel="noopener noreferrer"
                         className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
                       >
-                        🔗 Sayt
+                        📍 Lokatsiya
                       </a>
                     )}
                     {c.instagram && (
