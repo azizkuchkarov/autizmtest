@@ -3,7 +3,6 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import DarkModeToggle from "@/components/DarkModeToggle";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -51,10 +50,6 @@ export default function SignupPage() {
   return (
     <div className="min-h-dvh bg-gradient-to-br from-indigo-50 via-white to-emerald-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors duration-300">
       <main className="mx-auto max-w-md px-4 pb-16 pt-8">
-        <div className="fixed top-4 right-4 z-50 animate-fadeIn">
-          <DarkModeToggle />
-        </div>
-
         <section className="rounded-3xl bg-white/80 dark:bg-slate-900/70 backdrop-blur-xl p-8 md:p-10 shadow-xl ring-1 ring-slate-200/60 dark:ring-slate-700/60 animate-fadeIn">
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">
             Ro‘yxatdan o‘tish

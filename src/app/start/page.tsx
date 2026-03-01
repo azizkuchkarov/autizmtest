@@ -3,7 +3,6 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import DarkModeToggle from "@/components/DarkModeToggle";
 import type { AgeGroupId } from "@/data";
 import { useTranslations } from "@/lib/translations";
 import { INITIAL_DATA_KEY, type Respondent, type ChildGender, type InitialData } from "@/lib/initial-data";
@@ -84,10 +83,6 @@ export default function StartPage() {
   return (
     <div className="min-h-dvh bg-gradient-to-b from-indigo-50/60 via-white to-slate-50/80 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors duration-300">
       <main className="mx-auto max-w-xl px-4 sm:px-6 pb-20 pt-8 sm:pt-12">
-        <div className="fixed top-4 right-4 z-50">
-          <DarkModeToggle />
-        </div>
-
         <div className="relative overflow-hidden rounded-[1.75rem] border border-slate-200/80 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 shadow-xl shadow-slate-200/25 dark:shadow-black/25 backdrop-blur-sm">
           {/* Dekorativ fon */}
           <div className="absolute inset-0 pointer-events-none">

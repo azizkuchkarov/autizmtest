@@ -136,6 +136,8 @@ function getPdfLabels(locale: PdfLocale) {
     yoshGuruhi: "Yosh guruhi",
     smallDisclaimer: "Agar ota-ona tashvishlansa yoki bolada o'zgarishlar sezilsa, mutaxassis bilan muloqot qilish tavsiya etiladi.",
     bloklarBuyicha: "Bloklar bo'yicha (%)",
+    blocksConclusionTitle: "Bloklar bo'yicha natija va tushuntirish",
+    recommendation: "Tavsiya",
     redFlagTitle: "Red-flag savollar",
     tendencyTitle: "Autizmga moyilligi bor savollar va javoblari",
     javob: "Javob",
@@ -166,6 +168,8 @@ function getPdfLabels(locale: PdfLocale) {
     yoshGuruhi: "Возрастная группа",
     smallDisclaimer: "При беспокойстве или изменениях в поведении ребёнка рекомендуется консультация специалиста.",
     bloklarBuyicha: "По блокам (%)",
+    blocksConclusionTitle: "Результаты и пояснения по блокам",
+    recommendation: "Рекомендация",
     redFlagTitle: "Вопросы «красного флага»",
     tendencyTitle: "Вопросы с признаками и ответы",
     javob: "Ответ",
@@ -257,6 +261,8 @@ export type PdfScreeningParams = {
   }>;
   /** Base64-encoded TTF (Cyrillic) — ruscha PDF da matn to'g'ri ko'rinsin */
   fontBase64?: string;
+  /** Sahifadagi "Bloklar bo'yicha natija va tushuntirish" — har bir blok: sarlavha, foiz, oralik, tushuntirish */
+  blockInterpretations?: Array<{ blockTitle: string; score: number; rangeLabel: string; interpretation: string }>;
 };
 
 function ensurePage(doc: jsPDF, y: number, needSpace: number): number {
@@ -285,6 +291,7 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
     abaCenters,
     locale: localeParam,
     fontBase64,
+    blockInterpretations,
   } = params;
 
   const locale: PdfLocale = localeParam === "ru" ? "ru" : "uz";
@@ -369,11 +376,35 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
     y += LINE_HEIGHT;
   }
   const xulosaParagraphs = getXulosaParagraphs(result.riskLabel, ageLabel, result.totalScore, locale);
-  for (const p of xulosaParagraphs) {
+  for (let i = 0; i < xulosaParagraphs.length; i++) {
     y += 2;
-    const pLines = doc.splitTextToSize(p, contentW);
+    const pLines = doc.splitTextToSize(xulosaParagraphs[i], contentW);
     doc.text(pLines, MARGIN, y);
     y += pLines.length * LINE_HEIGHT;
+    if (i === 0 && blockInterpretations && blockInterpretations.length > 0) {
+      y += 4;
+      doc.setFont(pdfFont, pdfFontStyle("bold"));
+      doc.setFontSize(9);
+      doc.text(L.blocksConclusionTitle, MARGIN, y);
+      y += LINE_HEIGHT + 2;
+      doc.setFont(pdfFont, "normal");
+      doc.setFontSize(FONT_SIZE_BODY);
+      doc.setFontSize(8);
+      doc.text(L.riskScaleLegend, MARGIN, y);
+      y += LINE_HEIGHT + 2;
+      doc.setFontSize(FONT_SIZE_BODY);
+      for (const blk of blockInterpretations) {
+        y = ensurePage(doc, y, LINE_HEIGHT * 4);
+        doc.setFont(pdfFont, pdfFontStyle("bold"));
+        doc.text(`${blk.blockTitle} — ${blk.score}% (${blk.rangeLabel})`, MARGIN, y);
+        y += LINE_HEIGHT;
+        doc.setFont(pdfFont, "normal");
+        const interpLines = doc.splitTextToSize(blk.interpretation, contentW);
+        doc.text(interpLines, MARGIN, y);
+        y += interpLines.length * LINE_HEIGHT + 2;
+      }
+      y += 2;
+    }
   }
   y += 2;
   const smallLines = doc.splitTextToSize(L.smallDisclaimer, contentW);

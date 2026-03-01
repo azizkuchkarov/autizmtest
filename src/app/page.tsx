@@ -14,7 +14,6 @@ export default function Home() {
         {/* Til tanlash — asosiy kirish; tanlangan til barcha sahifalarda qo‘llanadi */}
         <div className="flex justify-end mb-4">
           <div className="inline-flex rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/95 shadow-sm p-1 gap-0.5">
-            <span className="px-3 py-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">{t("home.languageLabel")}</span>
             <button
               type="button"
               onClick={() => setLocale("uz")}

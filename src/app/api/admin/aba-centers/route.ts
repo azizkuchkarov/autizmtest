@@ -34,6 +34,7 @@ type AbaCenterPayload = {
   directorBio?: string | null;
   amenities?: { title: string; imageUrl: string }[] | null;
   portfolioDescription?: string | null;
+  telegramId?: string | null;
   order?: number;
   active?: boolean;
 };
@@ -56,6 +57,7 @@ function toPrismaCenter(c: AbaCenterPayload, idx: number) {
     directorBio: c.directorBio ? String(c.directorBio) : null,
     amenities: amenitiesValue,
     portfolioDescription: c.portfolioDescription ? String(c.portfolioDescription) : null,
+    telegramId: c.telegramId ? String(c.telegramId).trim() || null : null,
     order: typeof c.order === "number" && Number.isFinite(c.order) ? c.order : idx,
     active: c.active !== false,
   };
@@ -86,6 +88,7 @@ export async function PUT(req: Request) {
         directorBio: data.directorBio,
         amenities: data.amenities as Prisma.InputJsonValue,
         portfolioDescription: data.portfolioDescription,
+        telegramId: data.telegramId,
         order: data.order,
         active: data.active,
       },

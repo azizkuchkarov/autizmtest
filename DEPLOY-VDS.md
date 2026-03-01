@@ -93,6 +93,7 @@ CLICK_MERCHANT_ID=...
 CLICK_SERVICE_ID=...
 CLICK_SECRET_KEY=...
 CLICK_MERCHANT_USER_ID=...
+PAYMENT_AMOUNT=99000
 ```
 
 Saqlash: `Ctrl+O`, Enter, `Ctrl+X`.
@@ -179,12 +180,19 @@ sudo apt install -y nginx certbot python3-certbot-nginx
 sudo nano /etc/nginx/sites-available/autizmtest
 ```
 
-Quyidagini kiriting (DOMAIN va SERVER_IP ni almashtiring):
+Quyidagini kiriting (DOMAIN va SERVER_IP ni almashtiring). **Rasmlar 404 bo‘lmasligi uchun** `location /uploads/` bloki muhim — Nginx fayllarni to‘g‘ridan-to‘g‘ri `public/uploads` dan beradi:
 
 ```nginx
 server {
     listen 80;
     server_name DOMAIN_OR_IP;
+    client_max_body_size 10M;
+
+    # ABA markazlar rasmlari — 404 bo‘lmasligi uchun (loyiha yo‘li: /var/www/autizmtest)
+    location /uploads/ {
+        alias /var/www/autizmtest/public/uploads/;
+    }
+
     location / {
         proxy_pass http://127.0.0.1:3000;
         proxy_http_version 1.1;
@@ -197,11 +205,10 @@ server {
         proxy_cache_bypass $http_upgrade;
         proxy_read_timeout 86400;
     }
-    client_max_body_size 10M;
 }
 ```
 
-`client_max_body_size 10M` — rasm yuklash uchun (kerak bo‘lsa 20M qiling).
+`client_max_body_size 10M` — rasm yuklash uchun (kerak bo‘lsa 20M qiling). Loyiha boshqa papkada bo‘lsa, `alias` dagi yo‘lni o‘shanga o‘zgartiring (masalan `/var/www/autizmtest`).
 
 So‘ng:
 

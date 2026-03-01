@@ -3,7 +3,6 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import DarkModeToggle from "@/components/DarkModeToggle";
 import { useTranslations } from "@/lib/translations";
 
 export default function StartRegisterPage() {
@@ -78,10 +77,6 @@ export default function StartRegisterPage() {
   return (
     <div className="min-h-dvh bg-slate-50/80 dark:bg-slate-950 transition-colors duration-300">
       <main className="mx-auto max-w-md px-4 pb-16 pt-10 sm:pt-12">
-        <div className="fixed top-4 right-4 z-50">
-          <DarkModeToggle />
-        </div>
-
         <section className="rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/95 shadow-xl p-6 sm:p-8">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
             {t("register.title")}

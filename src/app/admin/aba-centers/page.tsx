@@ -21,6 +21,8 @@ type AbaCenter = {
   directorBio?: string;
   amenities?: AbaCenterAmenity[];
   portfolioDescription?: string;
+  telegramId?: string | null;
+  active?: boolean;
 };
 
 export default function AdminAbaCenters() {
@@ -52,6 +54,8 @@ export default function AdminAbaCenters() {
           directorBio: "",
           amenities: [] as AbaCenterAmenity[],
           portfolioDescription: "",
+          telegramId: null as string | null,
+          active: true,
         }));
         setItems(seeded);
       });
@@ -80,6 +84,8 @@ export default function AdminAbaCenters() {
         directorBio: "",
         amenities: [] as AbaCenterAmenity[],
         portfolioDescription: "",
+        telegramId: null,
+        active: true,
       },
     ]);
   }
@@ -160,13 +166,11 @@ export default function AdminAbaCenters() {
 
   async function save() {
     setStatus("Saqlanmoqda...");
-    const payload = items
-      .map((it, idx) => ({
-        ...it,
-        order: idx,
-        active: Boolean(it.name || it.phone || it.address || it.note),
-      }))
-      .filter((it) => it.active);
+    const payload = items.map((it, idx) => ({
+      ...it,
+      order: idx,
+      active: it.active !== false,
+    }));
     const res = await fetch("/api/admin/aba-centers", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -206,15 +210,26 @@ export default function AdminAbaCenters() {
                     const idx = items.findIndex((x) => x.id === it.id);
                     return (
                       <div key={it.id} className="rounded-xl border border-slate-200 p-3">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
                           <div className="text-xs font-semibold text-slate-600">Markaz</div>
-                          <button
-                            type="button"
-                            onClick={() => removeCenter(it.id)}
-                            className="text-xs text-rose-600 hover:underline"
-                          >
-                            O‘chirish
-                          </button>
+                          <div className="flex items-center gap-3">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <span className="text-xs text-slate-600">Ochiq</span>
+                              <input
+                                type="checkbox"
+                                checked={it.active !== false}
+                                onChange={(e) => update(idx, { active: e.target.checked })}
+                                className="rounded border-slate-300"
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => removeCenter(it.id)}
+                              className="text-xs text-rose-600 hover:underline"
+                            >
+                              O‘chirish
+                            </button>
+                          </div>
                         </div>
                         <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3">
                           {isToshkentShahar(it.region) && (
@@ -263,6 +278,12 @@ export default function AdminAbaCenters() {
                             placeholder="Instagram profil (havola)"
                             value={it.instagram || ""}
                             onChange={(e) => update(idx, { instagram: e.target.value })}
+                          />
+                          <input
+                            className="rounded-xl border border-slate-300 px-3 py-2 text-sm md:col-span-2"
+                            placeholder="Telegram ID (chat_id) — Ro'yxatga yozilish xabarlari shu yerga yuboriladi"
+                            value={it.telegramId ?? ""}
+                            onChange={(e) => update(idx, { telegramId: e.target.value.trim() || null })}
                           />
                           <div className="md:col-span-2">
                             <span className="block text-xs font-medium text-slate-600 mb-1">Rasm (faqat yuklash)</span>

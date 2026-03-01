@@ -1,11 +1,5 @@
 "use client";
 
-import DarkModeToggle from "@/components/DarkModeToggle";
-
 export default function AppToolbar() {
-  return (
-    <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
-      <DarkModeToggle />
-    </div>
-  );
+  return null;
 }

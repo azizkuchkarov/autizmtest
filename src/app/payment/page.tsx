@@ -2,7 +2,6 @@
 
 import React, { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import DarkModeToggle from "@/components/DarkModeToggle";
 import { useTranslations } from "@/lib/translations";
 
 function PaymentContent() {
@@ -14,7 +13,7 @@ function PaymentContent() {
   const [error, setError] = React.useState("");
   const [merchantTransId, setMerchantTransId] = React.useState<string | null>(null);
   const [polling, setPolling] = React.useState(false);
-  const [amount, setAmount] = React.useState<number>(125_000);
+  const [amount, setAmount] = React.useState<number>(1_000);
 
   // Format raqam — server va client da bir xil (hydration xatosiz)
   const amountText = String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
@@ -148,10 +147,6 @@ function PaymentContent() {
   return (
     <div className="min-h-dvh bg-gradient-to-br from-indigo-50 via-white to-emerald-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors duration-300">
       <main className="mx-auto max-w-md px-4 pb-16 pt-8">
-        <div className="fixed top-4 right-4 z-50">
-          <DarkModeToggle />
-        </div>
-
         <section className="rounded-3xl bg-white/80 dark:bg-slate-900/70 backdrop-blur-xl p-8 md:p-10 shadow-xl ring-1 ring-slate-200/60 dark:ring-slate-700/60">
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">
             {t("payment.title")}
@@ -226,9 +221,6 @@ function PaymentFallback() {
   const t = useTranslations();
   return (
     <div className="min-h-dvh bg-gradient-to-br from-indigo-50 via-white to-emerald-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center">
-      <div className="fixed top-4 right-4 z-50">
-        <DarkModeToggle />
-      </div>
       <p className="text-slate-600 dark:text-slate-400">{t("payment.loading")}</p>
     </div>
   );

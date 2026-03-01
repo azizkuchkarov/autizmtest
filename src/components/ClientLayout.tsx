@@ -2,6 +2,7 @@
 
 import { LocaleProvider } from "@/contexts/LocaleContext";
 import AppToolbar from "@/components/AppToolbar";
+import HelpWidget from "@/components/HelpWidget";
 
 export default function ClientLayout({
   children,
@@ -12,6 +13,7 @@ export default function ClientLayout({
     <LocaleProvider>
       <AppToolbar />
       {children}
+      <HelpWidget />
     </LocaleProvider>
   );
 }

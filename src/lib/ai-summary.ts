@@ -145,48 +145,48 @@ const SCREENING_V2_SYSTEM_PROMPT = `Siz bolalar rivojlanishi va autizm skriningi
 
 USLUB: Professional, ammo tushunarli til. Tibbiy terminlar kam, lekin matn qisqa va umuman yozilmasin. Har bir bo'limda yetarli hajmda ma'lumot bering.
 
-SIZGA BERILADIGAN MA'LUMOT: riskLabel ("Past xavf" / "O'rtacha xavf" / "Yuqori xavf"), totalScore (0–100), blocks — har biri uchun title va score (0–100). score = xavf ko'rsatkichi: yuqori score = shu sohada autizm belgilari kuchli.
+MA'LUMOT: riskLabel, totalScore, blocks (title, score), strengthsSource, needsFocusSource.
 
-"E'tibor kerak" (needsFocus): Faqat score 50+ bo'lgan bloklarni "belgilar kuchli kuzatilgan" deb yozing. riskLabel "Past xavf" va barcha blok score lari past (40 dan past) bo'lsa — needsFocus ni bo'sh [] qoldiring yoki bitta umumiy band (masalan "Rivojlanishni kuzatishda davom eting").
+"Kuchli tomonlar" (strengths.examples): FAQAT "strengthsSource" ro'yxatidagi savol/javoblar asosida yozing. Bu ro'yxat — autizmga moyil YUQORI bo'lmagan savollar (risk=0), ya'ni bolaning kuchli tomonlari. Har bir bandda shu savollardan 1–2 tasining mazmuni va ijobiy tomonini 1–2 jumla bilan ifodalang. strengthsSource bo'sh bo'lsa — [] yoki 1 qo'llab-quvvatlovchi jumla.
 
-"Kuchli tomonlar" (strengths): Yuqori ball olgan bloklarni bu yerga yozmang. Past risk/past ball bo'lsa — 3–5 ta to'liq jumla bilan kuchli tomonlarni (qaysi sohalar yaxshi) yozing.
+"E'tibor kerak" (needsFocus.priority): FAQAT "needsFocusSource" ro'yxatidagi savol/javoblar asosida yozing. Bu ro'yxat — autizmga moyilligi BOR savollar (risk>0). Har bir yo'nalish yoki savol uchun 1–2 jumla: qaysi soha va nima uchun e'tibor kerak. needsFocusSource bo'sh bo'lsa — [].
 
 QAT'IY: Tashxis qo'ymang, vahima uyg'otmang. Til: o'zbek (lotin). Javobni FAQAT quyidagi JSON da qaytaring.
 
 JSON — HAR BIR MAYDON TO'LIQ TO'LDIRILSIN:
 {
   "summary": {
-    "shortConclusion": "2–4 jumladan iborat to'liq xulosa: risk darajasi, umumiy baho, ota-ona uchun asosiy xabar. Qisqa 1 jumla emas — to'liq professional xulosa.",
-    "whyThisLevel": "4–7 jumla: Nima uchun shu risk darajasi chiqdi, qaysi sohalar qanday baholangan, bu natija nimani anglatadi, ota-ona nima bilishi kerak. Paragraf shaklida, to'liq tushuntirish."
+    "shortConclusion": "2–4 jumladan iborat to'liq xulosa: risk darajasi, umumiy baho, ota-ona uchun asosiy xabar.",
+    "whyThisLevel": "4–7 jumla: Nima uchun shu risk darajasi chiqdi, qaysi sohalar qanday baholangan, bu natija nimani anglatadi, ota-ona nima bilishi kerak."
   },
   "strengths": {
-    "examples": ["Har biri 1–2 jumla. Risk past bo'lsa 3–5 ta: ijtimoiy aloqa/muloqot/takroriy sohalar bo'yicha ijobiy tomonlar. Yuqori risk bo'lsa bo'sh [] yoki 1 qo'llab-quvvatlovchi jumla."]
+    "examples": ["Faqat strengthsSource dagi savol/javoblar asosida 3–5 ta band. Har biri 1–2 jumla — bolaning kuchli tomonlari (autizmga moyil yuq bo'lgan sohalar)."]
   },
   "needsFocus": {
-    "priority": ["Faqat yuqori score li bloklar uchun. Har biri 1–2 jumla: soha nomi va qisqacha nima uchun e'tibor kerak. Past risk bo'lsa bo'sh []."]
+    "priority": ["Faqat needsFocusSource dagi savol/javoblar asosida 2–4 ta band. Har biri 1–2 jumla — e'tibor kerak yo'nalishlar (autizmga moyilligi bor savollar)."]
   },
   "nextSteps": {
     "homePlan": [
       { "title": "Sarlavha", "why": "2–4 jumla nima uchun muhim", "how": ["Qadam 1", "Qadam 2", "… 4–6 ta aniq qadam"] }
     ]
-  }
-  — homePlan da 4–6 ta element bo'lsin, har birida how da 4–6 ta aniq qadam.
+  },
   "disclaimer": {
     "text": "Bu skrining natijasi — tibbiy tashxis emas. Yakuniy baho va davolash rejasi uchun bolalar nevrologi yoki rivojlanish mutaxassisi bilan muloqot qilishingiz tavsiya etiladi."
   }
-}`;
+}
+— homePlan da 4–6 ta element, har birida how da 4–6 ta aniq qadam.`;
 
-const SCREENING_V2_SYSTEM_PROMPT_RU = `Вы — профессиональный помощник по скринингу развития ребёнка и признаков аутизма. Ваша задача — дать родителям ПОЛНОЕ, ТОЧНОЕ и ПРОФЕССИОНАЛЬНОЕ заключение по результатам скрининга. Заключение не должно быть кратким или сухим: родитель должен полностью понимать результат и что делать дальше.
+const SCREENING_V2_SYSTEM_PROMPT_RU = `Вы — профессиональный помощник по скринингу развития ребёнка и признаков аутизма. Ваша задача — дать родителям ПОЛНОЕ, ТОЧНОЕ и ПРОФЕССИОНАЛЬНОЕ заключение по результатам скрининга. Родитель должен полностью понимать результат и что делать дальше.
 
 СТИЛЬ: Профессиональный, но понятный язык. Медицинских терминов минимум. Достаточный объём в каждом разделе.
 
-ДАННЫЕ: riskLabel (уровень риска), totalScore (0–100), blocks — название блока и score (0–100). score = показатель риска по блоку: высокий score = выраженные признаки в этой сфере.
+ДАННЫЕ: riskLabel, totalScore, blocks (title, score), strengthsSource, needsFocusSource.
 
-"Направления, требующие внимания" (needsFocus): Указывайте только блоки с score 50+. При низком риске и низких score — пустой [] или одна общая фраза.
+"Сильные стороны" (strengths.examples): Формулируйте СТРОГО на основе списка "strengthsSource". Это вопросы/ответы, где склонности к аутизму НЕТ (risk=0) — сильные стороны ребёнка. Опишите 3–5 пунктов по 1–2 предложения. Если strengthsSource пуст — [] или одна поддерживающая фраза.
 
-"Сильные стороны" (strengths): Не включайте блоки с высоким score. При низком риске — 3–5 предложений о сильных сторонах.
+"Направления, требующие внимания" (needsFocus.priority): Формулируйте СТРОГО на основе списка "needsFocusSource". Это вопросы/ответы, где есть склонность (risk>0) — сферы, требующие внимания. Опишите 2–4 пункта по 1–2 предложения. Если needsFocusSource пуст — [].
 
-КРИТИЧЕСКИ ВАЖНО: Не ставьте диагноз, не пугайте. Язык ответа: ТОЛЬКО РУССКИЙ. Весь текст во всех полях JSON должен быть на русском языке. Ответ — СТРОГО в формате JSON ниже.
+КРИТИЧЕСКИ ВАЖНО: Не ставьте диагноз, не пугайте. Язык ответа: ТОЛЬКО РУССКИЙ. Весь текст во всех полях JSON — на русском. Ответ — СТРОГО в формате JSON ниже.
 
 JSON — ВСЕ ПОЛЯ ЗАПОЛНИТЕ НА РУССКОМ:
 {
@@ -195,10 +195,10 @@ JSON — ВСЕ ПОЛЯ ЗАПОЛНИТЕ НА РУССКОМ:
     "whyThisLevel": "4–7 предложений: почему такой уровень риска, как оценены сферы, что это значит, что важно знать родителям."
   },
   "strengths": {
-    "examples": ["Каждый пункт 1–2 предложения. При низком риске 3–5 пунктов; при высоком — [] или одна поддерживающая фраза."]
+    "examples": ["Только на основе strengthsSource. 3–5 пунктов по 1–2 предложения — сильные стороны (сферы без выраженной склонности)."]
   },
   "needsFocus": {
-    "priority": ["Только блоки с высоким score. 1–2 предложения на сферу. При низком риске — []."]
+    "priority": ["Только на основе needsFocusSource. 2–4 пункта по 1–2 предложения — направления, требующие внимания (вопросы с выраженной склонностью)."]
   },
   "nextSteps": {
     "homePlan": [
@@ -234,6 +234,19 @@ const BLOCK_TITLES_RU: Record<string, string> = {
   A: "Социальное взаимодействие и общение",
   B: "Общение и речь",
   C: "Ограниченные и повторяющиеся модели поведения",
+};
+
+const ANSWER_LABELS_UZ: Record<number, string> = {
+  0: "Yo'q / hech qachon",
+  1: "Kamdan-kam",
+  2: "Ko'pincha",
+  3: "Doim / barqaror",
+};
+const ANSWER_LABELS_RU: Record<number, string> = {
+  0: "Нет / Никогда",
+  1: "Редко",
+  2: "Часто",
+  3: "Всегда / Постоянно",
 };
 
 function getAgeGroupLabel(ageGroupId: string | null | undefined, locale: Locale): string | null {
@@ -277,6 +290,27 @@ export async function generateAiSummaryForScreeningV2(
         : "";
 
   const isRu = locale === "ru";
+  const answerLabels = isRu ? ANSWER_LABELS_RU : ANSWER_LABELS_UZ;
+  const allTop = result.topOverall ?? [];
+
+  const strengthsSource = allTop
+    .filter((t) => (t.risk ?? 0) === 0)
+    .map((t) => ({
+      text: t.text,
+      blockTitle: isRu ? (BLOCK_TITLES_RU[t.blockId] ?? t.blockTitle) : t.blockTitle,
+      answer: t.answer,
+      answerLabel: t.answer !== undefined ? (answerLabels[t.answer] ?? String(t.answer)) : undefined,
+    }));
+
+  const needsFocusSource = allTop
+    .filter((t) => (t.risk ?? 0) > 0)
+    .map((t) => ({
+      text: t.text,
+      blockTitle: isRu ? (BLOCK_TITLES_RU[t.blockId] ?? t.blockTitle) : t.blockTitle,
+      risk: t.risk,
+      answer: t.answer,
+      answerLabel: t.answer !== undefined ? (answerLabels[t.answer] ?? String(t.answer)) : undefined,
+    }));
 
   const facts = {
     riskLabel: isRu ? (RISK_LABELS_RU[result.riskLabel] ?? result.riskLabel) : result.riskLabel,
@@ -288,29 +322,25 @@ export async function generateAiSummaryForScreeningV2(
       score: b.score,
       redFlagsCount: (b.redFlags ?? []).length,
     })),
-    topOverall: (result.topOverall ?? []).slice(0, 8).map((t) => ({
-      text: t.text,
-      blockTitle: isRu ? (BLOCK_TITLES_RU[t.blockId] ?? t.blockTitle) : t.blockTitle,
-      risk: t.risk,
-      isRedFlag: t.isRedFlag,
-    })),
+    strengthsSource,
+    needsFocusSource,
   };
 
   const systemPrompt = isRu ? SCREENING_V2_SYSTEM_PROMPT_RU : SCREENING_V2_SYSTEM_PROMPT;
 
   const userContentRu = `Составьте ПОЛНОЕ и ПРОФЕССИОНАЛЬНОЕ заключение по результатам скрининга. Ответ — ТОЛЬКО валидный JSON.
 
-КРИТИЧЕСКИ ВАЖНО: Весь ваш ответ (все поля JSON: summary.shortConclusion, summary.whyThisLevel, strengths.examples, needsFocus.priority, nextSteps.homePlan, disclaimer.text) должен быть написан СТРОГО на русском языке. Не используйте узбекский язык в ответе. Входные данные ниже могут содержать узбекские названия — переводите смысл на русский в своём ответе.${ageLine}
+КРИТИЧЕСКИ ВАЖНО: Весь ответ — СТРОГО на русском языке.${ageLine}
 
-Требования: shortConclusion — 2–4 предложения; whyThisLevel — 4–7 предложений; strengths — при низком риске 3–5 пунктов; homePlan — 4–6 планов, в каждом title, why (2–4 предложения), how (4–6 конкретных шагов). Блоки score 0–100. При низком riskLabel и низких score — needsFocus пустой [].
+strengths.examples — формулируйте ТОЛЬКО по списку strengthsSource (вопросы, где риск=0, сильные стороны ребёнка). needsFocus.priority — ТОЛЬКО по списку needsFocusSource (вопросы с риск>0, направления внимания). Если список пуст — соответствующий массив [] или одна общая фраза.
 
 Данные скрининга:\n${JSON.stringify(facts, null, 2)}`;
 
   const userContentUz = `Quyidagi skrining natijasi asosida TO'LIQ va PROFESSIONAL JSON xulosa yozing. Faqat JSON qaytaring.${ageLine}
 
-Talablar: shortConclusion 2–4 jumla; whyThisLevel 4–7 jumla to'liq tushuntirish; strengths da risk past bo'lsa 3–5 ta band; homePlan da 4–6 ta reja, har birida title, why (2–4 jumla), how (4–6 ta aniq qadam). Ota-ona natijani to'liq tushunishi kerak.
+strengths.examples — faqat "strengthsSource" ro'yxati asosida yozing (autizmga moyil yuq bo'lgan savollar = kuchli tomonlar). needsFocus.priority — faqat "needsFocusSource" ro'yxati asosida (autizmga moyilligi bor savollar = e'tibor kerak). Ro'yxat bo'sh bo'lsa — mos massiv [] yoki bitta umumiy jumla.
 
-MUHIM: Barcha javobni faqat o'zbek tilida (lotin) yozing. JSON dagi barcha maydonlar o'zbekcha bo'lsin. Esda tuting: blocks da score 0–100. riskLabel "Past xavf" va barcha score past bo'lsa, needsFocus ni bo'sh [] qoldiring.
+MUHIM: Barcha javob o'zbek tilida (lotin). JSON barcha maydonlar o'zbekcha.
 
 \n${JSON.stringify(facts, null, 2)}`;
 

@@ -96,8 +96,9 @@ model AbaCenter {
   directorBio       String?  // Ish faoliyati / qisqacha tavsif
   amenities         Json?   // [{ "title": "Qulaylik nomi", "imageUrl": "/uploads/..." }]
   portfolioDescription String?  // Markaz haqida qo'shimcha matn
+  telegramId          String?  // Telegram chat_id — Ro'yxatga yozilish xabarlari shu yerga yuboriladi
   order             Int
-  active            Boolean  @default(true)
+  active            Boolean  @default(true)  // Admin panelda ochiq/yopiq
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }

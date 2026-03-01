@@ -3,7 +3,6 @@
 import React, { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import DarkModeToggle from "@/components/DarkModeToggle";
 import TestWizard from "@/components/TestWizard";
 import type { AgeGroupId } from "@/data";
 import type { AnswerValue } from "@/lib/scoring";
@@ -151,9 +150,6 @@ function TestContent() {
   if (noInitialData) {
     return (
       <div className="min-h-dvh bg-slate-50/80 dark:bg-slate-950 transition-colors duration-300">
-        <div className="fixed top-4 right-4 z-50">
-          <DarkModeToggle />
-        </div>
         <main className="mx-auto max-w-md px-4 pb-16 pt-8 sm:pt-10">
           <section className="rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/95 shadow-xl p-6 sm:p-8">
             <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
@@ -177,9 +173,6 @@ function TestContent() {
   if (loading || !ageGroup || !config) {
     return (
       <div className="min-h-dvh bg-slate-50/80 dark:bg-slate-950 p-6">
-        <div className="fixed top-4 right-4 z-50">
-          <DarkModeToggle />
-        </div>
         <div className="mx-auto max-w-md text-center py-12 text-slate-600 dark:text-slate-400">
           Savollar yuklanmoqda...
         </div>
@@ -191,9 +184,6 @@ function TestContent() {
   if (hasNoQuestions) {
     return (
       <div className="min-h-dvh bg-slate-50/80 dark:bg-slate-950 transition-colors duration-300">
-        <div className="fixed top-4 right-4 z-50">
-          <DarkModeToggle />
-        </div>
         <main className="mx-auto max-w-md px-4 pb-16 pt-8 sm:pt-10">
           <section className="rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/95 shadow-xl p-6 sm:p-8">
             <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
@@ -221,9 +211,6 @@ function TestContent() {
 
   return (
     <div className="min-h-dvh bg-slate-50/80 dark:bg-slate-950 transition-colors duration-300 pb-20">
-      <div className="fixed top-4 right-4 z-50">
-        <DarkModeToggle />
-      </div>
       <main className="mx-auto max-w-lg px-4 sm:px-6 pt-8 sm:pt-10">
         {paidAmountFormatted && (
           <div className="mb-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/80 px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300">
@@ -253,9 +240,6 @@ export default function TestPage() {
     <Suspense
       fallback={
         <div className="min-h-dvh bg-slate-50/80 dark:bg-slate-950 flex items-center justify-center">
-          <div className="fixed top-4 right-4 z-50">
-            <DarkModeToggle />
-          </div>
           <p className="text-slate-600 dark:text-slate-400">Yuklanmoqda...</p>
         </div>
       }

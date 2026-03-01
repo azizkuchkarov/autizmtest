@@ -8,9 +8,8 @@ import type { MonitoringResult } from "@/lib/monitoringScoring";
 import type { OverallResult } from "@/lib/scoring";
 import { DOMAIN_LABELS_UZ, RISK_LABELS_UZ } from "@/lib/scoring";
 import { BLOCK_LABELS_UZ, STATUS_LABELS_UZ } from "@/lib/monitoringScoring";
-import DarkModeToggle from "@/components/DarkModeToggle";
 import { useLocale } from "@/contexts/LocaleContext";
-import { useTranslations } from "@/lib/translations";
+import { useTranslations, getTranslation } from "@/lib/translations";
 import { DonutRisk, RadarProfile, BarList } from "@/components/Charts";
 import { ABA_REGIONS, TOSHKENT_SHAHAR_DISTRICTS, isToshkentShahar } from "@/data/regions";
 
@@ -52,12 +51,42 @@ export type AbaCenterItem = {
   portfolioDescription?: string | null;
 };
 
+function AiSummaryLoadingCard({ progress, t }: { progress: number; t: (key: string) => string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-gradient-to-br from-indigo-50/80 to-white dark:from-slate-800/60 dark:to-slate-900/80 p-6 sm:p-8 shadow-inner">
+      <div className="flex flex-col items-center text-center">
+        <div className="relative flex h-14 w-14 items-center justify-center">
+          <div className="absolute inset-0 animate-ping rounded-full bg-indigo-400/30" style={{ animationDuration: "1.5s" }} />
+          <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/50 ring-4 ring-indigo-200/50 dark:ring-indigo-800/50">
+            <svg className="h-7 w-7 animate-spin text-indigo-600 dark:text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden>
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+          </div>
+        </div>
+        <p className="mt-5 text-base font-semibold text-slate-800 dark:text-slate-200">{t("result.aiGenerating")}</p>
+        <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">{t("result.aiLoadingHint")}</p>
+        <div className="mt-6 w-full max-w-xs overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+          <div
+            className="h-2 rounded-full bg-indigo-600 dark:bg-indigo-500 transition-all duration-300 ease-out"
+            style={{ width: `${Math.min(100, progress)}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AbaCenterPortfolioModal({
   center,
   onClose,
+  onRegister,
+  isRegistering,
 }: {
   center: AbaCenterItem;
   onClose: () => void;
+  onRegister?: () => void;
+  isRegistering?: boolean;
 }) {
   const amenities = Array.isArray(center.amenities) ? center.amenities : [];
   const hasDirector = center.directorName || center.directorImageUrl || center.directorBio;
@@ -330,6 +359,25 @@ function AbaCenterPortfolioModal({
                   </a>
                 )}
               </div>
+              {onRegister && (
+                <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                  <button
+                    type="button"
+                    onClick={onRegister}
+                    disabled={isRegistering}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white px-5 py-3 text-sm font-semibold shadow-lg shadow-emerald-500/30"
+                  >
+                    {isRegistering ? (
+                      <>
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        Yuborilmoqda...
+                      </>
+                    ) : (
+                      "Ro'yxatga yozilish"
+                    )}
+                  </button>
+                </div>
+              )}
               {center.note && (
                 <p className="mt-4 pt-4 text-xs text-slate-600 dark:text-slate-400 border-t border-slate-200 dark:border-slate-700 leading-relaxed">
                   {center.note}
@@ -344,6 +392,7 @@ function AbaCenterPortfolioModal({
 }
 
 function AbaCentersSection({
+  assessmentId,
   region,
   setRegion,
   district,
@@ -351,6 +400,7 @@ function AbaCentersSection({
   centers,
   setCenters,
 }: {
+  assessmentId: string;
   region: string;
   setRegion: (v: string) => void;
   district: string;
@@ -361,6 +411,30 @@ function AbaCentersSection({
   const t = useTranslations();
   const [loading, setLoading] = React.useState(false);
   const [portfolioCenter, setPortfolioCenter] = React.useState<AbaCenterItem | null>(null);
+  const [registeringId, setRegisteringId] = React.useState<string | null>(null);
+  const [registerMessage, setRegisterMessage] = React.useState<{ type: "ok" | "err"; text: string } | null>(null);
+
+  async function handleRegister(centerId: string) {
+    setRegisterMessage(null);
+    setRegisteringId(centerId);
+    try {
+      const res = await fetch("/api/aba-registration", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assessmentId, centerId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setRegisterMessage({ type: "ok", text: "Yuborildi. Markaz siz bilan bog‘lanadi." });
+      } else {
+        setRegisterMessage({ type: "err", text: data?.error || "Xatolik yuz berdi." });
+      }
+    } catch {
+      setRegisterMessage({ type: "err", text: "Tarmoq xatoligi." });
+    } finally {
+      setRegisteringId(null);
+    }
+  }
 
   React.useEffect(() => {
     if (!region) {
@@ -441,6 +515,17 @@ function AbaCentersSection({
             <span className="text-sm font-medium">Yuklanmoqda...</span>
           </div>
         )}
+        {registerMessage && (
+          <div
+            className={`mt-4 rounded-xl px-4 py-3 text-sm ${
+              registerMessage.type === "ok"
+                ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-200"
+                : "bg-rose-50 dark:bg-rose-900/30 text-rose-800 dark:text-rose-200"
+            }`}
+          >
+            {registerMessage.text}
+          </div>
+        )}
         {!loading && region && (isToshkentShahar(region) ? district : true) && centers.length === 0 && (
           <div className="mt-6 rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 bg-slate-50/80 dark:bg-slate-800/30 p-8 text-center">
             <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -512,7 +597,22 @@ function AbaCentersSection({
                   {c.note && (
                     <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{c.note}</p>
                   )}
-                  <div className="mt-4 sm:mt-auto">
+                  <div className="mt-4 sm:mt-auto flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleRegister(c.id)}
+                      disabled={!!registeringId}
+                      className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white px-5 py-3 text-sm font-semibold shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+                    >
+                      {registeringId === c.id ? (
+                        <>
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                          Yuborilmoqda...
+                        </>
+                      ) : (
+                        "Ro'yxatga yozilish"
+                      )}
+                    </button>
                     <button
                       type="button"
                       onClick={() => setPortfolioCenter(c)}
@@ -535,6 +635,10 @@ function AbaCentersSection({
         <AbaCenterPortfolioModal
           center={portfolioCenter}
           onClose={() => setPortfolioCenter(null)}
+          onRegister={() => {
+            handleRegister(portfolioCenter.id);
+          }}
+          isRegistering={registeringId === portfolioCenter.id}
         />
       )}
     </section>
@@ -549,6 +653,8 @@ export default function ResultPageClient({ assessmentId }: Props) {
   const [data, setData] = React.useState<ScoreResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [aiLoading, setAiLoading] = React.useState(false);
+  const [aiProgress, setAiProgress] = React.useState(0);
+  const aiLoadStartRef = React.useRef<number>(0);
   const [error, setError] = React.useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = React.useState(false);
   const [abaRegion, setAbaRegion] = React.useState("");
@@ -578,6 +684,21 @@ export default function ResultPageClient({ assessmentId }: Props) {
     };
   }, [assessmentId]);
 
+  // Progress bar 0→100% ~10 soniya davomida (faqat aiLoading true bo‘lganda)
+  React.useEffect(() => {
+    if (!aiLoading) {
+      setAiProgress(0);
+      return;
+    }
+    aiLoadStartRef.current = Date.now();
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - aiLoadStartRef.current;
+      const p = Math.min(100, (elapsed / 10_000) * 100);
+      setAiProgress(p);
+    }, 200);
+    return () => clearInterval(interval);
+  }, [aiLoading]);
+
   // AI xulosa faqat foydalanuvchi "AI xulosa olish" tugmasini bosganda so'raladi (avtomatik so'rov yo'q).
   async function requestAiSummary() {
     if (!data) return;
@@ -585,7 +706,9 @@ export default function ResultPageClient({ assessmentId }: Props) {
     if (data.aiSummary.status === "ready" && storedLocale === locale) return;
 
     setAiLoading(true);
+    setAiProgress(0);
     setError(null);
+    const startTime = Date.now();
 
     try {
       const res = await fetch(`/api/assessments/${assessmentId}/ai-summary`, {
@@ -619,7 +742,12 @@ export default function ResultPageClient({ assessmentId }: Props) {
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : t("result.error"));
     } finally {
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 10_000) {
+        await new Promise((r) => setTimeout(r, 10_000 - elapsed));
+      }
       setAiLoading(false);
+      setAiProgress(0);
     }
   }
 
@@ -676,6 +804,23 @@ export default function ResultPageClient({ assessmentId }: Props) {
           ? ageLabels[data.ageGroup]
           : data.ageGroup ?? null;
 
+      const getBlockTitle = (blockId: string) => {
+        const d = domains.find((dm: { id: string; title?: string }) => dm.id === blockId);
+        return d?.title ?? getTranslation(locale, `result.block${blockId}`);
+      };
+      const blockInterpretations = (normalizedResult.blocks ?? []).map((b) => {
+        const score = Math.round(b.score);
+        const rangeKey =
+          score < 20 ? "veryLow" : score < 40 ? "low" : score < 60 ? "mid" : score < 80 ? "high" : "veryHigh";
+        const blockKey = ["A", "B", "C"].includes(String(b.blockId)) ? `block${b.blockId}` : "blockA";
+        return {
+          blockTitle: getBlockTitle(b.blockId),
+          score,
+          rangeLabel: getTranslation(locale, `result.screening.range.${rangeKey}`),
+          interpretation: getTranslation(locale, `result.screening.${blockKey}.${rangeKey}`),
+        };
+      });
+
       let fontBase64: string | undefined;
       if (locale === "ru") {
         try {
@@ -706,6 +851,7 @@ export default function ResultPageClient({ assessmentId }: Props) {
         abaCenters: abaCenters.length > 0 ? abaCenters : undefined,
         locale,
         fontBase64,
+        blockInterpretations: blockInterpretations.length > 0 ? blockInterpretations : undefined,
       });
     } catch (e) {
       console.error(e);
@@ -717,9 +863,6 @@ export default function ResultPageClient({ assessmentId }: Props) {
   if (loading) {
     return (
       <div className="min-h-dvh bg-gradient-to-br from-indigo-50 via-white to-emerald-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-6">
-        <div className="fixed top-4 right-4 z-50">
-          <DarkModeToggle />
-        </div>
         <div className="mx-auto max-w-md text-center py-12">{t("result.loading")}</div>
       </div>
     );
@@ -727,9 +870,6 @@ export default function ResultPageClient({ assessmentId }: Props) {
   if (error) {
     return (
       <div className="min-h-dvh bg-gradient-to-br from-indigo-50 via-white to-emerald-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-6">
-        <div className="fixed top-4 right-4 z-50">
-          <DarkModeToggle />
-        </div>
         <div className="mx-auto max-w-md rounded-2xl bg-white dark:bg-slate-900 p-6 ring-1 ring-slate-200 dark:ring-slate-700">
           <p className="text-rose-600 dark:text-rose-400">{error}</p>
         </div>
@@ -739,9 +879,6 @@ export default function ResultPageClient({ assessmentId }: Props) {
   if (!data) {
     return (
       <div className="min-h-dvh bg-gradient-to-br from-indigo-50 via-white to-emerald-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-6">
-        <div className="fixed top-4 right-4 z-50">
-          <DarkModeToggle />
-        </div>
         <div className="mx-auto max-w-md text-center py-12">{t("result.noData")}</div>
       </div>
     );
@@ -751,9 +888,6 @@ export default function ResultPageClient({ assessmentId }: Props) {
   if (data.testType === "progress" && isMonitoringResult(data.scoring)) {
     return (
       <div className="min-h-dvh bg-gradient-to-br from-indigo-50 via-white to-emerald-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors duration-300 pb-16">
-        <div className="fixed top-4 right-4 z-50">
-          <DarkModeToggle />
-        </div>
         <div className="mx-auto max-w-[900px] px-4 py-6">
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">
             Progress monitoring — Natija
@@ -771,14 +905,15 @@ export default function ResultPageClient({ assessmentId }: Props) {
               <div className="text-sm text-rose-600 dark:text-rose-400">
                 {data.aiSummary.error === "AI javobi JSON emas." ? t("result.aiErrorJson") : `${t("result.aiError")}: ${data.aiSummary.error ?? t("result.aiErrorUnknown")}`}
               </div>
+            ) : aiLoading ? (
+              <AiSummaryLoadingCard progress={aiProgress} t={t} />
             ) : (
               <button
                 type="button"
                 onClick={requestAiSummary}
-                disabled={aiLoading}
                 className="rounded-2xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {aiLoading ? t("result.aiGenerating") : t("result.getAiSummary")}
+                {t("result.getAiSummary")}
               </button>
             )}
           </section>
@@ -805,9 +940,6 @@ export default function ResultPageClient({ assessmentId }: Props) {
 
     return (
       <div className="min-h-dvh bg-slate-50/80 dark:bg-slate-950 transition-colors duration-300 pb-20">
-        <div className="fixed top-4 right-4 z-50">
-          <DarkModeToggle />
-        </div>
         <div className="mx-auto max-w-[920px] px-4 sm:px-6 py-8 sm:py-10">
           <div className="mb-8">
             <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">{t("result.screeningTitle")}</p>
@@ -840,14 +972,15 @@ export default function ResultPageClient({ assessmentId }: Props) {
               <div className="text-sm text-rose-600 dark:text-rose-400">
                 {data.aiSummary.error === "AI javobi JSON emas." ? t("result.aiErrorJson") : `${t("result.aiError")}: ${data.aiSummary.error ?? t("result.aiErrorUnknown")}`}
               </div>
+            ) : aiLoading ? (
+              <AiSummaryLoadingCard progress={aiProgress} t={t} />
             ) : (
               <button
                 type="button"
                 onClick={requestAiSummary}
-                disabled={aiLoading}
                 className="rounded-2xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {aiLoading ? t("result.aiGenerating") : t("result.getAiSummary")}
+                {t("result.getAiSummary")}
               </button>
             )}
             <div className="mt-6">
@@ -864,6 +997,7 @@ export default function ResultPageClient({ assessmentId }: Props) {
 
           {/* ABA markazlar — AI xulosadan keyin; PDF da ham tanlangan viloyat/markazlar chiqadi */}
           <AbaCentersSection
+            assessmentId={assessmentId}
             region={abaRegion}
             setRegion={setAbaRegion}
             district={abaDistrict}
@@ -906,9 +1040,6 @@ export default function ResultPageClient({ assessmentId }: Props) {
 
   return (
     <div className="min-h-dvh bg-gradient-to-br from-indigo-50 via-white to-emerald-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors duration-300 pb-16">
-      <div className="fixed top-4 right-4 z-50">
-        <DarkModeToggle />
-      </div>
       <div className="mx-auto max-w-[900px] px-4 py-6">
         <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">Natija</h1>
 
@@ -988,14 +1119,15 @@ export default function ResultPageClient({ assessmentId }: Props) {
             <div className="text-sm text-rose-600 dark:text-rose-400">
               {data.aiSummary.error === "AI javobi JSON emas." ? t("result.aiErrorJson") : `${t("result.aiError")}: ${data.aiSummary.error ?? t("result.aiErrorUnknown")}`}
             </div>
+          ) : aiLoading ? (
+            <AiSummaryLoadingCard progress={aiProgress} t={t} />
           ) : (
             <button
               type="button"
               onClick={requestAiSummary}
-              disabled={aiLoading}
               className="rounded-2xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {aiLoading ? t("result.aiGenerating") : t("result.getAiSummary")}
+              {t("result.getAiSummary")}
             </button>
           )}
         </section>
@@ -1007,9 +1139,6 @@ export default function ResultPageClient({ assessmentId }: Props) {
   // Agar hech qanday natija topilmasa
   return (
     <div className="min-h-dvh bg-gradient-to-br from-indigo-50 via-white to-emerald-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-6">
-      <div className="fixed top-4 right-4 z-50">
-        <DarkModeToggle />
-      </div>
       <div className="mx-auto max-w-md text-center py-12">{t("result.formatUnknown")}</div>
     </div>
   );
@@ -1236,27 +1365,37 @@ function ScreeningV2ResultView({
             <p>{t("result.screening.highRiskDesc")}</p>
           )}
 
-          {/* Har bir blok bo'yicha foiz va professional tushuntirish — ota-onaga aniq ma'lumot */}
+          {/* Har bir blok bo'yicha foiz, 5 daraja (0–20% … 80–100%) va blokga xos professional tushuntirish */}
           {blocks.length > 0 && (
             <div className="mt-5 pt-4 border-t border-slate-200 dark:border-slate-700">
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
                 {t("result.screening.blocksConclusionTitle")}
               </p>
-              <ul className="space-y-3">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                {t("result.screening.range.veryLow")} · {t("result.screening.range.low")} · {t("result.screening.range.mid")} · {t("result.screening.range.high")} · {t("result.screening.range.veryHigh")}
+              </p>
+              <ul className="space-y-4">
                 {blocks.map((b) => {
                   const score = Math.round(b.score);
-                  const interpretation =
-                    score <= 30
-                      ? t("result.screening.blockScoreLow")
-                      : score <= 60
-                        ? t("result.screening.blockScoreMid")
-                        : t("result.screening.blockScoreHigh");
+                  const rangeKey =
+                    score < 20
+                      ? "veryLow"
+                      : score < 40
+                        ? "low"
+                        : score < 60
+                          ? "mid"
+                          : score < 80
+                            ? "high"
+                            : "veryHigh";
+                  const blockKey = ["A", "B", "C"].includes(String(b.blockId)) ? `block${b.blockId}` : "blockA";
+                  const interpretation = t(`result.screening.${blockKey}.${rangeKey}`);
+                  const rangeLabel = t(`result.screening.range.${rangeKey}`);
                   return (
-                    <li key={b.blockId} className="flex flex-col gap-1">
+                    <li key={b.blockId} className="flex flex-col gap-1.5">
                       <span className="font-semibold text-slate-800 dark:text-slate-200">
-                        {getBlockTitle(b.blockId)} — {score}%
+                        {getBlockTitle(b.blockId)} — {score}% ({rangeLabel})
                       </span>
-                      <span className="text-slate-600 dark:text-slate-400">{interpretation}</span>
+                      <span className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">{interpretation}</span>
                     </li>
                   );
                 })}
