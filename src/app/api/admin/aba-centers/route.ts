@@ -96,6 +96,13 @@ export async function PUT(req: Request) {
       });
     });
     await prisma.$transaction(tx);
+    // Ro'yxatdan o'chirilgan markazlarni bazadan ham o'chirish (refresh dan keyin qaytib kelmasin)
+    const keptIds = items.map((c: AbaCenterPayload, idx: number) => toPrismaCenter(c, idx).id);
+    if (keptIds.length > 0) {
+      await prisma.abaCenter.deleteMany({ where: { id: { notIn: keptIds } } });
+    } else {
+      await prisma.abaCenter.deleteMany({});
+    }
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error("[ABA centers PUT]", e);
