@@ -28,6 +28,7 @@ type AbaCenter = {
 export default function AdminAbaCenters() {
   const [items, setItems] = React.useState<AbaCenter[]>([]);
   const [status, setStatus] = React.useState("");
+  const [expandedId, setExpandedId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     fetch("/api/admin/aba-centers")
@@ -66,10 +67,11 @@ export default function AdminAbaCenters() {
   }
 
   function addCenter(region: string) {
+    const newId = `new-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     setItems((prev) => [
       ...prev,
       {
-        id: `new-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        id: newId,
         region,
         district: isToshkentShahar(region) ? "" : null,
         name: "",
@@ -88,6 +90,7 @@ export default function AdminAbaCenters() {
         active: true,
       },
     ]);
+    setExpandedId(newId);
   }
 
   async function uploadImage(index: number, file: File) {
@@ -169,7 +172,7 @@ export default function AdminAbaCenters() {
     const payload = items.map((it, idx) => ({
       ...it,
       order: idx,
-      active: it.active !== false,
+      active: true,
     }));
     const res = await fetch("/api/admin/aba-centers", {
       method: "PUT",
@@ -205,33 +208,47 @@ export default function AdminAbaCenters() {
               {list.length === 0 ? (
                 <div className="mt-3 text-xs text-slate-500">Hozircha markaz yo‘q.</div>
               ) : (
-                <div className="mt-3 space-y-3">
+                <div className="mt-3 space-y-2">
                   {list.map((it) => {
                     const idx = items.findIndex((x) => x.id === it.id);
+                    const isExpanded = expandedId === it.id;
                     return (
-                      <div key={it.id} className="rounded-xl border border-slate-200 p-3">
-                        <div className="flex items-center justify-between flex-wrap gap-2">
-                          <div className="text-xs font-semibold text-slate-600">Markaz</div>
-                          <div className="flex items-center gap-3">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                              <span className="text-xs text-slate-600">Ochiq</span>
-                              <input
-                                type="checkbox"
-                                checked={it.active !== false}
-                                onChange={(e) => update(idx, { active: e.target.checked })}
-                                className="rounded border-slate-300"
-                              />
-                            </label>
-                            <button
-                              type="button"
-                              onClick={() => removeCenter(it.id)}
-                              className="text-xs text-rose-600 hover:underline"
-                            >
-                              O‘chirish
-                            </button>
+                      <div key={it.id} className="rounded-xl border border-slate-200 overflow-hidden">
+                        {!isExpanded ? (
+                          <div className="flex items-center justify-between p-3 bg-slate-50/80 hover:bg-slate-100/80">
+                            <span className="font-medium text-slate-900">
+                              {it.name?.trim() || "Yangi markaz (nomini kiriting)"}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setExpandedId(it.id)}
+                                className="rounded-lg bg-slate-200 hover:bg-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700"
+                              >
+                                O‘zgartirish
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => removeCenter(it.id)}
+                                className="text-xs text-rose-600 hover:underline"
+                              >
+                                Ro‘yxatdan o‘chirish
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                        <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3">
+                        ) : (
+                          <>
+                            <div className="flex items-center justify-between p-3 border-b border-slate-200 bg-slate-50/80">
+                              <span className="text-xs font-semibold text-slate-600">Markaz ma’lumotlari</span>
+                              <button
+                                type="button"
+                                onClick={() => setExpandedId(null)}
+                                className="rounded-lg bg-slate-200 hover:bg-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700"
+                              >
+                                Yopish
+                              </button>
+                            </div>
+                        <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
                           {isToshkentShahar(it.region) && (
                             <div className="md:col-span-2">
                               <label className="block text-xs font-medium text-slate-600 mb-1">Tuman</label>
@@ -453,6 +470,8 @@ export default function AdminAbaCenters() {
                             </div>
                           </div>
                         </div>
+                          </>
+                        )}
                       </div>
                     );
                   })}
