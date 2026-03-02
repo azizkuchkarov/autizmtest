@@ -26,10 +26,10 @@ const ANSWER_LABELS_RU: Record<number, string> = {
 const A4_W = 210;
 const A4_H = 297;
 const MARGIN = 18;
-const LINE_HEIGHT = 5.5;
-const FONT_SIZE_BODY = 10;
-const FONT_SIZE_TITLE = 14;
-const FONT_SIZE_HEADING = 11;
+const LINE_HEIGHT = 6;
+const FONT_SIZE_BODY = 11;
+const FONT_SIZE_TITLE = 16;
+const FONT_SIZE_HEADING = 13;
 
 /** Risk darajasi bo‘yicha RGB (jsPDF setFillColor uchun) */
 function getRiskRgb(totalScore: number): [number, number, number] {
@@ -49,14 +49,14 @@ function getBlockBarRgb(score: number): [number, number, number] {
 
 /** Donut chizish: tashqi rangli halqa, ichida foiz matni. fontName — kirillitsa uchun "Roboto" */
 function drawDonut(doc: jsPDF, cx: number, cy: number, value: number, fontName = "helvetica"): void {
-  const outerR = 14;
-  const innerR = 8;
+  const outerR = 18;
+  const innerR = 11;
   const [r, g, b] = getRiskRgb(value);
   doc.setFillColor(r, g, b);
   doc.circle(cx, cy, outerR, "F");
   doc.setFillColor(255, 255, 255);
   doc.circle(cx, cy, innerR, "F");
-  doc.setFontSize(9);
+  doc.setFontSize(10);
   doc.setFont(fontName, fontName === "Roboto" ? "normal" : "bold");
   doc.setTextColor(0, 0, 0);
   doc.text(`${Math.round(value)}%`, cx - 3.5, cy + 1.2);
@@ -330,17 +330,18 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
   y += LINE_HEIGHT + 2;
 
   // Rangli donut va risk bar (diagramma)
-  const donutCx = MARGIN + 18;
-  const donutCy = y + 18;
+  const donutCx = MARGIN + 22;
+  const donutCy = y + 20;
   drawDonut(doc, donutCx, donutCy, result.totalScore, pdfFont);
-  const barX = MARGIN + 50;
-  const barW = 55;
-  const barH = 6;
+  const barX = MARGIN + 58;
+  const barW = 70;
+  const barH = 7;
   drawRiskBar(doc, barX, y + 12, barW, barH, result.totalScore);
   doc.text(`Risk: ${result.totalScore.toFixed(1)}%`, barX + barW + 4, y + 16);
   y += 38;
 
   const disclaimerLines = doc.splitTextToSize(L.disclaimerUmumiy, contentW);
+  y = ensurePage(doc, y, disclaimerLines.length * LINE_HEIGHT + 4);
   doc.text(disclaimerLines, MARGIN, y);
   y += disclaimerLines.length * LINE_HEIGHT;
   const redFlagCount = (result.redFlags ?? []).length;
@@ -377,8 +378,10 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
   }
   const xulosaParagraphs = getXulosaParagraphs(result.riskLabel, ageLabel, result.totalScore, locale);
   for (let i = 0; i < xulosaParagraphs.length; i++) {
-    y += 2;
     const pLines = doc.splitTextToSize(xulosaParagraphs[i], contentW);
+    const need = pLines.length * LINE_HEIGHT + 6;
+    y = ensurePage(doc, y, need);
+    y += 2;
     doc.text(pLines, MARGIN, y);
     y += pLines.length * LINE_HEIGHT;
     if (i === 0 && blockInterpretations && blockInterpretations.length > 0) {
@@ -408,6 +411,7 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
   }
   y += 2;
   const smallLines = doc.splitTextToSize(L.smallDisclaimer, contentW);
+  y = ensurePage(doc, y, smallLines.length * LINE_HEIGHT + 4);
   doc.text(smallLines, MARGIN, y);
   y += smallLines.length * LINE_HEIGHT + 4;
 
@@ -416,10 +420,11 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
   doc.text(L.bloklarBuyicha, MARGIN, y);
   y += LINE_HEIGHT + 2;
   doc.setFont(pdfFont, "normal");
-  const blockBarW = 50;
-  const blockBarH = 4;
+  const blockBarW = 70;
+  const blockBarH = 5;
   const domainById = new Map(domains.map((d) => [d.id, d.title]));
   for (const b of result.blocks ?? []) {
+    y = ensurePage(doc, y, LINE_HEIGHT + 6);
     const score = Math.min(100, Math.max(0, Number(b.score) || 0));
     const [r, g, bl] = getBlockBarRgb(score);
     doc.setFillColor(230, 230, 230);
@@ -443,6 +448,8 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
     doc.setFont(pdfFont, "normal");
     for (const rf of result.redFlags ?? []) {
       const lines = doc.splitTextToSize(rf.text, contentW);
+      const need = lines.length * LINE_HEIGHT + 4;
+      y = ensurePage(doc, y, need);
       doc.text(lines, MARGIN, y);
       y += lines.length * LINE_HEIGHT;
     }
@@ -459,13 +466,14 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
     y += LINE_HEIGHT;
     doc.setFont(pdfFont, "normal");
     for (const issue of topWithBall) {
-      y = ensurePage(doc, y, LINE_HEIGHT * 3);
       const ansStr =
         typeof issue.answer === "number"
           ? answerLabels[issue.answer] ?? (locale === "ru" ? "Ответ " : "Javob ") + issue.answer
           : "—";
       const qText = questionById.get(issue.questionId)?.text ?? issue.text;
       const lines = doc.splitTextToSize(`${qText}  — ${L.javob}: ${ansStr}`, contentW);
+      const need = lines.length * LINE_HEIGHT + 4;
+      y = ensurePage(doc, y, need);
       doc.text(lines, MARGIN, y);
       y += lines.length * LINE_HEIGHT;
     }
@@ -484,40 +492,47 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
 
     if (aiPayload.summary?.shortConclusion) {
       const cLines = doc.splitTextToSize(aiPayload.summary.shortConclusion, contentW);
+      y = ensurePage(doc, y, cLines.length * LINE_HEIGHT + 4);
       doc.text(cLines, MARGIN, y);
       y += cLines.length * LINE_HEIGHT;
     }
     if (aiPayload.summary?.whyThisLevel) {
       const wLines = doc.splitTextToSize(aiPayload.summary.whyThisLevel, contentW);
+      y = ensurePage(doc, y, wLines.length * LINE_HEIGHT + 4);
       doc.text(wLines, MARGIN, y);
       y += wLines.length * LINE_HEIGHT;
     }
     if (Array.isArray(aiPayload.strengths?.examples) && aiPayload.strengths.examples.length > 0) {
       y += 2;
+      y = ensurePage(doc, y, LINE_HEIGHT * 2);
       doc.setFont(pdfFont, pdfFontStyle("bold"));
       doc.text(L.kuchliTomonlar, MARGIN, y);
       y += LINE_HEIGHT;
       doc.setFont(pdfFont, "normal");
       for (const ex of aiPayload.strengths.examples) {
         const exLines = doc.splitTextToSize(`• ${ex}`, contentW - 4);
+        y = ensurePage(doc, y, exLines.length * LINE_HEIGHT + 2);
         doc.text(exLines, MARGIN + 2, y);
         y += exLines.length * LINE_HEIGHT;
       }
     }
     if (Array.isArray(aiPayload.needsFocus?.priority) && aiPayload.needsFocus.priority.length > 0) {
       y += 2;
+      y = ensurePage(doc, y, LINE_HEIGHT * 2);
       doc.setFont(pdfFont, pdfFontStyle("bold"));
       doc.text(L.etiborKerak, MARGIN, y);
       y += LINE_HEIGHT;
       doc.setFont(pdfFont, "normal");
       for (const p of aiPayload.needsFocus.priority) {
         const pLines = doc.splitTextToSize(`• ${p}`, contentW - 4);
+        y = ensurePage(doc, y, pLines.length * LINE_HEIGHT + 2);
         doc.text(pLines, MARGIN + 2, y);
         y += pLines.length * LINE_HEIGHT;
       }
     }
     if (Array.isArray(aiPayload.nextSteps?.homePlan) && aiPayload.nextSteps.homePlan.length > 0) {
       y += 2;
+      y = ensurePage(doc, y, LINE_HEIGHT * 2);
       doc.setFont(pdfFont, pdfFontStyle("bold"));
       doc.text(L.uyRejasi, MARGIN, y);
       y += LINE_HEIGHT;
@@ -527,18 +542,21 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
         if (plan.title) {
           doc.setFont(pdfFont, pdfFontStyle("bold"));
           const tLines = doc.splitTextToSize(plan.title, contentW - 2);
+          y = ensurePage(doc, y, tLines.length * LINE_HEIGHT + 2);
           doc.text(tLines, MARGIN + 2, y);
           y += tLines.length * LINE_HEIGHT;
           doc.setFont(pdfFont, "normal");
         }
         if (plan.why) {
           const wLines = doc.splitTextToSize(plan.why, contentW - 4);
+          y = ensurePage(doc, y, wLines.length * LINE_HEIGHT + 2);
           doc.text(wLines, MARGIN + 2, y);
           y += wLines.length * LINE_HEIGHT;
         }
         if (Array.isArray(plan.how) && plan.how.length > 0) {
           for (const step of plan.how) {
             const sLines = doc.splitTextToSize(`• ${step}`, contentW - 6);
+            y = ensurePage(doc, y, sLines.length * LINE_HEIGHT + 2);
             doc.text(sLines, MARGIN + 4, y);
             y += sLines.length * LINE_HEIGHT;
           }
@@ -549,6 +567,7 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
     if (aiPayload.disclaimer?.text) {
       y += 4;
       const dLines = doc.splitTextToSize(aiPayload.disclaimer.text, contentW);
+      y = ensurePage(doc, y, dLines.length * LINE_HEIGHT + 4);
       doc.setFont(pdfFont, useCyrillicFont ? "normal" : "italic");
       doc.text(dLines, MARGIN, y);
       doc.setFont(pdfFont, "normal");
@@ -580,15 +599,18 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
       }
       if (c.address) {
         const aLines = doc.splitTextToSize(`${L.manzil}: ${c.address}`, contentW - 2);
+        y = ensurePage(doc, y, aLines.length * LINE_HEIGHT + 2);
         doc.text(aLines, MARGIN, y);
         y += aLines.length * LINE_HEIGHT;
       }
       if (c.phone) {
+        y = ensurePage(doc, y, LINE_HEIGHT + 2);
         doc.text(`${L.telefon}: ${c.phone}`, MARGIN, y);
         y += LINE_HEIGHT;
       }
       if (c.url) {
         const urlAbs = c.url.startsWith("http") ? c.url : `https://${c.url}`;
+        y = ensurePage(doc, y, LINE_HEIGHT + 2);
         doc.setTextColor(0, 51, 102);
         doc.textWithLink(`URL: ${c.url}`, MARGIN, y, { url: urlAbs });
         doc.setTextColor(0, 0, 0);
@@ -598,6 +620,7 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
         const igAbs = c.instagram.startsWith("http")
           ? c.instagram
           : `https://instagram.com/${c.instagram.replace(/^@?\/?/, "")}`;
+        y = ensurePage(doc, y, LINE_HEIGHT + 2);
         doc.setTextColor(0, 51, 102);
         doc.textWithLink(`Instagram: ${c.instagram}`, MARGIN, y, { url: igAbs });
         doc.setTextColor(0, 0, 0);
@@ -605,6 +628,7 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
       }
       if (c.note) {
         const nLines = doc.splitTextToSize(c.note, contentW - 2);
+        y = ensurePage(doc, y, nLines.length * LINE_HEIGHT + 2);
         doc.text(nLines, MARGIN, y);
         y += nLines.length * LINE_HEIGHT;
       }
@@ -614,8 +638,10 @@ export function generateScreeningPdf(params: PdfScreeningParams): void {
   }
 
   y += 8;
+  const footerLines = doc.splitTextToSize(L.footerDisclaimer, contentW);
+  y = ensurePage(doc, y, footerLines.length * LINE_HEIGHT + 4);
   doc.setFontSize(9);
-  doc.text(L.footerDisclaimer, MARGIN, y);
+  doc.text(footerLines, MARGIN, y);
 
   const fileName = locale === "ru"
     ? `Skrining-rezultat-${getXulosaRaqami(assessmentId, completedAt)}.pdf`

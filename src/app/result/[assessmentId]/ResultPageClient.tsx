@@ -853,6 +853,11 @@ export default function ResultPageClient({ assessmentId }: Props) {
         fontBase64,
         blockInterpretations: blockInterpretations.length > 0 ? blockInterpretations : undefined,
       });
+      await fetch("/api/log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "pdf_download", metadata: { assessmentId } }),
+      });
     } catch (e) {
       console.error(e);
     } finally {

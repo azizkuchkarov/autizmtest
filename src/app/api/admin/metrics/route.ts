@@ -7,7 +7,8 @@ export async function GET() {
     totalPdf,
     last7,
     paymentsAgg,
-    recentPayments,
+    recentPaymentsWithAssessments,
+    pdfDownloadAssessmentIds,
     adminLogins,
   ] = await Promise.all([
     prisma.userEvent.count({ where: { type: "test_open" } }),
@@ -34,7 +35,16 @@ export async function GET() {
         merchantTransId: true,
         createdAt: true,
         paidAt: true,
+        assessments: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { id: true, aiSummaryStatus: true },
+        },
       },
+    }),
+    prisma.userEvent.findMany({
+      where: { type: "pdf_download" },
+      select: { metadata: true },
     }),
     prisma.userEvent.findMany({
       where: { type: "admin_login" },
@@ -44,6 +54,28 @@ export async function GET() {
     }),
   ]);
 
+  const pdfSet = new Set<string>();
+  for (const e of pdfDownloadAssessmentIds) {
+    const id = (e.metadata as Record<string, unknown>)?.assessmentId;
+    if (typeof id === "string") pdfSet.add(id);
+  }
+
+  const recent = recentPaymentsWithAssessments.map((p) => {
+    const assessment = p.assessments[0] ?? null;
+    return {
+      id: p.id,
+      phone: p.phone,
+      amount: p.amount,
+      status: p.status,
+      merchantTransId: p.merchantTransId,
+      createdAt: p.createdAt,
+      paidAt: p.paidAt,
+      assessmentId: assessment?.id ?? null,
+      aiSummaryReceived: assessment ? assessment.aiSummaryStatus === "ready" : false,
+      pdfDownloaded: assessment ? pdfSet.has(assessment.id) : false,
+    };
+  });
+
   return NextResponse.json({
     totalTests,
     totalPdf,
@@ -51,7 +83,7 @@ export async function GET() {
     payments: {
       totalCount: paymentsAgg._count.id,
       totalAmount: paymentsAgg._sum.amount ?? 0,
-      recent: recentPayments,
+      recent,
     },
     adminLogins: adminLogins.map((e) => ({
       email: (e.metadata as Record<string, unknown>)?.email ?? "—",

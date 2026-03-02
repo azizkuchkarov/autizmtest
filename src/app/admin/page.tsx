@@ -17,6 +17,9 @@ type Metrics = {
       merchantTransId: string;
       createdAt: string;
       paidAt: string | null;
+      assessmentId: string | null;
+      aiSummaryReceived: boolean;
+      pdfDownloaded: boolean;
     }[];
   };
   adminLogins?: { email: string; createdAt: string }[];
@@ -103,7 +106,7 @@ export default function AdminDashboard() {
         )}
       </section>
 
-      {/* To‘lovlar ro‘yxati */}
+      {/* To‘lovlar ro‘yxati — so‘nggi 50: AI xulosa, PDF, Mijoz natijani ko‘rish */}
       <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
         <h2 className="text-lg font-bold text-slate-900 mb-4">To‘lovlar (so‘nggi 50)</h2>
         {metrics?.payments?.recent?.length ? (
@@ -114,7 +117,10 @@ export default function AdminDashboard() {
                   <th className="pb-2 pr-4 font-semibold">Telefon</th>
                   <th className="pb-2 pr-4 font-semibold">Summa</th>
                   <th className="pb-2 pr-4 font-semibold">To‘langan sana</th>
-                  <th className="pb-2 font-semibold">Tranzaksiya</th>
+                  <th className="pb-2 pr-4 font-semibold">AI xulosa</th>
+                  <th className="pb-2 pr-4 font-semibold">PDF yuklangan</th>
+                  <th className="pb-2 pr-4 font-semibold">Tranzaksiya</th>
+                  <th className="pb-2 font-semibold">Mijoz natijasi</th>
                 </tr>
               </thead>
               <tbody>
@@ -127,7 +133,35 @@ export default function AdminDashboard() {
                     <td className="py-2 pr-4 text-slate-600">
                       {formatDate(p.paidAt ?? p.createdAt)}
                     </td>
-                    <td className="py-2 text-slate-500 font-mono text-xs">{p.merchantTransId}</td>
+                    <td className="py-2 pr-4">
+                      {p.assessmentId
+                        ? p.aiSummaryReceived
+                          ? <span className="text-emerald-600 font-medium">Ha</span>
+                          : <span className="text-slate-400">Yo‘q</span>
+                        : "—"}
+                    </td>
+                    <td className="py-2 pr-4">
+                      {p.assessmentId
+                        ? p.pdfDownloaded
+                          ? <span className="text-emerald-600 font-medium">Ha</span>
+                          : <span className="text-slate-400">Yo‘q</span>
+                        : "—"}
+                    </td>
+                    <td className="py-2 pr-4 text-slate-500 font-mono text-xs">{p.merchantTransId}</td>
+                    <td className="py-2">
+                      {p.assessmentId ? (
+                        <a
+                          href={`/result/${p.assessmentId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-indigo-600 hover:text-indigo-800 font-medium underline"
+                        >
+                          Natijani ko‘rish
+                        </a>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
