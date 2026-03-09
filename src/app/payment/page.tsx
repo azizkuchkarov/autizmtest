@@ -124,7 +124,9 @@ function PaymentContent() {
         return;
       }
       try {
-        sessionStorage.setItem("asds_phone", phone);
+        if (phone) {
+          sessionStorage.setItem("asds_phone", phone);
+        }
       } catch {}
       setMerchantTransId(data.merchantTransId);
       setPolling(true);
@@ -149,9 +151,6 @@ function PaymentContent() {
         setError(data?.error ?? t("common.error"));
         return;
       }
-      try {
-        sessionStorage.setItem("asds_phone", phone);
-      } catch {}
       if (data.redirectUrl) {
         window.location.href = data.redirectUrl;
         return;
