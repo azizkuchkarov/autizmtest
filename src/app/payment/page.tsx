@@ -63,12 +63,25 @@ function PaymentContent() {
   React.useEffect(() => {
     const mt = searchParams.get("mt") || searchParams.get("merchant_trans_id");
     const aid = searchParams.get("assessment_id");
+
     if (mt) {
       setMerchantTransId(mt);
       setPolling(true);
     }
+
     if (aid) {
       setAssessmentId(aid);
+      try {
+        sessionStorage.setItem("autizm_assessment_id", aid);
+      } catch {}
+    } else {
+      // Agar URL da assessment_id bo'lmasa, lekin avval saqlangan bo'lsa — uni qayta tiklaymiz
+      try {
+        const storedAid = sessionStorage.getItem("autizm_assessment_id");
+        if (storedAid) {
+          setAssessmentId(storedAid);
+        }
+      } catch {}
     }
   }, [searchParams]);
 
