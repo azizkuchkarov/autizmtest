@@ -91,19 +91,15 @@ function PaymentContent() {
               // ignore linking error, result baribir ochiladi
             }
             router.push(`/result/${assessmentId}`);
-          } else {
-            const params = new URLSearchParams();
-            if (data.paymentId) params.set("payment_id", data.paymentId);
-            if (typeof data.amount === "number") params.set("amount", String(data.amount));
-            const qs = params.toString() ? `?${params.toString()}` : "";
-            router.push(`/test${qs}`);
+            router.refresh();
           }
-          router.refresh();
+          // Agar assessmentId yo'q bo'lsa, hech qayerga o'tmaymiz:
+          // bu holatda oqim noto'g'ri ishlatilgan (testdan keyin to'lov emas).
         }
       } catch {}
     }, 3000);
     return () => clearInterval(interval);
-  }, [merchantTransId, polling, router]);
+  }, [merchantTransId, polling, router, assessmentId]);
 
   async function handlePayClick() {
     setError("");
