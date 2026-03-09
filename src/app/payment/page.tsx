@@ -18,6 +18,7 @@ function PaymentContent() {
   const [amount, setAmount] = React.useState<number>(1_000);
   const [cardModalOpen, setCardModalOpen] = React.useState(false);
   const [clickConfirmOpen, setClickConfirmOpen] = React.useState(false);
+  const [assessmentId, setAssessmentId] = React.useState<string | null>(null);
 
   const amountText = String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
@@ -61,9 +62,13 @@ function PaymentContent() {
 
   React.useEffect(() => {
     const mt = searchParams.get("mt") || searchParams.get("merchant_trans_id");
+    const aid = searchParams.get("assessment_id");
     if (mt) {
       setMerchantTransId(mt);
       setPolling(true);
+    }
+    if (aid) {
+      setAssessmentId(aid);
     }
   }, [searchParams]);
 
@@ -75,11 +80,24 @@ function PaymentContent() {
         const data = await res.json();
         if (data.status === "paid") {
           setPolling(false);
-          const params = new URLSearchParams();
-          if (data.paymentId) params.set("payment_id", data.paymentId);
-          if (typeof data.amount === "number") params.set("amount", String(data.amount));
-          const qs = params.toString() ? `?${params.toString()}` : "";
-          router.push(`/test${qs}`);
+          if (assessmentId && data.paymentId) {
+            try {
+              await fetch("/api/assessments/link-payment", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ assessmentId, paymentId: data.paymentId }),
+              });
+            } catch {
+              // ignore linking error, result baribir ochiladi
+            }
+            router.push(`/result/${assessmentId}`);
+          } else {
+            const params = new URLSearchParams();
+            if (data.paymentId) params.set("payment_id", data.paymentId);
+            if (typeof data.amount === "number") params.set("amount", String(data.amount));
+            const qs = params.toString() ? `?${params.toString()}` : "";
+            router.push(`/test${qs}`);
+          }
           router.refresh();
         }
       } catch {}
@@ -118,17 +136,13 @@ function PaymentContent() {
   async function handlePayByCard() {
     setCardModalOpen(false);
     setError("");
-    if (!phone || !/^\+998\d{9}$/.test(phone.replace(/\s+/g, ""))) {
-      setError(t("payment.needPhoneText"));
-      return;
-    }
     setLoading(true);
     try {
       const returnUrl = typeof window !== "undefined" ? window.location.origin : "";
       const res = await fetch("/api/payment/redirect-url", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, return_url: returnUrl }),
+        body: JSON.stringify({ return_url: returnUrl }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -205,6 +219,38 @@ function PaymentContent() {
                 <span>{t("payment.whatPdf")}</span>
               </li>
             </ul>
+            <div className="mt-4 rounded-2xl bg-slate-100 dark:bg-slate-800/70 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                {t("payment.riskScaleInfoTitle")}
+              </p>
+              <ul className="mt-2 space-y-1 text-xs text-slate-700 dark:text-slate-300">
+                <li>
+                  <Link href="/result/demo-0-20" className="hover:underline text-indigo-600 dark:text-indigo-400">
+                    {t("payment.riskScaleLine1")}
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/result/demo-20-40" className="hover:underline text-indigo-600 dark:text-indigo-400">
+                    {t("payment.riskScaleLine2")}
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/result/demo-40-60" className="hover:underline text-indigo-600 dark:text-indigo-400">
+                    {t("payment.riskScaleLine3")}
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/result/demo-60-80" className="hover:underline text-indigo-600 dark:text-indigo-400">
+                    {t("payment.riskScaleLine4")}
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/result/demo-80-100" className="hover:underline text-indigo-600 dark:text-indigo-400">
+                    {t("payment.riskScaleLine5")}
+                  </Link>
+                </li>
+              </ul>
+            </div>
             <p className="mt-4 text-sm font-medium text-slate-700 dark:text-slate-300">
               {t("payment.afterPaymentAutoTest")}
             </p>

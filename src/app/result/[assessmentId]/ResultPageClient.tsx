@@ -949,7 +949,13 @@ export default function ResultPageClient({ assessmentId }: Props) {
           <div className="mb-8">
             <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">{t("result.screeningTitle")}</p>
             <h1 className="mt-1 text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{t("result.resultTitle")}</h1>
-            {data.paidAmount != null && data.paidAmount > 0 && (
+            {assessmentId.startsWith("demo-") && (
+              <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-amber-50 dark:bg-amber-900/40 px-3 py-1 text-xs font-semibold text-amber-800 dark:text-amber-200 border border-amber-200/70 dark:border-amber-700/70">
+                <span className="h-2 w-2 rounded-full bg-amber-500" />
+                <span>{t("result.demoBadge")}</span>
+              </div>
+            )}
+            {data.paidAmount != null && data.paidAmount > 0 && !assessmentId.startsWith("demo-") && (
               <div className="mt-4 flex flex-wrap items-center gap-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm">
                 <span className="font-semibold text-slate-700 dark:text-slate-300">
                   {t("result.paidAmount")}: {String(data.paidAmount).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} {t("payment.currency")}
@@ -1011,6 +1017,25 @@ export default function ResultPageClient({ assessmentId }: Props) {
             setCenters={setAbaCenters}
           />
         </div>
+
+        {assessmentId.startsWith("demo-") && (
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.location.href = "/payment";
+              }
+            }}
+            className="fixed bottom-5 left-5 z-40 flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/40 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
+          >
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.75 19.5L8.25 12l7.5-7.5" />
+              </svg>
+            </span>
+            <span>To‘lov sahifasiga qaytish</span>
+          </button>
+        )}
       </div>
     );
   }

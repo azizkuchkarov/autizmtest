@@ -9,13 +9,7 @@ import type { AnswerValue } from "@/lib/scoring";
 import type { TestType } from "@/lib/test-types";
 import { useLocale } from "@/contexts/LocaleContext";
 import { useTranslations } from "@/lib/translations";
-import {
-  getStoredInitialData,
-  getStoredPaymentId,
-  getStoredPaidAmount,
-  PAYMENT_ID_KEY,
-  PAID_AMOUNT_KEY,
-} from "@/lib/initial-data";
+import { getStoredInitialData } from "@/lib/initial-data";
 
 const DEFAULT_ANSWER_SCALE = [
   { value: 0, label: "Yo'q / hech qachon" },
@@ -37,40 +31,12 @@ function TestContent() {
   } | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [paidAmount, setPaidAmount] = React.useState<number | null>(null);
   const [noInitialData, setNoInitialData] = React.useState(false);
 
   const questionsApi = "/api/screening/questions";
   const testType: TestType = "screening";
 
   React.useEffect(() => {
-    const pid = searchParams.get("payment_id");
-    const amt = searchParams.get("amount");
-    if (pid) {
-      try {
-        sessionStorage.setItem(PAYMENT_ID_KEY, pid);
-      } catch {}
-    }
-    if (amt) {
-      const n = parseInt(amt, 10);
-      if (Number.isFinite(n)) {
-        setPaidAmount(n);
-        try {
-          sessionStorage.setItem(PAID_AMOUNT_KEY, amt);
-        } catch {}
-      }
-    } else {
-      const stored = getStoredPaidAmount();
-      if (stored != null) setPaidAmount(stored);
-    }
-  }, [searchParams]);
-
-  React.useEffect(() => {
-    const paymentId = searchParams.get("payment_id") || getStoredPaymentId();
-    if (!paymentId) {
-      router.replace("/start");
-      return;
-    }
     const initial = getStoredInitialData();
     if (!initial?.ageGroup) {
       setNoInitialData(true);
@@ -109,13 +75,11 @@ function TestContent() {
     if (!ageGroup) return;
     setError(null);
     const initial = getStoredInitialData();
-    const paymentId = getStoredPaymentId();
     const payload: Record<string, unknown> = {
       testType,
       ageGroup,
       answers,
     };
-    if (paymentId) payload.paymentId = paymentId;
     if (initial?.respondent) payload.respondent = initial.respondent;
     if (initial?.childGender) payload.childGender = initial.childGender;
     try {
@@ -131,11 +95,7 @@ function TestContent() {
       }
       const id = data?.assessmentId;
       if (id) {
-        try {
-          sessionStorage.removeItem(PAYMENT_ID_KEY);
-          sessionStorage.removeItem(PAID_AMOUNT_KEY);
-        } catch {}
-        router.push(`/result/${id}`);
+        router.push(`/payment?assessment_id=${id}`);
       } else {
         setError("Assessment ID topilmadi");
       }
@@ -204,19 +164,9 @@ function TestContent() {
     );
   }
 
-  const paidAmountFormatted =
-    paidAmount != null && paidAmount > 0
-      ? String(paidAmount).replace(/\B(?=(\d{3})+(?!\d))/g, " ")
-      : null;
-
   return (
     <div className="min-h-dvh bg-slate-50/80 dark:bg-slate-950 transition-colors duration-300 pb-20">
       <main className="mx-auto max-w-lg px-4 sm:px-6 pt-8 sm:pt-10">
-        {paidAmountFormatted && (
-          <div className="mb-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/80 px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300">
-            To&apos;langan summa: {paidAmountFormatted} so&apos;m
-          </div>
-        )}
         {error && (
           <div className="mb-4 rounded-2xl border border-rose-200/60 dark:border-rose-800/50 bg-rose-50 dark:bg-rose-900/20 p-4 text-sm font-medium text-rose-700 dark:text-rose-300">
             {error}

@@ -11,15 +11,9 @@ const CLICK_PAY_URL = "https://my.click.uz/services/pay";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const phone = String(body?.phone || "").replace(/\s+/g, "").trim();
+    const rawPhone = typeof body?.phone === "string" ? body.phone : "";
+    const phone = rawPhone.replace(/\s+/g, "").trim();
     const returnBase = String(body?.return_url || body?.returnUrl || "").trim() || undefined;
-
-    if (!/^\+998\d{9}$/.test(phone)) {
-      return NextResponse.json(
-        { error: "Telefon raqam +998XXXXXXXXX ko'rinishida bo'lishi kerak." },
-        { status: 400 }
-      );
-    }
 
     const merchantId = process.env.CLICK_MERCHANT_ID;
     const serviceId = process.env.CLICK_SERVICE_ID;
@@ -35,7 +29,7 @@ export async function POST(req: Request) {
 
     await prisma.payment.create({
       data: {
-        phone,
+        phone: phone || "CARD",
         amount,
         status: "pending",
         merchantTransId,

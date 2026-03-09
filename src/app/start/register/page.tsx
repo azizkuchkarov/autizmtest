@@ -67,7 +67,7 @@ export default function StartRegisterPage() {
       try {
         sessionStorage.setItem("asds_phone", cleanedPhone);
       } catch {}
-      router.push("/payment");
+      router.push("/test");
       router.refresh();
     } finally {
       setLoading(false);
