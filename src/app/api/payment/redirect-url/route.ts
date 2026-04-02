@@ -14,6 +14,8 @@ export async function POST(req: Request) {
     const rawPhone = typeof body?.phone === "string" ? body.phone : "";
     const phone = rawPhone.replace(/\s+/g, "").trim();
     const returnBase = String(body?.return_url || body?.returnUrl || "").trim() || undefined;
+    const assessmentId =
+      typeof body?.assessment_id === "string" ? body.assessment_id.trim() : "";
 
     const merchantId = process.env.CLICK_MERCHANT_ID;
     const serviceId = process.env.CLICK_SERVICE_ID;
@@ -37,7 +39,9 @@ export async function POST(req: Request) {
     });
 
     const returnUrl = returnBase
-      ? `${returnBase.replace(/\/$/, "")}/payment?mt=${encodeURIComponent(merchantTransId)}`
+      ? `${returnBase.replace(/\/$/, "")}/payment?mt=${encodeURIComponent(merchantTransId)}${
+          assessmentId ? `&assessment_id=${encodeURIComponent(assessmentId)}` : ""
+        }`
       : undefined;
 
     const params = new URLSearchParams({

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyCompleteSign } from "@/lib/click";
+import { logUserEvent } from "@/lib/user-event";
 
 async function parseBody(req: Request): Promise<Record<string, string>> {
   const ct = req.headers.get("content-type") || "";
@@ -85,6 +86,13 @@ export async function POST(req: Request) {
       await prisma.payment.update({
         where: { merchantTransId },
         data: { status: "paid", paidAt: new Date() },
+      });
+      void logUserEvent("payment_success", {
+        paymentId: payment.id,
+        phone: payment.phone,
+        amount: payment.amount,
+        merchantTransId: payment.merchantTransId,
+        source: "click_complete",
       });
     } else {
       await prisma.payment.update({

@@ -955,12 +955,21 @@ export default function ResultPageClient({ assessmentId }: Props) {
                 <span>{t("result.demoBadge")}</span>
               </div>
             )}
-            {data.paidAmount != null && data.paidAmount > 0 && !assessmentId.startsWith("demo-") && (
+            {data.paidAmount != null && !assessmentId.startsWith("demo-") && (
               <div className="mt-4 flex flex-wrap items-center gap-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm">
-                <span className="font-semibold text-slate-700 dark:text-slate-300">
-                  {t("result.paidAmount")}: {String(data.paidAmount).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} {t("payment.currency")}
-                </span>
-                <span className="font-semibold text-slate-600 dark:text-slate-400">{t("result.balance")}: 0 {t("payment.currency")}</span>
+                {data.paidAmount > 0 ? (
+                  <>
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                      {t("result.paidAmount")}: {String(data.paidAmount).replace(/\B(?=(\d{3})+(?!\d))/g, " ")}{" "}
+                      {t("payment.currency")}
+                    </span>
+                    <span className="font-semibold text-slate-600 dark:text-slate-400">
+                      {t("result.balance")}: 0 {t("payment.currency")}
+                    </span>
+                  </>
+                ) : (
+                  <span className="font-semibold text-violet-800 dark:text-violet-200">{t("result.promoPaidLabel")}</span>
+                )}
               </div>
             )}
           </div>

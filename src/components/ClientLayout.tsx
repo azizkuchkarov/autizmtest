@@ -3,6 +3,7 @@
 import { LocaleProvider } from "@/contexts/LocaleContext";
 import AppToolbar from "@/components/AppToolbar";
 import HelpWidget from "@/components/HelpWidget";
+import SiteFooter from "@/components/SiteFooter";
 
 export default function ClientLayout({
   children,
@@ -11,9 +12,12 @@ export default function ClientLayout({
 }) {
   return (
     <LocaleProvider>
-      <AppToolbar />
-      {children}
-      <HelpWidget />
+      <div className="flex min-h-dvh flex-col">
+        <AppToolbar />
+        <div className="flex-1">{children}</div>
+        <SiteFooter />
+        <HelpWidget />
+      </div>
     </LocaleProvider>
   );
 }

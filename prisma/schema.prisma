@@ -166,6 +166,24 @@ model Assessment {
   childGender       String?  // Qiz | O'g'il
   paymentId         String?
   payment           Payment? @relation(fields: [paymentId], references: [id])
+  promoCodes        PromoCode[]
   createdAt         DateTime @default(now())
   @@index([paymentId])
+}
+
+/// Admin tomonidan beriladigan demo / promokod — muammo bo‘lganda to‘lovsiz natijaga kirish
+model PromoCode {
+  id            String   @id @default(uuid())
+  code          String   @unique
+  assessmentId  String
+  assessment    Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  expiresAt     DateTime?
+  maxUses       Int      @default(1)
+  usedCount     Int      @default(0)
+  active        Boolean  @default(true)
+  note          String?
+  createdAt     DateTime @default(now())
+
+  @@index([assessmentId])
+  @@index([code])
 }

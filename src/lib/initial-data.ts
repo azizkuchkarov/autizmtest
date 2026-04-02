@@ -11,6 +11,8 @@ export interface InitialData {
   ageGroup: AgeGroupId;
   respondent: Respondent;
   childGender: ChildGender;
+  /** Click invoice va sessiya uchun +998XXXXXXXXX */
+  phone: string;
 }
 
 const AGE_IDS: AgeGroupId[] = ["AGE_1_5_2", "AGE_3_4", "AGE_5_6", "AGE_7_9"];
@@ -23,15 +25,18 @@ export function getStoredInitialData(): InitialData | null {
     const raw = sessionStorage.getItem(INITIAL_DATA_KEY);
     if (!raw) return null;
     const data = JSON.parse(raw) as InitialData;
+    const phone =
+      typeof data?.phone === "string" ? data.phone.replace(/\s+/g, "") : "";
     if (
       data?.ageGroup &&
       data?.respondent &&
       data?.childGender &&
+      /^\+998\d{9}$/.test(phone) &&
       AGE_IDS.includes(data.ageGroup) &&
       RESPONDENTS.includes(data.respondent) &&
       GENDERS.includes(data.childGender)
     ) {
-      return data;
+      return { ...data, phone };
     }
   } catch {}
   return null;
@@ -52,6 +57,22 @@ export function getStoredPaidAmount(): number | null {
     if (v == null) return null;
     const n = parseInt(v, 10);
     return Number.isFinite(n) ? n : null;
+  } catch {}
+  return null;
+}
+
+/** Dastlabki ma'lumotlardan yoki (eski oqim) `asds_phone` dan */
+export function getStoredPhone(): string | null {
+  const initial = getStoredInitialData();
+  if (initial?.phone && /^\+998\d{9}$/.test(initial.phone)) {
+    return initial.phone;
+  }
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = sessionStorage.getItem("asds_phone");
+    if (stored && /^\+998\d{9}$/.test(stored.replace(/\s+/g, ""))) {
+      return stored.replace(/\s+/g, "");
+    }
   } catch {}
   return null;
 }

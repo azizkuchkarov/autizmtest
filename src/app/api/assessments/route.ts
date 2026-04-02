@@ -9,6 +9,7 @@ import { scoreAssessment, type Question } from "@/lib/scoring";
 import { scoreTest } from "@/lib/screening-v2-scoring";
 import { scoreMonitoringTest, toMonitoringAgeGroup } from "@/lib/monitoringScoring";
 import type { ScoreResponse } from "@/types/api";
+import { logUserEvent } from "@/lib/user-event";
 
 export async function POST(req: Request) {
   try {
@@ -19,6 +20,8 @@ export async function POST(req: Request) {
     const paymentId = typeof body?.paymentId === "string" && body.paymentId ? body.paymentId : undefined;
     const respondent = typeof body?.respondent === "string" && body.respondent ? body.respondent : undefined;
     const childGender = typeof body?.childGender === "string" && body.childGender ? body.childGender : undefined;
+    const phoneRaw = typeof body?.phone === "string" ? body.phone.replace(/\s+/g, "").trim() : "";
+    const phone = /^\+998\d{9}$/.test(phoneRaw) ? phoneRaw : undefined;
 
     if (!ageGroup || !answers || typeof answers !== "object") {
       return NextResponse.json({ error: "ageGroup va answers majburiy." }, { status: 400 });
@@ -86,6 +89,15 @@ export async function POST(req: Request) {
         ...(respondent && { respondent }),
         ...(childGender && { childGender }),
       },
+    });
+
+    void logUserEvent("test_completed", {
+      assessmentId: assessment.id,
+      testType,
+      ageGroup,
+      phone: phone ?? null,
+      respondent: respondent ?? null,
+      childGender: childGender ?? null,
     });
 
     const response: ScoreResponse = {

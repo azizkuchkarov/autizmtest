@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { createInvoice } from "@/lib/click";
 import { getPaymentAmount } from "@/lib/payment-config";
+import { logUserEvent } from "@/lib/user-event";
 
 export async function POST(req: Request) {
   try {
@@ -28,6 +29,13 @@ export async function POST(req: Request) {
           merchantTransId,
           paidAt: new Date(),
         },
+      });
+      void logUserEvent("payment_success", {
+        paymentId: paid.id,
+        phone: paid.phone,
+        amount: paid.amount,
+        merchantTransId: paid.merchantTransId,
+        source: "dev_skip",
       });
       return NextResponse.json({
         ok: true,

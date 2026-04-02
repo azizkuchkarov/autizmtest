@@ -82,6 +82,7 @@ function TestContent() {
     };
     if (initial?.respondent) payload.respondent = initial.respondent;
     if (initial?.childGender) payload.childGender = initial.childGender;
+    if (initial?.phone) payload.phone = initial.phone;
     try {
       const res = await fetch("/api/assessments", {
         method: "POST",
@@ -116,7 +117,7 @@ function TestContent() {
               Dastlabki ma&apos;lumotlar kerak
             </h1>
             <p className="mt-4 text-slate-600 dark:text-slate-400">
-              Testni boshlash uchun avval dastlabki ma&apos;lumotlarni (yosh, kim to&apos;ldiradi, jins) to&apos;ldiring.
+              Testni boshlash uchun avval dastlabki ma&apos;lumotlarni (yosh, kim to&apos;ldiradi, jins va mobil raqam) to&apos;ldiring.
             </p>
             <Link
               href="/start"

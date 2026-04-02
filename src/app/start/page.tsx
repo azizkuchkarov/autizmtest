@@ -19,6 +19,7 @@ export default function StartPage() {
   const [ageGroup, setAgeGroup] = React.useState<AgeGroupId | null>(null);
   const [respondent, setRespondent] = React.useState<Respondent | null>(null);
   const [childGender, setChildGender] = React.useState<ChildGender | null>(null);
+  const [phone, setPhone] = React.useState("+998");
   const [error, setError] = React.useState("");
   const [testLoading, setTestLoading] = React.useState(false);
   const [isTestMode, setIsTestMode] = React.useState(false);
@@ -30,19 +31,26 @@ export default function StartPage() {
     }
   }, []);
 
-  function handleRegister() {
+  const cleanedPhone = phone.replace(/\s+/g, "");
+
+  function handleContinueToTest() {
     if (!ageGroup || !respondent || !childGender) {
       setError(t("start.fillAll"));
+      return;
+    }
+    if (!/^\+998\d{9}$/.test(cleanedPhone)) {
+      setError(t("register.errorPhone"));
       return;
     }
     setError("");
     try {
       sessionStorage.setItem(
         INITIAL_DATA_KEY,
-        JSON.stringify({ ageGroup, respondent, childGender } as InitialData)
+        JSON.stringify({ ageGroup, respondent, childGender, phone: cleanedPhone } satisfies InitialData)
       );
+      sessionStorage.setItem("asds_phone", cleanedPhone);
     } catch {}
-    router.push("/start/register");
+    router.push("/test");
   }
 
   async function handleTestMode() {
@@ -50,12 +58,17 @@ export default function StartPage() {
       setError(t("start.fillAll"));
       return;
     }
+    if (!/^\+998\d{9}$/.test(cleanedPhone)) {
+      setError(t("register.errorPhone"));
+      return;
+    }
     setError("");
     try {
       sessionStorage.setItem(
         INITIAL_DATA_KEY,
-        JSON.stringify({ ageGroup, respondent, childGender } as InitialData)
+        JSON.stringify({ ageGroup, respondent, childGender, phone: cleanedPhone } satisfies InitialData)
       );
+      sessionStorage.setItem("asds_phone", cleanedPhone);
     } catch {}
     setTestLoading(true);
     try {
@@ -78,7 +91,8 @@ export default function StartPage() {
     }
   }
 
-  const allFilled = ageGroup && respondent && childGender;
+  const allFilled =
+    ageGroup && respondent && childGender && /^\+998\d{9}$/.test(cleanedPhone);
 
   return (
     <div className="min-h-dvh bg-gradient-to-b from-indigo-50/60 via-white to-slate-50/80 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors duration-300">
@@ -217,6 +231,34 @@ export default function StartPage() {
                   ))}
                 </div>
               </div>
+
+              {/* Mobil raqam — Click invoice uchun, SMS kodi talab qilinmaydi */}
+              <div className="rounded-2xl border border-slate-100 dark:border-slate-700/80 bg-slate-50/80 dark:bg-slate-800/40 p-5 sm:p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                  </span>
+                  <label className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                    {t("start.phoneLabelFull")}
+                  </label>
+                </div>
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  placeholder={t("register.phonePlaceholder")}
+                  value={phone}
+                  onChange={(e) => {
+                    setPhone(e.target.value);
+                    setError("");
+                  }}
+                  className="w-full rounded-xl bg-white dark:bg-slate-800/80 px-4 py-3.5 text-base font-semibold text-slate-900 dark:text-slate-100 ring-1 ring-slate-200 dark:ring-slate-600 outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                  {t("start.phoneHint")}
+                </p>
+              </div>
             </div>
 
             {error && (
@@ -240,11 +282,11 @@ export default function StartPage() {
               </Link>
               <button
                 type="button"
-                onClick={handleRegister}
+                onClick={handleContinueToTest}
                 disabled={!allFilled}
                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-8 py-4 text-base font-bold text-white shadow-lg shadow-indigo-500/25 transition-all duration-200 hover:bg-indigo-700 hover:shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:pointer-events-none disabled:translate-y-0"
               >
-                {t("start.register")}
+                {t("start.continueToTest")}
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>

@@ -1,16 +1,19 @@
 "use client";
 
 import Link from "next/link";
+import React from "react";
+import { HomeTestServicesSection } from "@/components/home/HomeTestServicesSection";
 import { useTranslations } from "@/lib/translations";
 import { useLocale } from "@/contexts/LocaleContext";
 
 export default function Home() {
   const t = useTranslations();
   const { locale, setLocale } = useLocale();
+  const [offerAccepted, setOfferAccepted] = React.useState(false);
 
   return (
     <div className="min-h-dvh bg-slate-50/80 dark:bg-slate-950 transition-colors duration-300">
-      <main className="mx-auto max-w-4xl px-4 sm:px-6 pb-20 pt-10 sm:pt-12">
+      <main className="mx-auto max-w-5xl px-4 sm:px-6 pb-20 pt-10 sm:pt-12">
         {/* Til tanlash — asosiy kirish; tanlangan til barcha sahifalarda qo‘llanadi */}
         <div className="flex justify-end mb-4">
           <div className="inline-flex rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/95 shadow-sm p-1 gap-0.5">
@@ -57,59 +60,60 @@ export default function Home() {
             <p className="mt-5 max-w-2xl text-lg text-slate-600 dark:text-slate-400 leading-relaxed">
               {t("home.hero.description")}
             </p>
-            <div className="mt-8">
-              <Link
-                href="/start"
-                className="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-8 py-4 text-base font-bold text-white shadow-lg shadow-indigo-500/25 transition hover:bg-indigo-700 hover:shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-0.5"
-              >
-                {t("home.hero.cta")}
-                <span className="text-white/90">→</span>
-              </Link>
+            <div className="mt-8 space-y-5">
+              <p className="text-sm text-slate-600 dark:text-slate-400">{t("home.offer.blockHint")}</p>
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                <Link
+                  href="/offer"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-indigo-200 bg-indigo-50/80 px-6 py-3.5 text-sm font-bold text-indigo-800 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-100 dark:border-indigo-800/60 dark:bg-indigo-950/40 dark:text-indigo-200 dark:hover:border-indigo-600 dark:hover:bg-indigo-900/30"
+                >
+                  <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  {t("home.offer.readLink")}
+                </Link>
+              </div>
+
+              <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200/90 bg-slate-50/80 p-4 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700/80 dark:bg-slate-800/40 dark:hover:border-slate-600 dark:hover:bg-slate-800/60">
+                <input
+                  type="checkbox"
+                  checked={offerAccepted}
+                  onChange={(e) => setOfferAccepted(e.target.checked)}
+                  className="mt-0.5 h-5 w-5 shrink-0 rounded-md border-slate-300 text-indigo-600 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-900"
+                />
+                <span className="text-sm font-medium leading-relaxed text-slate-800 dark:text-slate-200">
+                  {t("home.offer.acceptCheckbox")}
+                </span>
+              </label>
+
+              {offerAccepted ? (
+                <Link
+                  href="/start"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-8 py-4 text-base font-bold text-white shadow-lg shadow-indigo-500/25 transition hover:bg-indigo-700 hover:shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-0.5"
+                >
+                  {t("home.hero.cta")}
+                  <span className="text-white/90">→</span>
+                </Link>
+              ) : (
+                <span
+                  className="inline-flex cursor-not-allowed items-center gap-2 rounded-2xl bg-slate-300 px-8 py-4 text-base font-bold text-slate-500 dark:bg-slate-700 dark:text-slate-500"
+                  title={t("home.offer.needAccept")}
+                  aria-disabled
+                >
+                  {t("home.hero.cta")}
+                  <span className="opacity-60">→</span>
+                </span>
+              )}
             </div>
           </div>
         </section>
 
-        {/* Testlar haqida alohida ma'lumot */}
-        <section className="mb-10">
-          <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">{t("home.choice.label")}</p>
-          <h2 className="mt-1 text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 mb-6">
-            {t("home.choice.title")}
-          </h2>
-          <div className="grid gap-6 md:grid-cols-1">
-            <div className="rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/95 shadow-xl shadow-slate-200/20 dark:shadow-black/20 p-6 md:p-8 transition hover:shadow-2xl hover:shadow-slate-200/30 dark:hover:shadow-black/30">
-              <div className="inline-flex rounded-full bg-amber-100 dark:bg-amber-900/40 px-3 py-1 text-xs font-bold text-amber-800 dark:text-amber-200">
-                {t("home.screening.badge")}
-              </div>
-              <h3 className="mt-4 text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-                {t("home.screening.title")}
-              </h3>
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                {t("home.screening.description")}
-              </p>
-              <ul className="mt-4 space-y-1.5 text-sm text-slate-700 dark:text-slate-300">
-                <li>• {t("home.screening.feature1")}</li>
-                <li>• {t("home.screening.feature2")}</li>
-                <li>• {t("home.screening.feature3")}</li>
-              </ul>
-            </div>
-
-            {/* Autizm progressini aniqlash — tez kunda */}
-            <div className="rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/60 dark:bg-slate-800/60 shadow-lg shadow-slate-200/10 dark:shadow-black/10 p-6 md:p-8">
-              <div className="inline-flex rounded-full bg-slate-200/80 dark:bg-slate-700/60 px-3 py-1 text-xs font-bold text-slate-600 dark:text-slate-400">
-                {t("home.progress.badge")}
-              </div>
-              <h3 className="mt-4 text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-                {t("home.progress.title")}
-              </h3>
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                {t("home.progress.description")}
-              </p>
-              <p className="mt-4 text-xs font-medium text-slate-500 dark:text-slate-500 italic">
-                {t("home.progress.comingSoon")}
-              </p>
-            </div>
-          </div>
-        </section>
+        <HomeTestServicesSection />
 
         <section className="rounded-3xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/80 dark:bg-slate-800/50 p-5 sm:p-6">
           <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
