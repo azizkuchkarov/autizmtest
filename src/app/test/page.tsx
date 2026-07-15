@@ -96,7 +96,7 @@ function TestContent() {
       }
       const id = data?.assessmentId;
       if (id) {
-        router.push(`/payment?assessment_id=${id}`);
+        router.push(`/result/${id}`);
       } else {
         setError("Assessment ID topilmadi");
       }

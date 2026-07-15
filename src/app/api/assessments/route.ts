@@ -17,7 +17,6 @@ export async function POST(req: Request) {
     const testType = (body?.testType as TestType) ?? "screening";
     const ageGroup = body?.ageGroup as AgeGroupId | undefined;
     const answers = body?.answers as Record<string, 0 | 1 | 2 | 3 | undefined> | undefined;
-    const paymentId = typeof body?.paymentId === "string" && body.paymentId ? body.paymentId : undefined;
     const respondent = typeof body?.respondent === "string" && body.respondent ? body.respondent : undefined;
     const childGender = typeof body?.childGender === "string" && body.childGender ? body.childGender : undefined;
     const phoneRaw = typeof body?.phone === "string" ? body.phone.replace(/\s+/g, "").trim() : "";
@@ -85,9 +84,9 @@ export async function POST(req: Request) {
         answers: answers as object,
         scoring,
         aiSummaryStatus: "pending",
-        ...(paymentId && { paymentId }),
         ...(respondent && { respondent }),
         ...(childGender && { childGender }),
+        ...(phone && { phone }),
       },
     });
 

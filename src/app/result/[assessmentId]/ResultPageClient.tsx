@@ -955,23 +955,6 @@ export default function ResultPageClient({ assessmentId }: Props) {
                 <span>{t("result.demoBadge")}</span>
               </div>
             )}
-            {data.paidAmount != null && !assessmentId.startsWith("demo-") && (
-              <div className="mt-4 flex flex-wrap items-center gap-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm">
-                {data.paidAmount > 0 ? (
-                  <>
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">
-                      {t("result.paidAmount")}: {String(data.paidAmount).replace(/\B(?=(\d{3})+(?!\d))/g, " ")}{" "}
-                      {t("payment.currency")}
-                    </span>
-                    <span className="font-semibold text-slate-600 dark:text-slate-400">
-                      {t("result.balance")}: 0 {t("payment.currency")}
-                    </span>
-                  </>
-                ) : (
-                  <span className="font-semibold text-violet-800 dark:text-violet-200">{t("result.promoPaidLabel")}</span>
-                )}
-              </div>
-            )}
           </div>
 
           <ScreeningV2ResultView
@@ -1026,25 +1009,6 @@ export default function ResultPageClient({ assessmentId }: Props) {
             setCenters={setAbaCenters}
           />
         </div>
-
-        {assessmentId.startsWith("demo-") && (
-          <button
-            type="button"
-            onClick={() => {
-              if (typeof window !== "undefined") {
-                window.location.href = "/payment";
-              }
-            }}
-            className="fixed bottom-5 left-5 z-40 flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/40 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
-          >
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.75 19.5L8.25 12l7.5-7.5" />
-              </svg>
-            </span>
-            <span>To‘lov sahifasiga qaytish</span>
-          </button>
-        )}
       </div>
     );
   }
@@ -1149,7 +1113,7 @@ export default function ResultPageClient({ assessmentId }: Props) {
 
         <section className="mt-6 rounded-2xl bg-white dark:bg-slate-900/80 p-5 ring-1 ring-slate-200/60 dark:ring-slate-700/60 shadow-sm">
           <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-3">
-            AI Premium xulosa
+            AI xulosa
           </h3>
 
           {data.aiSummary.status === "ready" && data.aiSummary.payload ? (

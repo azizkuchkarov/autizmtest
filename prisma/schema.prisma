@@ -137,21 +137,6 @@ model PinSetupToken {
   createdAt DateTime @default(now())
 }
 
-model Payment {
-  id                 String        @id @default(uuid())
-  phone              String
-  amount             Int           // sum
-  status             String        @default("pending") // pending, paid, failed
-  merchantTransId    String        @unique // Click uchun
-  clickTransId      String?
-  merchantPrepareId  Int?
-  createdAt          DateTime      @default(now())
-  paidAt             DateTime?
-  assessments       Assessment[]
-  @@index([phone])
-  @@index([merchantTransId])
-}
-
 model Assessment {
   id                String   @id @default(uuid())
   testType          String   @default("screening") // screening | progress
@@ -164,26 +149,6 @@ model Assessment {
   aiSummaryError    String?
   respondent        String?  // Ota | Ona | Vasiy
   childGender       String?  // Qiz | O'g'il
-  paymentId         String?
-  payment           Payment? @relation(fields: [paymentId], references: [id])
-  promoCodes        PromoCode[]
+  phone             String?  // +998XXXXXXXXX
   createdAt         DateTime @default(now())
-  @@index([paymentId])
-}
-
-/// Admin tomonidan beriladigan demo / promokod — muammo bo‘lganda to‘lovsiz natijaga kirish
-model PromoCode {
-  id            String   @id @default(uuid())
-  code          String   @unique
-  assessmentId  String
-  assessment    Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
-  expiresAt     DateTime?
-  maxUses       Int      @default(1)
-  usedCount     Int      @default(0)
-  active        Boolean  @default(true)
-  note          String?
-  createdAt     DateTime @default(now())
-
-  @@index([assessmentId])
-  @@index([code])
 }

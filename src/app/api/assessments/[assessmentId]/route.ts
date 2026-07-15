@@ -189,7 +189,6 @@ export async function GET(
         completedAt: new Date().toISOString(),
         ageGroup: "AGE_3_4",
         answers: null,
-        paidAmount: null,
       };
 
       return NextResponse.json(response, { status: 200 });
@@ -197,7 +196,6 @@ export async function GET(
 
     const assessment = await prisma.assessment.findUnique({
       where: { id: assessmentId },
-      include: { payment: true },
     });
 
     if (!assessment) {
@@ -230,7 +228,6 @@ export async function GET(
       completedAt: assessment.createdAt?.toISOString?.() ?? null,
       ageGroup: assessment.ageGroup ?? null,
       answers,
-      paidAmount: assessment.payment?.amount ?? null,
     };
 
     return NextResponse.json(response, { status: 200 });

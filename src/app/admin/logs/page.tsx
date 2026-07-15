@@ -103,8 +103,7 @@ export default function AdminLogs() {
     <div>
       <div className="text-2xl font-bold text-slate-900">Loglar</div>
       <p className="mt-1 text-sm text-slate-600">
-        <code className="rounded bg-slate-100 px-1">test_completed</code> — telefon va dastlabki ma&apos;lumotlar;
-        <code className="ml-2 rounded bg-slate-100 px-1">payment_success</code> — to&apos;lovdagi telefon va summa.
+        <code className="rounded bg-slate-100 px-1">test_completed</code> — telefon va dastlabki ma&apos;lumotlar.
       </p>
       <div className="mt-4 overflow-x-auto rounded-2xl bg-white p-4 ring-1 ring-slate-200">
         <table className="w-full min-w-[640px] text-sm">

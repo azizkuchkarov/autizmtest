@@ -32,7 +32,7 @@ export const publicOfferUz: PublicOfferDocument = {
     {
       title: "2. Xizmatning predmeti",
       body:
-        "Platforma ota-onalar (yoki vasiylar) uchun bolaning rivojlanishi bo‘yicha skrining so‘rovnomasini to‘ldirish, avtomatik baholash natijalarini shakllantirish, qo‘shimcha xizmatlar (masalan, AI xulosa, PDF eksport) va to‘lov orqali to‘liq natijaga kirish imkonini beradi. Xizmat masofadan — internet orqali ko‘rsatiladi. Platforma funksiyalari va narxlari axborot sifatida e’lon qilingan holatda amal qiladi.",
+        "Platforma ota-onalar (yoki vasiylar) uchun bolaning rivojlanishi bo‘yicha skrining so‘rovnomasini to‘ldirish, avtomatik baholash natijalarini shakllantirish va qo‘shimcha xizmatlar (masalan, AI xulosa, PDF eksport) imkonini beradi. Test tugagach natija darhol ko‘rsatiladi. Xizmat masofadan — internet orqali ko‘rsatiladi. Platforma funksiyalari axborot sifatida e’lon qilingan holatda amal qiladi.",
     },
     {
       title: "3. Tibbiy tashxis emasligi",
@@ -47,12 +47,12 @@ export const publicOfferUz: PublicOfferDocument = {
     {
       title: "5. Shaxsiy ma’lumotlar va maxfiylik",
       body:
-        "Platforma jarayonida telefon raqami, test javoblari, natijalar va texnik loglar qayd etilishi mumkin. Ma’lumotlar xizmatni ko‘rsatish, to‘lovlarni hisob-kitob qilish, qonuniy talablarga rioya etish va xavfsizlikni ta’minlash maqsadida qayta ishlanadi. Ma’lumotlarni uchinchi shaxslarga faqat qonunda nazarda tutilgan hollarda yoki anonimlashtirilgan/statistik shaklda uzatish mumkin. Batafsil maxfiylik siyosati alohida hujjatda yoki saytning tegishli bo‘limida joylashtirilishi mumkin.",
+        "Platforma jarayonida telefon raqami, test javoblari, natijalar va texnik loglar qayd etilishi mumkin. Ma’lumotlar xizmatni ko‘rsatish, qonuniy talablarga rioya etish va xavfsizlikni ta’minlash maqsadida qayta ishlanadi. Ma’lumotlarni uchinchi shaxslarga faqat qonunda nazarda tutilgan hollarda yoki anonimlashtirilgan/statistik shaklda uzatish mumkin. Batafsil maxfiylik siyosati alohida hujjatda yoki saytning tegishli bo‘limida joylashtirilishi mumkin.",
     },
     {
-      title: "6. To‘lov va Click orqali hisob-kitob",
+      title: "6. Xizmatdan foydalanish tartibi",
       body:
-        "Ayrim natijalar va funksiyalar pulli bo‘lishi mumkin. To‘lovlar joriy tariflar asosida amalga oshiriladi. Click va boshqa to‘lov tizimlari orqali amalga oshirilgan operatsiyalar ularning qoidalariga muvofiq. To‘lov muvaffaqiyatli yakunlangach, Foydalanuvchiga e’lon qilingan hajmda kontent va xizmatlar taqdim etiladi. Agar texnik xatolik yoki xizmat ko‘rsatilmagan bo‘lsa, adolatli e’tirozlar qonun va Platforma ichki tartibiga muvofiq ko‘rib chiqiladi.",
+        "Foydalanuvchi dastlabki ma’lumotlarni to‘ldiradi, skrining testini yakunlaydi va natijani ko‘radi. Natijada e’lon qilingan hajmda kontent va xizmatlar taqdim etiladi. Agar texnik xatolik yoki xizmat ko‘rsatilmagan bo‘lsa, adolatli e’tirozlar qonun va Platforma ichki tartibiga muvofiq ko‘rib chiqiladi.",
     },
     {
       title: "7. Intellektual mulk",
@@ -62,7 +62,7 @@ export const publicOfferUz: PublicOfferDocument = {
     {
       title: "8. Javobgarlikni cheklash",
       body:
-        "Platforma «boricha» va mavjud texnologiyalar doirasida taqdim etiladi. Uchinchi tomon xizmatlari (to‘lov tizimlari, hosting, AI provayderlari) uzilishlari uchun Bizning javobgarligimiz ularning xizmat shartlariga bo‘g‘liq. Platforma Foydalanuvchining tibbiy, moddiy yoki boshqa bilvosita zararlar uchun javobgarlikni qonunda ruxsat etilgan chegaradan oshmaydi.",
+        "Platforma «boricha» va mavjud texnologiyalar doirasida taqdim etiladi. Uchinchi tomon xizmatlari (hosting, AI provayderlari) uzilishlari uchun Bizning javobgarligimiz ularning xizmat shartlariga bo‘g‘liq. Platforma Foydalanuvchining tibbiy, moddiy yoki boshqa bilvosita zararlar uchun javobgarlikni qonunda ruxsat etilgan chegaradan oshmaydi.",
     },
     {
       title: "9. Ofertaning o‘zgarishi va bekor qilinishi",
@@ -72,7 +72,7 @@ export const publicOfferUz: PublicOfferDocument = {
     {
       title: "10. Aloqa va murojaat",
       body:
-        "Oferta, to‘lov yoki xizmat bo‘yicha savollar uchun saytda ko‘rsatilgan «Yordam» / aloqa kanallari orqali murojaat qilishingiz mumkin. Rekvizitlar va rasmiy manzillar veb-saytda yangilanishi mumkin.",
+        "Oferta yoki xizmat bo‘yicha savollar uchun saytda ko‘rsatilgan «Yordam» / aloqa kanallari orqali murojaat qilishingiz mumkin. Rekvizitlar va rasmiy manzillar veb-saytda yangilanishi mumkin.",
     },
   ],
   footerNote:
@@ -89,12 +89,12 @@ export const publicOfferRu: PublicOfferDocument = {
     {
       title: "1. Термины и стороны",
       body:
-        "Исполнитель — лицо, администрирующее платформу Autizm skrining (далее — «Мы», «Платформа»). Пользователь — физическое лицо, принявшее оферту и прошедшее анкету или оплату на Платформе. Контент — вопросы теста, результаты, тексты с использованием ИИ, PDF и иные материалы.",
+        "Исполнитель — лицо, администрирующее платформу Autizm skrining (далее — «Мы», «Платформа»). Пользователь — физическое лицо, принявшее оферту и прошедшее анкету на Платформе. Контент — вопросы теста, результаты, тексты с использованием ИИ, PDF и иные материалы.",
     },
     {
       title: "2. Предмет услуги",
       body:
-        "Платформа позволяет родителям (или законным представителям) заполнить скринговую анкету по развитию ребёнка, получить автоматически сформированные оценки, дополнительные функции (например, заключение ИИ, экспорт в PDF) и полный доступ к результатам после оплаты. Услуга оказывается дистанционно через интернет. Состав функций и тарифы действуют в редакции, размещённой на сайте.",
+        "Платформа позволяет родителям (или законным представителям) заполнить скринговую анкету по развитию ребёнка, получить автоматически сформированные оценки и дополнительные функции (например, заключение ИИ, экспорт в PDF). После завершения теста результат отображается сразу. Услуга оказывается дистанционно через интернет. Состав функций действует в редакции, размещённой на сайте.",
     },
     {
       title: "3. Отсутствие медицинского диагноза",
@@ -109,12 +109,12 @@ export const publicOfferRu: PublicOfferDocument = {
     {
       title: "5. Персональные данные и конфиденциальность",
       body:
-        "В процессе могут обрабатываться номер телефона, ответы на вопросы, результаты и технические журналы. Обработка осуществляется для оказания услуг, учёта платежей, соблюдения законодательства и обеспечения безопасности. Передача третьим лицам — в случаях, предусмотренных законом, либо в обезличенном виде. Подробная политика конфиденциальности может размещаться отдельно на сайте.",
+        "В процессе могут обрабатываться номер телефона, ответы на вопросы, результаты и технические журналы. Обработка осуществляется для оказания услуг, соблюдения законодательства и обеспечения безопасности. Передача третьим лицам — в случаях, предусмотренных законом, либо в обезличенном виде. Подробная политика конфиденциальности может размещаться отдельно на сайте.",
     },
     {
-      title: "6. Оплата и расчёты через Click",
+      title: "6. Порядок использования сервиса",
       body:
-        "Отдельные результаты и функции могут быть платными в соответствии с действующими тарифами. Платежи через Click и иные платёжные системы регулируются их правилами. После успешной оплаты пользователю предоставляется заявленный объём контента и функций. Споры по техническим сбоям или неоказанной услуге рассматриваются в рамках закона и внутреннего порядка Платформы.",
+        "Пользователь заполняет предварительные данные, проходит скрининговый тест и просматривает результат. Предоставляется объём контента и функций, заявленный на Платформе. Споры по техническим сбоям или неоказанной услуге рассматриваются в рамках закона и внутреннего порядка Платформы.",
     },
     {
       title: "7. Интеллектуальная собственность",
@@ -124,7 +124,7 @@ export const publicOfferRu: PublicOfferDocument = {
     {
       title: "8. Ограничение ответственности",
       body:
-        "Платформа предоставляется «как есть» в рамках доступных технологий. За сбои сторонних сервисов (платежи, хостинг, провайдеры ИИ) ответственность ограничивается условиями таких сервисов. Ответственность Исполнителя за прямой или косвенный вред не превышает пределов, установленных законом.",
+        "Платформа предоставляется «как есть» в рамках доступных технологий. За сбои сторонних сервисов (хостинг, провайдеры ИИ) ответственность ограничивается условиями таких сервисов. Ответственность Исполнителя за прямой или косвенный вред не превышает пределов, установленных законом.",
     },
     {
       title: "9. Изменение и прекращение оферты",
@@ -134,7 +134,7 @@ export const publicOfferRu: PublicOfferDocument = {
     {
       title: "10. Контакты",
       body:
-        "По вопросам оферты, оплаты или сервиса вы можете обратиться через раздел «Помощь» / контакты на сайте. Реквизиты и официальные адреса могут обновляться на веб-ресурсе.",
+        "По вопросам оферты или сервиса вы можете обратиться через раздел «Помощь» / контакты на сайте. Реквизиты и официальные адреса могут обновляться на веб-ресурсе.",
     },
   ],
   footerNote:

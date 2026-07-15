@@ -26,7 +26,7 @@ export default function RegisterPage() {
       sessionStorage.setItem("asds_family_history", familyHistory);
       sessionStorage.setItem("asds_lang", "uz");
     } catch {}
-    router.push("/payment");
+    router.push("/start");
   }
 
   return (
@@ -34,7 +34,7 @@ export default function RegisterPage() {
       <main className="mx-auto max-w-3xl px-4 pb-16 pt-8">
         <section className="rounded-3xl bg-white/80 dark:bg-slate-900/70 backdrop-blur-xl p-8 md:p-10 shadow-xl ring-1 ring-slate-200/60 dark:ring-slate-700/60 hover-lift animate-fadeIn">
           <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50/80 dark:bg-indigo-900/30 px-4 py-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-100/70 dark:ring-indigo-800/60">
-            Premium
+            Skrining
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-100">
             Ro'yxatdan o'tish
@@ -137,7 +137,7 @@ export default function RegisterPage() {
               onClick={handleStart}
               className="w-full rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-indigo-600 dark:from-indigo-500 dark:via-indigo-400 dark:to-indigo-600 px-6 py-4 text-base font-bold text-white shadow-xl shadow-indigo-500/30 dark:shadow-indigo-500/40 transition-all hover:from-indigo-700 hover:via-indigo-600 hover:to-indigo-700 dark:hover:from-indigo-600 dark:hover:via-indigo-500 dark:hover:to-indigo-700 hover:shadow-2xl hover:-translate-y-0.5"
             >
-              To'lovga o'tish
+              Davom etish
             </button>
           </div>
         </section>

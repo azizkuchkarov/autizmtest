@@ -11,8 +11,6 @@ const AGE_IDS: AgeGroupId[] = ["AGE_1_5_2", "AGE_3_4", "AGE_5_6", "AGE_7_9"];
 const RESPONDENT_VALUES: Respondent[] = ["Ota", "Ona", "Vasiy"];
 const GENDER_VALUES: ChildGender[] = ["Qiz", "O'g'il"];
 
-const TEST_PHONE = "+998000000001";
-
 export default function StartPage() {
   const router = useRouter();
   const t = useTranslations();
@@ -21,7 +19,6 @@ export default function StartPage() {
   const [childGender, setChildGender] = React.useState<ChildGender | null>(null);
   const [phone, setPhone] = React.useState("+998");
   const [error, setError] = React.useState("");
-  const [testLoading, setTestLoading] = React.useState(false);
   const [isTestMode, setIsTestMode] = React.useState(false);
 
   React.useEffect(() => {
@@ -70,25 +67,7 @@ export default function StartPage() {
       );
       sessionStorage.setItem("asds_phone", cleanedPhone);
     } catch {}
-    setTestLoading(true);
-    try {
-      const res = await fetch("/api/payment/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: TEST_PHONE, dev_skip: true }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data?.error ?? t("start.testModePaymentError"));
-        return;
-      }
-      const params = new URLSearchParams();
-      if (data.paymentId) params.set("payment_id", data.paymentId);
-      if (typeof data.amount === "number") params.set("amount", String(data.amount));
-      router.push(`/test?${params.toString()}`);
-    } finally {
-      setTestLoading(false);
-    }
+    router.push("/test");
   }
 
   const allFilled =
@@ -232,7 +211,7 @@ export default function StartPage() {
                 </div>
               </div>
 
-              {/* Mobil raqam — Click invoice uchun, SMS kodi talab qilinmaydi */}
+              {/* Mobil raqam */}
               <div className="rounded-2xl border border-slate-100 dark:border-slate-700/80 bg-slate-50/80 dark:bg-slate-800/40 p-5 sm:p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300">
@@ -296,10 +275,10 @@ export default function StartPage() {
                 <button
                   type="button"
                   onClick={handleTestMode}
-                  disabled={!allFilled || testLoading}
+                  disabled={!allFilled}
                   className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-amber-400 bg-amber-50 dark:bg-amber-900/20 px-6 py-3.5 text-sm font-bold text-amber-800 dark:text-amber-200 transition-all hover:bg-amber-100 dark:hover:bg-amber-900/30 disabled:opacity-50 disabled:pointer-events-none"
                 >
-                  {testLoading ? t("start.loading") : t("start.testModeButton")}
+                  {t("start.testModeButton")}
                 </button>
               )}
             </div>

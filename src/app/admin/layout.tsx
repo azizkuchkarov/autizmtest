@@ -9,7 +9,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <a href="/admin/aba-centers" className="hover:text-slate-900">ABA markazlar</a>
             <a href="/admin/logs" className="hover:text-slate-900">Loglar</a>
             <a href="/admin/feedback" className="hover:text-slate-900">Feedback</a>
-            <a href="/admin/promo-codes" className="hover:text-slate-900">Promo-kodlar</a>
           </nav>
         </div>
       </div>

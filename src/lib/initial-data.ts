@@ -1,8 +1,6 @@
 import type { AgeGroupId } from "@/data";
 
 export const INITIAL_DATA_KEY = "autizm_initial_data";
-export const PAYMENT_ID_KEY = "autizm_payment_id";
-export const PAID_AMOUNT_KEY = "autizm_paid_amount";
 
 export type Respondent = "Ota" | "Ona" | "Vasiy";
 export type ChildGender = "Qiz" | "O'g'il";
@@ -11,7 +9,7 @@ export interface InitialData {
   ageGroup: AgeGroupId;
   respondent: Respondent;
   childGender: ChildGender;
-  /** Click invoice va sessiya uchun +998XXXXXXXXX */
+  /** Mijoz telefoni +998XXXXXXXXX */
   phone: string;
 }
 
@@ -38,25 +36,6 @@ export function getStoredInitialData(): InitialData | null {
     ) {
       return { ...data, phone };
     }
-  } catch {}
-  return null;
-}
-
-export function getStoredPaymentId(): string | null {
-  if (typeof window === "undefined") return null;
-  try {
-    return sessionStorage.getItem(PAYMENT_ID_KEY);
-  } catch {}
-  return null;
-}
-
-export function getStoredPaidAmount(): number | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const v = sessionStorage.getItem(PAID_AMOUNT_KEY);
-    if (v == null) return null;
-    const n = parseInt(v, 10);
-    return Number.isFinite(n) ? n : null;
   } catch {}
   return null;
 }

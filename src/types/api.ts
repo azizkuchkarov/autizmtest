@@ -83,8 +83,6 @@ export interface ScoreResponse {
   ageGroup?: string | null;
   /** Ota-onaning javoblari (savol id → 0|1|2|3), PDF va boshqa maqsadlar uchun */
   answers?: Record<string, number> | null;
-  /** To'langan summa (so'm), test uchun to'lov qilingan bo'lsa */
-  paidAmount?: number | null;
 }
 
 export interface AiSummaryResponse {

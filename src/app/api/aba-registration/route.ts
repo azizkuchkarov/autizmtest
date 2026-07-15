@@ -24,7 +24,6 @@ export async function POST(req: Request) {
 
     const assessment = await prisma.assessment.findUnique({
       where: { id: assessmentId },
-      include: { payment: true },
     });
     if (!assessment) {
       return NextResponse.json({ error: "Natija topilmadi." }, { status: 404 });
@@ -43,7 +42,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const phone = assessment.payment?.phone ?? "—";
+    const phone = assessment.phone ?? "—";
     const ageLabel = AGE_GROUP_LABELS[assessment.ageGroup] ?? assessment.ageGroup ?? "—";
     const gender = assessment.childGender ?? "—";
 
