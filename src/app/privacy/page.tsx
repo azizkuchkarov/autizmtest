@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: "AutizmTest ilovasi va sayti qanday ma'lumot yig'adi, nima uchun ishlatadi va qanday o'chiriladi.",
 };
 
-const CONTACT_EMAIL = "support@autizmtest.uz";
+const CONTACT_EMAIL = "aziz.kuchkarov91@gmail.com";
 const UPDATED = "2026-10-31";
 
 type Section = { title: string; body: string[] };
