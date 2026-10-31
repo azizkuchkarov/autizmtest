@@ -484,7 +484,7 @@ type Editing =
   | { type: "video"; id: string }
   | null;
 
-export default function AdminContent() {
+export default function AdminContentSections() {
   const [categories, setCategories] = React.useState<Category[] | null>(null);
   const [professions, setProfessions] = React.useState<Profession[]>([]);
   /** Tanlangan yo'nalish filtri: "" — barchasi */
@@ -555,7 +555,8 @@ export default function AdminContent() {
 
   return (
     <div>
-      <div className="text-2xl font-bold text-slate-900">Video darslar</div>
+      <a href="/admin/content" className="text-sm text-indigo-600 hover:underline">← Videolar</a>
+      <div className="mt-1 text-2xl font-bold text-slate-900">Bo&apos;limlar va qo&apos;shimcha sozlamalar</div>
       <p className="mt-1 text-sm text-slate-600">
         Mobil ilovadagi “Darslar” va “Mashqlar” bo‘limlari shu yerdan boshqariladi: yo‘nalish (Autizm, Logoped, Sensor
         integratsiya…) → mavzu → bir yoki bir nechta video. Faqat faol yo‘nalish, mavzu va videolar ilovada ko‘rinadi.

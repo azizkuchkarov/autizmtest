@@ -28,13 +28,17 @@ export const professionSchema = z.object({
   active: z.boolean().optional(),
 });
 
-export const videoSchema = z.object({
+/** Video maydonlari (tahrirlashda .partial() bilan ishlatiladi — standart qiymatlar yo'q). */
+export const videoFieldsSchema = z.object({
   categoryId: z.string().uuid(),
   titleUz: z.string().trim().min(1).max(200),
-  titleRu: z.string().trim().min(1).max(200),
+  /** Bo'sh bo'lsa ilovada o'zbekchasi ko'rsatiladi */
+  titleRu: z.string().trim().max(200),
   descriptionUz: optionalText,
   descriptionRu: optionalText,
-  videoUrl: z.string().trim().min(1).max(1000),
+  videoUrl: z.string().trim().max(1000),
+  /** /api/upload/video javobi: yuklangan fayl serverda siqiladi (scripts/video-worker.mjs) */
+  uploadId: z.string().regex(/^[0-9a-f-]{36}\.(mp4|mov|m4v|webm|mkv|avi)$/).optional(),
   thumbnailUrl: z.string().trim().max(1000).nullish(),
   durationSec: z.number().int().positive().nullish(),
   ageGroups: z.array(z.enum(AGE_GROUPS)).optional(),
@@ -42,6 +46,19 @@ export const videoSchema = z.object({
   order: z.number().int().optional(),
   active: z.boolean().optional(),
 });
+
+/** Yangi video: ruscha nom va havola ixtiyoriy (fayl yuklansa havolani server o'zi yozadi). */
+export const videoSchema = videoFieldsSchema.extend({
+  titleRu: videoFieldsSchema.shape.titleRu.default(""),
+  videoUrl: videoFieldsSchema.shape.videoUrl.default(""),
+});
+
+/** Yuklangan video fayllar shu papkada: incoming/ (siqilishini kutayotgan), videos/, thumbs/. */
+export function mediaDir() {
+  const dir = process.env.LOCAL_VIDEO_DIR;
+  if (!dir) throw new Error("LOCAL_VIDEO_DIR .env da belgilanmagan.");
+  return dir;
+}
 
 /** Admin sessiyasini tekshiradi; yo'q bo'lsa 401 javobini qaytaradi. */
 export async function requireAdmin(): Promise<NextResponse | null> {

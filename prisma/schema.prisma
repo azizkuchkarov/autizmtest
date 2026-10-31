@@ -290,6 +290,9 @@ model Video {
   domains       String[] // Skrining sohalari A | B | C — natijaga qarab tavsiya qilish uchun
   order         Int             @default(0)
   active        Boolean         @default(true)
+  status        String          @default("ready") // ready | processing | failed — admin yuklagan fayl serverda siqilmoqda
+  sourceFile    String? // siqilishi kutilayotgan yuklangan fayl (MEDIA_DIR/incoming/...)
+  processError  String?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   category      ContentCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)

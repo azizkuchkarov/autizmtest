@@ -15,13 +15,13 @@ export async function GET(req: Request) {
 
   const [professions, categories] = await Promise.all([
     prisma.profession.findMany({
-      where: { active: true, categories: { some: { kind, active: true, videos: { some: { active: true } } } } },
+      where: { active: true, categories: { some: { kind, active: true, videos: { some: { active: true, status: "ready" } } } } },
       orderBy: { order: "asc" },
     }),
     prisma.contentCategory.findMany({
       where: { kind, active: true, profession: { active: true, ...(profession ? { slug: profession } : {}) } },
       orderBy: [{ profession: { order: "asc" } }, { order: "asc" }],
-      include: { profession: true, videos: { where: { active: true }, orderBy: { order: "asc" } } },
+      include: { profession: true, videos: { where: { active: true, status: "ready" }, orderBy: { order: "asc" } } },
     }),
   ]);
 

@@ -16,8 +16,9 @@ export function parseLocale(v: string | null): Locale {
 export function toPublicVideo(v: Video, locale: Locale) {
   return {
     id: v.id,
-    title: locale === "ru" ? v.titleRu : v.titleUz,
-    description: (locale === "ru" ? v.descriptionRu : v.descriptionUz) ?? null,
+    // Ruscha matn kiritilmagan bo'lsa o'zbekchasi ko'rsatiladi
+    title: (locale === "ru" && v.titleRu) || v.titleUz,
+    description: (locale === "ru" && v.descriptionRu) || v.descriptionUz || null,
     videoUrl: v.videoUrl,
     thumbnailUrl: v.thumbnailUrl,
     durationSec: v.durationSec,
