@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { normalizePhone } from "@/lib/user-auth";
+import { randomBytes } from "node:crypto";
 import { sendSms } from "@/lib/eskiz";
+import { BOT_TEXT, botLocale, botStartLink, sendTelegramMessage } from "@/lib/telegram";
 
 const OTP_TTL_MINUTES = 5;
 const RATE_LIMIT_MINUTES = 1;
@@ -14,6 +16,9 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const phone = normalizePhone(String(body?.phone || ""));
+    // Kod qayerga yuboriladi: SMS (Eskiz) yoki Telegram bot
+    const channel = body?.channel === "telegram" ? "telegram" : "sms";
+    const locale = botLocale(body?.locale);
 
     if (!/^\+998\d{9}$/.test(phone)) {
       return NextResponse.json(
@@ -26,6 +31,7 @@ export async function POST(req: Request) {
     const recent = await prisma.otpCode.findFirst({
       where: {
         phone,
+        channel,
         createdAt: { gte: new Date(now.getTime() - RATE_LIMIT_MINUTES * 60 * 1000) },
       },
       orderBy: { createdAt: "desc" },
@@ -51,9 +57,29 @@ export async function POST(req: Request) {
     const code = isReview ? reviewCode : useDevCode ? devCode : generateCode();
     const expiresAt = new Date(now.getTime() + OTP_TTL_MINUTES * 60 * 1000);
 
+    const tgToken = channel === "telegram" ? randomBytes(16).toString("hex") : null;
     await prisma.otpCode.create({
-      data: { phone, code, expiresAt },
+      data: { phone, code, expiresAt, channel, locale, tgToken },
     });
+
+    if (channel === "telegram") {
+      const link = botStartLink(tgToken!);
+      if (isReview || useDevCode) {
+        return NextResponse.json({ ok: true, channel, sent: true, link, ...(useDevCode ? { devCode } : {}) });
+      }
+      // Raqam avval bot bilan tasdiqlangan bo'lsa — kod darhol yuboriladi; aks holda ota-ona botni havola orqali ochadi
+      const linked = await prisma.telegramLink.findUnique({ where: { phone } });
+      if (linked) {
+        try {
+          await sendTelegramMessage(linked.chatId, BOT_TEXT[locale].code(code));
+          return NextResponse.json({ ok: true, channel, sent: true, link });
+        } catch (tgErr) {
+          // Bot bloklangan yoki chat o'chirilgan: havola orqali qayta bog'lanadi
+          console.error("[OTP telegram]", tgErr instanceof Error ? tgErr.message : tgErr);
+        }
+      }
+      return NextResponse.json({ ok: true, channel, sent: false, link });
+    }
 
     if (isReview) {
       return NextResponse.json({ ok: true, message: "SMS yuborildi. Kodni kiriting." });

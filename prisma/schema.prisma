@@ -183,10 +183,26 @@ model OtpCode {
   id        String   @id @default(uuid())
   phone     String
   code      String
+  channel   String   @default("sms") // sms | telegram
+  locale    String   @default("uz") // bot xabari shu tilda
+  tgToken   String?  @unique // t.me/<bot>?start=<tgToken> — bir martalik, kodni shu so'rovga bog'laydi
+  tgChatId  String? // botni shu havola bilan ochgan chat (kontakt kutilmoqda)
   expiresAt DateTime
   createdAt DateTime @default(now())
 
   @@index([phone])
+  @@index([tgChatId])
+}
+
+/// Telefon raqami tasdiqlangan Telegram chati: keyingi safar kod darhol botga yuboriladi
+model TelegramLink {
+  phone     String   @id
+  chatId    String
+  tgUserId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([chatId])
 }
 
 model UserSession {

@@ -236,8 +236,10 @@ const uz = {
   'offer.continue': 'Davom etish',
 
   'phone.title': 'Telefon raqamingiz',
-  'phone.subtitle': 'Raqamingizga tasdiqlash kodini SMS orqali yuboramiz',
+  'phone.subtitle': 'Kirish kodini Telegram yoki SMS orqali yuboramiz',
   'phone.send': 'Kod olish',
+  'phone.sendTelegram': 'Telegram orqali kod olish',
+  'phone.sendSms': 'SMS orqali kod olish',
   'phone.privacy': "Raqamingiz faqat kirish uchun ishlatiladi va hech kimga berilmaydi",
 
   'verify.title': 'Kodni kiriting',
@@ -247,6 +249,11 @@ const uz = {
   'verify.change': "Raqamni o'zgartirish",
   'verify.devHint': 'Test rejimi kodi: {code}',
   'verify.confirm': 'Tasdiqlash',
+  'verify.subtitleTg': "{phone} raqami uchun kod Telegram'da @autizmtestbot ga yuborildi",
+  'verify.subtitleTgLink': "Telegram'da @autizmtestbot ochiladi: «📱 Raqamni yuborish» tugmasini bosing — kod o'sha yerga keladi. Keyin shu yerga qaytib kodni kiriting.",
+  'verify.openTelegram': "Telegram'ni ochish",
+  'verify.viaSms': 'Kodni SMS orqali olish',
+  'verify.viaTelegram': 'Kodni Telegram orqali olish',
 
   'child.step': '1-qadam / 3',
   'child.title': 'Farzandingiz bilan tanishaylik',
@@ -929,8 +936,10 @@ const ru: Record<TranslationKey, string> = {
   'offer.continue': 'Продолжить',
 
   'phone.title': 'Ваш номер телефона',
-  'phone.subtitle': 'Мы отправим код подтверждения по SMS',
+  'phone.subtitle': 'Код для входа отправим в Telegram или по SMS',
   'phone.send': 'Получить код',
+  'phone.sendTelegram': 'Получить код в Telegram',
+  'phone.sendSms': 'Получить код по SMS',
   'phone.privacy': 'Номер используется только для входа и никому не передаётся',
 
   'verify.title': 'Введите код',
@@ -940,6 +949,11 @@ const ru: Record<TranslationKey, string> = {
   'verify.change': 'Изменить номер',
   'verify.devHint': 'Код тестового режима: {code}',
   'verify.confirm': 'Подтвердить',
+  'verify.subtitleTg': 'Код для номера {phone} отправлен в Telegram, бот @autizmtestbot',
+  'verify.subtitleTgLink': 'В Telegram откроется @autizmtestbot: нажмите «📱 Отправить номер» — код придёт туда. Затем вернитесь сюда и введите код.',
+  'verify.openTelegram': 'Открыть Telegram',
+  'verify.viaSms': 'Получить код по SMS',
+  'verify.viaTelegram': 'Получить код в Telegram',
 
   'child.step': 'Шаг 1 из 3',
   'child.title': 'Давайте познакомимся с ребёнком',

@@ -1,13 +1,13 @@
 "use client";
 
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Send } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 
 import { useLocale, useProfile } from "@/components/app/providers";
 import { StartScaffold } from "@/components/app/start-scaffold";
 import { accent, Button, FadeIn, IconBadge } from "@/components/app/ui";
-import { requestOtp, verifyOtp } from "@/lib/app/api";
+import { requestOtp, verifyOtp, type OtpChannel } from "@/lib/app/api";
 
 const CODE_LENGTH = 6;
 const RESEND_SECONDS = 60;
@@ -21,7 +21,7 @@ function prettyPhone(phone: string) {
 function VerifyScreen() {
   const params = useSearchParams();
   const phone = params.get("phone") ?? "";
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const { signIn } = useProfile();
   const router = useRouter();
   const a = accent("exercises");
@@ -31,6 +31,10 @@ function VerifyScreen() {
   const [loading, setLoading] = useState(false);
   const [seconds, setSeconds] = useState(RESEND_SECONDS);
   const [devCode, setDevCode] = useState(params.get("devCode") ?? "");
+  const [channel, setChannel] = useState<OtpChannel>(params.get("channel") === "telegram" ? "telegram" : "sms");
+  // Telegram: kod botga yuborildimi yoki ota-ona avval botda raqamini tasdiqlashi kerakmi
+  const [tgLink, setTgLink] = useState(params.get("link") ?? "");
+  const [tgSent, setTgSent] = useState(params.get("sent") !== "0");
   const [shakeKey, setShakeKey] = useState(0);
 
   useEffect(() => {
@@ -69,23 +73,42 @@ function VerifyScreen() {
     if (next.length === CODE_LENGTH) submit(next);
   };
 
-  const resend = async () => {
+  /** Kodni qayta yoki boshqa kanal orqali so'raydi. */
+  const resend = async (via: OtpChannel = channel) => {
     setSeconds(RESEND_SECONDS);
     setError("");
     try {
-      const res = await requestOtp(phone);
+      const res = await requestOtp(phone, via, locale);
+      setChannel(via);
       if (res.devCode) setDevCode(res.devCode);
+      if (via === "telegram") {
+        setTgLink(res.link ?? "");
+        setTgSent(res.sent !== false);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : t("common.offline"));
     }
   };
 
+  const subtitle = channel === "sms" ? t("verify.subtitle") : tgSent ? t("verify.subtitleTg") : t("verify.subtitleTgLink");
+
   return (
     <StartScaffold footer={<Button title={t("verify.confirm")} onClick={() => submit(code)} disabled={code.length < 4} loading={loading} />}>
       <FadeIn className="mt-6 flex flex-col gap-4">
-        <IconBadge icon={MessageSquare} color={a.fg} background={a.soft} size={64} />
+        <IconBadge icon={channel === "telegram" ? Send : MessageSquare} color={a.fg} background={a.soft} size={64} />
         <h1 className="t-title">{t("verify.title")}</h1>
-        <p className="t-body text-ink-2">{t("verify.subtitle").replace("{phone}", prettyPhone(phone))}</p>
+        <p className="t-body text-ink-2">{subtitle.replace("{phone}", prettyPhone(phone))}</p>
+        {channel === "telegram" && tgLink ? (
+          <a
+            href={tgLink}
+            target="_blank"
+            rel="noreferrer"
+            className="t-small-bold inline-flex w-fit items-center gap-2 rounded-[14px] border border-line bg-element px-4 py-2.5 text-ink hover:bg-muted"
+          >
+            <Send className="h-4 w-4 text-tint" />
+            {t("verify.openTelegram")}
+          </a>
+        ) : null}
       </FadeIn>
 
       <FadeIn delay={100} className="mt-2">
@@ -127,7 +150,7 @@ function VerifyScreen() {
         {seconds > 0 ? (
           <span className="t-small-bold text-ink-3 tabular-nums">{t("verify.resendIn").replace("{s}", String(seconds))}</span>
         ) : (
-          <button onClick={resend} className="t-small-bold text-tint hover:underline">
+          <button onClick={() => resend()} className="t-small-bold text-tint hover:underline">
             {t("verify.resend")}
           </button>
         )}
@@ -135,6 +158,9 @@ function VerifyScreen() {
           {t("verify.change")}
         </button>
       </div>
+      <button onClick={() => resend(channel === "sms" ? "telegram" : "sms")} className="t-small-bold mx-auto mt-2 text-tint hover:underline">
+        {channel === "sms" ? t("verify.viaTelegram") : t("verify.viaSms")}
+      </button>
     </StartScaffold>
   );
 }

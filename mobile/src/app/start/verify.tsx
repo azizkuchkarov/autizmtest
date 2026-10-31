@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 
 import { StartScaffold } from '@/components/start-scaffold';
@@ -10,7 +10,7 @@ import { FontFamily, Radius, Spacing } from '@/constants/theme';
 import { useLocale } from '@/contexts/locale';
 import { useProfile } from '@/contexts/profile';
 import { useAccent, useTheme } from '@/hooks/use-theme';
-import { requestOtp, verifyOtp } from '@/lib/api';
+import { requestOtp, verifyOtp, type OtpChannel } from '@/lib/api';
 import { haptics } from '@/lib/haptics';
 
 const CODE_LENGTH = 6;
@@ -23,9 +23,9 @@ function prettyPhone(phone: string) {
 }
 
 export default function VerifyScreen() {
-  const params = useLocalSearchParams<{ phone: string; devCode?: string }>();
+  const params = useLocalSearchParams<{ phone: string; devCode?: string; channel?: OtpChannel; link?: string; sent?: string }>();
   const phone = params.phone ?? '';
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const { signIn } = useProfile();
   const theme = useTheme();
   const accent = useAccent('exercises');
@@ -35,6 +35,10 @@ export default function VerifyScreen() {
   const [loading, setLoading] = useState(false);
   const [seconds, setSeconds] = useState(RESEND_SECONDS);
   const [devCode, setDevCode] = useState(params.devCode ?? '');
+  const [channel, setChannel] = useState<OtpChannel>(params.channel === 'telegram' ? 'telegram' : 'sms');
+  // Telegram: kod botga yuborildimi yoki ota-ona avval botda raqamini tasdiqlashi kerakmi
+  const [tgLink, setTgLink] = useState(params.link ?? '');
+  const [tgSent, setTgSent] = useState(params.sent !== '0');
   const shake = useSharedValue(0);
 
   useEffect(() => {
@@ -77,25 +81,51 @@ export default function VerifyScreen() {
     if (next.length === CODE_LENGTH) submit(next);
   };
 
-  const resend = async () => {
+  /** Kodni qayta yoki boshqa kanal orqali so'raydi. */
+  const resend = async (via: OtpChannel = channel) => {
     setSeconds(RESEND_SECONDS);
     setError('');
     try {
-      const res = await requestOtp(phone);
+      const res = await requestOtp(phone, via, locale);
+      setChannel(via);
       if (res.devCode) setDevCode(res.devCode);
+      if (via === 'telegram') {
+        setTgLink(res.link ?? '');
+        setTgSent(res.sent !== false);
+        if (res.sent === false && res.link) Linking.openURL(res.link).catch(() => {});
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : t('common.offline'));
     }
   };
 
+  const subtitle =
+    channel === 'sms' ? t('verify.subtitle') : tgSent ? t('verify.subtitleTg') : t('verify.subtitleTgLink');
+
   return (
     <StartScaffold footer={<Button title={t('verify.confirm')} onPress={() => submit(code)} disabled={code.length < 4} loading={loading} />}>
       <Animated.View entering={FadeInDown.duration(400)} style={{ gap: Spacing.three, marginTop: Spacing.four }}>
-        <IconBadge name={sym('message.fill', 'sms')} color={accent.fg} background={accent.soft} size={64} />
+        <IconBadge
+          name={channel === 'telegram' ? sym('paperplane.fill', 'send') : sym('message.fill', 'sms')}
+          color={accent.fg}
+          background={accent.soft}
+          size={64}
+        />
         <ThemedText type="title">{t('verify.title')}</ThemedText>
         <ThemedText type="body" themeColor="textSecondary">
-          {t('verify.subtitle').replace('{phone}', prettyPhone(phone))}
+          {subtitle.replace('{phone}', prettyPhone(phone))}
         </ThemedText>
+        {channel === 'telegram' && tgLink ? (
+          <View style={{ alignSelf: 'flex-start' }}>
+            <Button
+              title={t('verify.openTelegram')}
+              variant="secondary"
+              size="md"
+              icon={sym('paperplane.fill', 'send')}
+              onPress={() => Linking.openURL(tgLink).catch(() => {})}
+            />
+          </View>
+        ) : null}
       </Animated.View>
 
       <Animated.View entering={FadeInDown.delay(100).duration(400)} style={{ marginTop: Spacing.two }}>
@@ -152,7 +182,7 @@ export default function VerifyScreen() {
             {t('verify.resendIn').replace('{s}', String(seconds))}
           </ThemedText>
         ) : (
-          <Pressable onPress={resend} hitSlop={8}>
+          <Pressable onPress={() => resend()} hitSlop={8}>
             <ThemedText type="smallBold" themeColor="tint">
               {t('verify.resend')}
             </ThemedText>
@@ -164,6 +194,11 @@ export default function VerifyScreen() {
           </ThemedText>
         </Pressable>
       </View>
+      <Pressable onPress={() => resend(channel === 'sms' ? 'telegram' : 'sms')} hitSlop={8} style={{ alignSelf: 'center', marginTop: Spacing.two }}>
+        <ThemedText type="smallBold" themeColor="tint">
+          {channel === 'sms' ? t('verify.viaTelegram') : t('verify.viaSms')}
+        </ThemedText>
+      </Pressable>
     </StartScaffold>
   );
 }

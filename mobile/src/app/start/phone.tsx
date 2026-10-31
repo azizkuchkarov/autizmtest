@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useRef, useState, type ComponentRef } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { StartScaffold } from '@/components/start-scaffold';
@@ -10,7 +10,7 @@ import { Button, IconBadge, sym } from '@/components/ui';
 import { FontFamily, Radius, Spacing } from '@/constants/theme';
 import { useLocale } from '@/contexts/locale';
 import { useAccent, useTheme } from '@/hooks/use-theme';
-import { requestOtp } from '@/lib/api';
+import { requestOtp, type OtpChannel } from '@/lib/api';
 import { haptics } from '@/lib/haptics';
 
 /** 901234567 → "90 123 45 67" */
@@ -20,38 +20,62 @@ function formatPhoneDigits(digits: string) {
 }
 
 export default function PhoneScreen() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const theme = useTheme();
   const accent = useAccent('test');
   const input = useRef<ComponentRef<typeof TextInput>>(null);
   const [digits, setDigits] = useState('');
   const [focused, setFocused] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<OtpChannel | null>(null);
   const [error, setError] = useState('');
 
   const valid = digits.length === 9;
 
-  const onSubmit = async () => {
+  const onSubmit = async (channel: OtpChannel) => {
     if (!valid || loading) return;
-    setLoading(true);
+    setLoading(channel);
     setError('');
     const phone = `+998${digits}`;
     try {
-      const res = await requestOtp(phone);
+      const res = await requestOtp(phone, channel, locale);
       haptics.success();
-      router.push({ pathname: '/start/verify', params: { phone, devCode: res.devCode ?? '' } });
+      const link = res.link ?? '';
+      // Raqam bot bilan hali bog'lanmagan: kodni olish uchun botni ochamiz
+      if (channel === 'telegram' && !res.sent && link) Linking.openURL(link).catch(() => {});
+      router.push({
+        pathname: '/start/verify',
+        params: { phone, devCode: res.devCode ?? '', channel, link, sent: res.sent === false ? '0' : '1' },
+      });
     } catch (e) {
       haptics.warning();
       setError(e instanceof Error && e.message !== 'Network error' ? e.message : t('common.offline'));
     } finally {
-      setLoading(false);
+      setLoading(null);
     }
   };
 
   return (
     <StartScaffold
       back={false}
-      footer={<Button title={t('phone.send')} onPress={onSubmit} disabled={!valid} loading={loading} icon={sym('paperplane.fill', 'send')} />}>
+      footer={
+        <View style={{ gap: Spacing.two }}>
+          <Button
+            title={t('phone.sendTelegram')}
+            onPress={() => onSubmit('telegram')}
+            disabled={!valid || loading === 'sms'}
+            loading={loading === 'telegram'}
+            icon={sym('paperplane.fill', 'send')}
+          />
+          <Button
+            title={t('phone.sendSms')}
+            variant="secondary"
+            onPress={() => onSubmit('sms')}
+            disabled={!valid || loading === 'telegram'}
+            loading={loading === 'sms'}
+            icon={sym('message.fill', 'sms')}
+          />
+        </View>
+      }>
       <Animated.View entering={FadeInDown.duration(400)} style={{ gap: Spacing.three, marginTop: Spacing.four }}>
         <IconBadge name={sym('iphone.gen3', 'smartphone')} color={accent.fg} background={accent.soft} size={64} />
         <ThemedText type="title">{t('phone.title')}</ThemedText>
@@ -85,7 +109,7 @@ export default function PhoneScreen() {
             }}
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
-            onSubmitEditing={onSubmit}
+            onSubmitEditing={() => onSubmit('telegram')}
             placeholder="90 123 45 67"
             placeholderTextColor={theme.textTertiary}
             keyboardType="number-pad"

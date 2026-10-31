@@ -53,8 +53,14 @@ export type ChildRecord = {
 
 export type ChildInput = Omit<ChildRecord, "id">;
 
-export function requestOtp(phone: string) {
-  return request<{ ok: boolean; devCode?: string }>("/api/auth/otp/request", { method: "POST", body: JSON.stringify({ phone }) });
+export type OtpChannel = "sms" | "telegram";
+
+/** Kirish kodi: SMS yoki Telegram bot. Telegram'da raqam hali bog'lanmagan bo'lsa sent=false — botni link orqali ochish kerak. */
+export function requestOtp(phone: string, channel: OtpChannel, locale: Locale) {
+  return request<{ ok: boolean; devCode?: string; sent?: boolean; link?: string }>("/api/auth/otp/request", {
+    method: "POST",
+    body: JSON.stringify({ phone, channel, locale }),
+  });
 }
 
 export function verifyOtp(phone: string, code: string) {

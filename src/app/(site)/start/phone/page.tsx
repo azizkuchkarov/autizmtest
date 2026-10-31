@@ -1,13 +1,13 @@
 "use client";
 
-import { CheckCircle2, Lock, Send, Smartphone } from "lucide-react";
+import { CheckCircle2, Lock, MessageSquare, Send, Smartphone } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useLocale } from "@/components/app/providers";
 import { StartScaffold } from "@/components/app/start-scaffold";
 import { accent, Button, FadeIn, IconBadge } from "@/components/app/ui";
-import { requestOtp } from "@/lib/app/api";
+import { requestOtp, type OtpChannel } from "@/lib/app/api";
 
 /** 901234567 → "90 123 45 67" */
 function formatPhoneDigits(digits: string) {
@@ -16,38 +16,65 @@ function formatPhoneDigits(digits: string) {
 }
 
 export default function PhonePage() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const router = useRouter();
   const a = accent("test");
   const [digits, setDigits] = useState("");
   const [focused, setFocused] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<OtpChannel | null>(null);
   const [error, setError] = useState("");
 
   const valid = digits.length === 9;
 
-  const onSubmit = async () => {
+  const onSubmit = async (channel: OtpChannel) => {
     if (!valid || loading) return;
-    setLoading(true);
+    setLoading(channel);
     setError("");
     const phone = `+998${digits}`;
     try {
-      const res = await requestOtp(phone);
-      const params = new URLSearchParams({ phone, ...(res.devCode ? { devCode: res.devCode } : {}) });
+      const res = await requestOtp(phone, channel, locale);
+      const params = new URLSearchParams({
+        phone,
+        channel,
+        ...(res.devCode ? { devCode: res.devCode } : {}),
+        ...(res.link ? { link: res.link } : {}),
+        ...(res.sent === false ? { sent: "0" } : {}),
+      });
       router.push(`/start/verify?${params}`);
     } catch (e) {
       setError(e instanceof Error && e.message !== "Network error" ? e.message : t("common.offline"));
     } finally {
-      setLoading(false);
+      setLoading(null);
     }
   };
 
   return (
-    <StartScaffold back={false} footer={<Button title={t("phone.send")} onClick={onSubmit} disabled={!valid} loading={loading} icon={Send} />}>
+    <StartScaffold
+      back={false}
+      footer={
+        <div className="flex flex-col gap-2">
+          <Button
+            title={t("phone.sendTelegram")}
+            onClick={() => onSubmit("telegram")}
+            disabled={!valid || loading === "sms"}
+            loading={loading === "telegram"}
+            icon={Send}
+          />
+          <Button
+            title={t("phone.sendSms")}
+            variant="secondary"
+            onClick={() => onSubmit("sms")}
+            disabled={!valid || loading === "telegram"}
+            loading={loading === "sms"}
+            icon={MessageSquare}
+          />
+        </div>
+      }
+    >
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          onSubmit();
+          onSubmit("telegram");
         }}
         className="contents"
       >
