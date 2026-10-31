@@ -75,7 +75,7 @@ export const professionalQuestions: ScreeningQuestion[] = [
     id: "SCREENING_A_05",
     domain: "A",
     weight: 1,
-    isRedFlag: false,
+    isRedFlag: true,
     text: "Bola siz bilan qiziqarli narsalarni bo‘lishadimi va sizning reaksiyangizni kutadimi?",
     example: "Yangi o‘yinchoqni ko‘rsatib, sizning reaksiyangizni kutadi yoki sizga qarata kuladi.",
     explanation: "Ijtimoiy bo‘lishish va boshqalarning reaksiyasini kutish ijtimoiy motivatsiya va birgalikda tajriba yaratish qobiliyatini ko‘rsatadi.",
@@ -84,7 +84,7 @@ export const professionalQuestions: ScreeningQuestion[] = [
     id: "SCREENING_A_06",
     domain: "A",
     weight: 1,
-    isRedFlag: false,
+    isRedFlag: true,
     text: "Bola ismiga chaqirilganda yoki siz uni chaqirganingizda sizga qarab javob beradimi?",
     example: "Xonada boshqa shovqin yoki o‘yinchoq bilan band bo‘lsa ham, ismi aytilganda boshini sizga qaratadi, qisqa murojaat qiladi yoki sizga yaqinlashadi.",
     explanation: "Ismga javob berish ijtimoiy yo‘nalish (social orienting) va boshqalar bilan aloqada bo‘lish istagining asosiy ko‘rsatkichidir; rivojlanish davomida tez-tez baholanadigan ko‘nikmadir.",
@@ -93,7 +93,7 @@ export const professionalQuestions: ScreeningQuestion[] = [
     id: "SCREENING_A_07",
     domain: "A",
     weight: 1,
-    isRedFlag: false,
+    isRedFlag: true,
     text: "Siz biror narsaga barmoq bilan ishora qilsangiz, bola shu tomonga qaraydimi va narsani topadimi?",
     example: "«U yerda, qara» desangiz, barmog‘ingiz yo‘nalishiga qarab qidiradi va topadi.",
     explanation: "Boshqalarning ko‘rsatmalariga e’tibor berish va ularga moslashish ijtimoiy o‘zaro ta’sir va til rivojlanishining muhim belgisidir.",
@@ -104,7 +104,7 @@ export const professionalQuestions: ScreeningQuestion[] = [
     weight: 1,
     isRedFlag: false,
     text: "Bola qo‘rqganda, yig‘laganda yoki og‘riq sezganda sizga kelib quchoq yoki yordam so‘raydimi?",
-    example: "Masalan: baland ovoz, it yoki noma’lum kishi qo‘rqitganda sizga yuguradi; tushganda yoki og‘riq teganda sizdan quchoq yoki og‘riq joyiga «puf» qilishni so‘raydi.",
+    example: "Masalan: baland ovoz, it yoki noma’lum kishi qo‘rqitganda sizga yuguradi; yiqilganda yoki biror joyi og‘riganda sizdan quchoq yoki og‘riq joyiga «puf» qilishni so‘raydi.",
     explanation: "Stress vaqtida yaqin kishidan yordam va qulaylik so‘rash xavfsiz bog‘lanish va emotsional tartibga solishning muhim belgisidir.",
   },
   {
@@ -112,7 +112,7 @@ export const professionalQuestions: ScreeningQuestion[] = [
     domain: "A",
     weight: 1,
     isRedFlag: false,
-    text: "Bola siz bilan oddiy ijtimoiy o‘yinlarda (masalan, qo‘l silkitish, qochish, tag-teg) qatnashadimi?",
+    text: "Bola siz bilan oddiy ijtimoiy o‘yinlarda (masalan, «ku-ku», quvlashmachoq) qatnashadimi?",
     example: "Siz «qoch» desangiz, qochadi va kuladi; siz uni tutib olmoqchi bo‘lsangiz, qochadi va o‘yin davom etadi.",
     explanation: "Ijtimoiy o‘yinlar ijtimoiy qoidalarni tushunish va boshqalar bilan o‘zaro ta’sir qilish qobiliyatini ko‘rsatadi.",
   },
@@ -132,7 +132,7 @@ export const professionalQuestions: ScreeningQuestion[] = [
     isRedFlag: false,
     text: "Bola o‘yinda navbatni kutish va boshqalar bilan hamkorlik qilishni tushunadimi?",
     example: "«Avval men, keyin sen» o‘yinida navbatni kutadi va boshqalar bilan birga o‘ynaydi.",
-    explanation: "Ijtimoiy qoidalarni tushunish va hamkorlik qilish ijtimoiy kompetentsiyaning muhim belgisidir.",
+    explanation: "Ijtimoiy qoidalarni tushunish va hamkorlik qilish ijtimoiy kompetensiyaning muhim belgisidir.",
   },
   // ——— B: Muloqot va til (7 ta) ———
   {
@@ -141,7 +141,7 @@ export const professionalQuestions: ScreeningQuestion[] = [
     weight: 1,
     isRedFlag: false,
     text: "Bola ehtiyojlarini va istaklarini bildirish uchun so‘z, imo-ishora yoki yuz ifodasini ishlatadimi?",
-    example: "Suv kerak bo‘lsa, «suv» deydi yoki barmoq bilan ko‘rsatadi; yordam kerak bo‘lsa, sizga qarata yig‘laydi.",
+    example: "Suv kerak bo‘lsa, «suv» deydi yoki barmoq bilan ko‘rsatadi; yordam kerak bo‘lsa, sizga qarab tovush chiqaradi yoki qo‘lingizdan tortadi.",
     explanation: "Muloqot qilish qobiliyati bola ehtiyojlarini va istaklarini boshqalarga yetkazish uchun zarurdir.",
   },
   {
@@ -158,7 +158,7 @@ export const professionalQuestions: ScreeningQuestion[] = [
     domain: "B",
     weight: 1,
     isRedFlag: false,
-    text: "Bola sizning gapingizga mos ravishda javob beradi va suhbatni davom ettiradimi?",
+    text: "Bola sizning gapingizga mos ravishda javob berib, suhbatni davom ettiradimi?",
     example: "Siz «Bu nima?» desangiz, javob beradi va keyin o‘zi ham savol beradi yoki mavzuni davom ettiradi.",
     explanation: "Dialogik muloqot va suhbatni davom ettirish muloqot qobiliyatining muhim belgisidir.",
   },
@@ -166,9 +166,9 @@ export const professionalQuestions: ScreeningQuestion[] = [
     id: "SCREENING_B_04",
     domain: "B",
     weight: 1,
-    isRedFlag: false,
-    text: "Bola sizning oddiy harakatlaringizni (masalan, qo‘l silkitish, bosh irg‘ash, qo‘l ko‘tarish) taqlid qiladimi?",
-    example: "Siz «bye-bye» qilsangiz, u ham qo‘lini silkitadi; siz bosh irg‘asangiz, u ham boshini irg‘atadi.",
+    isRedFlag: true,
+    text: "Bola sizning oddiy harakatlaringizni (masalan, qo‘l silkitish, bosh irg‘atish, qo‘l ko‘tarish) taqlid qiladimi?",
+    example: "Siz «xayr» deb qo‘l silkitsangiz, u ham qo‘lini silkitadi; siz bosh irg‘asangiz, u ham boshini irg‘atadi.",
     explanation: "Taqlid qilish o‘rganishning asosiy mexanizmi bo‘lib, ijtimoiy o‘rganish va muloqot rivojlanishida muhimdir.",
   },
   {
@@ -185,8 +185,8 @@ export const professionalQuestions: ScreeningQuestion[] = [
     domain: "B",
     weight: 1,
     isRedFlag: false,
-    text: "Bola «aslida» bo‘lmagan narsalarni o‘yinda ishlatadimi? (Masalan: qo‘g‘irchoqni uxlatar, bo‘sh idishdan «ichadi», o‘yinchoqni «hayvon» qilib o‘ynaydi)",
-    example: "Bananani telefonga o‘xshatib gaplashadi; qo‘g‘irchoqni ovqatlantiradi; bo‘sh idishdan ichadi.",
+    text: "Bola «aslida» bo‘lmagan narsalarni o‘yinda ishlatadimi? (Masalan: qo‘g‘irchoqni uxlatadi, bo‘sh idishdan «ichadi», o‘yinchoqni «hayvon» qilib o‘ynaydi)",
+    example: "Bananni telefon qilib «gaplashadi»; qo‘g‘irchoqni ovqatlantiradi; bo‘sh idishdan ichadi.",
     explanation: "Fantaziya o‘yini va tasavvur qobiliyati kognitiv rivojlanish va ijtimoiy o‘rganishning muhim ko‘rsatkichidir.",
   },
   {
@@ -205,7 +205,7 @@ export const professionalQuestions: ScreeningQuestion[] = [
     weight: 1,
     isRedFlag: false,
     text: "Bola qo‘lini silkitish, o‘z atrofida aylanish, barmoqlarni harakatlantirish, qo‘lini ko‘tarib turish kabi takroriy harakatlarni ko‘p qiladimi?",
-    example: "Hayajonlanganida yoki zerikganda bir xil harakatni uzoq vaqt takrorlaydi; qo‘lini oldinga ko‘tarib, barmoqlarini harakatlantirib turadi.",
+    example: "Hayajonlanganda yoki zerikkanda bir xil harakatni uzoq vaqt takrorlaydi; qo‘lini oldinga ko‘tarib, barmoqlarini harakatlantirib turadi.",
     explanation: "Takroriy harakatlar ba’zi hollarda normal rivojlanishning bir qismi bo‘lishi mumkin, lekin haddan tashqari va doimiy takrorlanishi e’tiborga olinishi kerak.",
   },
   {
@@ -258,8 +258,8 @@ export const professionalQuestions: ScreeningQuestion[] = [
     domain: "C",
     weight: 1,
     isRedFlag: false,
-    text: "Bola ovoz, hid, yorug‘lik yoki tegishga g‘ayrioddiy sezgirlik yoki kam sezgirlik ko‘rsatadimi?",
-    example: "Ba’zi ovozlardan quloqni beradi yoki juda baland ovozga reaksiya bermaydi; ba’zi hidlar yoki yorug‘likka haddan tashqari reaksiya ko‘rsatadi.",
+    text: "Bola ovoz, hid, yorug‘lik yoki tegishga haddan tashqari yuqori yoki juda past sezgirlik ko‘rsatadimi?",
+    example: "Ba’zi ovozlardan quloqlarini yopadi yoki juda baland ovozga reaksiya bermaydi; ba’zi hidlar yoki yorug‘likka haddan tashqari reaksiya ko‘rsatadi.",
     explanation: "Sezgi reaksiyalari har bir bolada turlicha bo‘lishi mumkin; haddan tashqari yoki kam reaksiya e’tiborga olinishi kerak.",
   },
   {
@@ -276,8 +276,39 @@ export const professionalQuestions: ScreeningQuestion[] = [
     domain: "C",
     weight: 1,
     isRedFlag: false,
-    text: "Bola kiyim, ovqat yoki atrof-muhitga nisbatan haddan tashqari sezgirlik yoki kam sezgirlik ko‘rsatadimi?",
+    text: "Bola kiyim, ovqat yoki atrof-muhitga nisbatan haddan tashqari yuqori yoki juda past sezgirlik ko‘rsatadimi?",
     example: "Ma’lum kiyimlarni kiyishni rad etadi; ma’lum ovqatlarni yeyishni rad etadi; yangi joyga moslashishi juda qiyin.",
     explanation: "Sezgi moslashuvi har bir bolada turlicha bo‘lishi mumkin; haddan tashqari qarshilik yoki moslashmaslik e’tiborga olinishi kerak.",
   },
 ];
+
+/** Yosh guruhiga mos kelmaydigan savollar (ID lar uz va ru da bir xil). */
+export const AGE_EXCLUDED_QUESTION_IDS: Record<string, string[]> = {
+  // 1,5–2 yosh: navbat/hamkorlik, suhbatni davom ettirish va rollarni almashtirish hali kutilmaydi
+  AGE_1_5_2: ["SCREENING_A_11", "SCREENING_B_03", "SCREENING_B_07"],
+  // 7–9 yosh: so‘z va tovushlarni takrorlash bu yoshda ma’lumot bermaydi
+  AGE_7_9: ["SCREENING_B_05"],
+};
+
+export type QuestionOverride = Partial<Pick<ScreeningQuestion, "text" | "example" | "explanation">>;
+
+/** Yosh guruhiga moslashtirilgan matnlar (o‘zbekcha). */
+export const professionalAgeOverrides: Record<string, Record<string, QuestionOverride>> = {
+  AGE_7_9: {
+    SCREENING_A_09: {
+      text: "Bola siz yoki boshqa bolalar bilan qoidali birgalikdagi o‘yinlarda (masalan, berkinmachoq, quvlashmachoq, stol o‘yinlari) qatnashadimi?",
+      example: "Berkinmachoqda navbat bilan qidiradi va yashirinadi; stol o‘yinida qoidaga amal qiladi va yutqazsa ham o‘yinni davom ettiradi.",
+    },
+  },
+};
+
+/** Savollar ro‘yxatini yosh guruhiga moslaydi: mos kelmaydiganlarini olib tashlaydi va matnlarni almashtiradi. */
+export function questionsForAge(
+  questions: ScreeningQuestion[],
+  ageGroupId: string,
+  overrides: Record<string, Record<string, QuestionOverride>>
+): ScreeningQuestion[] {
+  const excluded = AGE_EXCLUDED_QUESTION_IDS[ageGroupId] ?? [];
+  const ageOverrides = overrides[ageGroupId] ?? {};
+  return questions.filter((q) => !excluded.includes(q.id)).map((q) => ({ ...q, ...ageOverrides[q.id] }));
+}

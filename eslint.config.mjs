@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Mobil ilova o‘zining Expo lint sozlamalariga ega
+    "mobile/**",
   ]),
 ]);
 

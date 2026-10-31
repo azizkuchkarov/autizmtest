@@ -1,17 +1,22 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Manrope } from "next/font/google";
 import "./globals.css";
-import ClientLayout from "@/components/ClientLayout";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const manrope = Manrope({
+  variable: "--font-manrope",
+  subsets: ["latin", "cyrillic"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#F5F6FB" },
+    { media: "(prefers-color-scheme: dark)", color: "#0A0C18" },
+  ],
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://autizmtest.uz"),
@@ -20,7 +25,7 @@ export const metadata: Metadata = {
     template: "%s | Autizm skrining",
   },
   description:
-    "2–9 yoshli bolalar uchun professional autizm belgilari skrining testi. 3 soha: ijtimoiy aloqa, muloqot, cheklangan xatti-harakatlar. AI xulosa, PDF hisobot, ABA markazlar.",
+    "Bepul autizm belgilari skrining testi, mutaxassislardan video darslar va uyda mashqlar. 3 soha: ijtimoiy aloqa, muloqot, takroriy xatti-harakatlar. AI xulosa va ABA markazlari.",
   keywords: [
     "autizm skrining",
     "bola rivojlanishi",
@@ -35,12 +40,12 @@ export const metadata: Metadata = {
     locale: "uz_UZ",
     title: "Autizm skrining — Bola rivojlanishi va autizm belgilari",
     description:
-      "2–9 yoshli bolalar uchun professional autizm belgilari skrining testi. AI xulosa, PDF hisobot.",
+      "Bepul autizm belgilari skrining testi, video darslar va uyda mashqlar.",
   },
   twitter: {
     card: "summary_large_image",
     title: "Autizm skrining — Bola rivojlanishi va autizm belgilari",
-    description: "2–9 yoshli bolalar uchun autizm belgilari skrining testi.",
+    description: "Bepul autizm belgilari skrining testi, video darslar va uyda mashqlar.",
   },
   robots: { index: true, follow: true },
 };
@@ -52,11 +57,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="uz" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <ClientLayout>{children}</ClientLayout>
-      </body>
+      <body className={`${manrope.variable} antialiased`}>{children}</body>
     </html>
   );
 }

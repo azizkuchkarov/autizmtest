@@ -1,0 +1,314 @@
+/**
+ * Professional autizm skrining savollari (3 soha: A, B, C)
+ * Ota-onalar uchun soha kirish matnlari va 27 ta savol
+ */
+
+import type { ScreeningQuestion, AnswerScaleItem, Domain } from "@/shared/lib/screening-types";
+
+export const professionalAnswerScale: AnswerScaleItem[] = [
+  { value: 0, label: "Yo‘q / hech qachon" },
+  { value: 1, label: "Kamdan-kam / ayrim hollarda" },
+  { value: 2, label: "Ko‘pincha" },
+  { value: 3, label: "Doim / barqaror" },
+];
+
+export const professionalDomains: Domain[] = [
+  {
+    id: "A",
+    title: "Ijtimoiy aloqa va o‘zaro ta’sir",
+    subtitle:
+      "Ushbu qismda bolaning siz va boshqalar bilan qanday aloqa qilishi, ko‘z aloqasi, birgalikda diqqat, emotsional javob va ijtimoiy o‘yin ko‘nikmalari baholanadi. Savollar shuni aniqlashga yordam beradi: bola boshqalarning e’tiborini qanday jalb qiladi, ularning reaksiyasiga qanday javob beradi va ular bilan qanday o‘ynaydi.",
+  },
+  {
+    id: "B",
+    title: "Muloqot va til",
+    subtitle:
+      "Ushbu qismda bolaning og‘zaki va og‘zaki bo‘lmagan muloqoti, savol va buyruqlarga javob berishi, taqlid qilishi va fantaziya o‘yini baholanadi. Savollar shuni aniqlashga yordam beradi: bola ehtiyoj va istaklarini qanday bildiradi, sizning gapingizni qanday tushunadi va o‘yinda tasavvur qanday ishlatadi.",
+  },
+  {
+    id: "C",
+    title: "Cheklangan va takroriy xatti-harakatlar",
+    subtitle:
+      "Ushbu qismda bolaning takroriy harakatlari, qat’iy tartib va o‘zgarishlarga reaksiyasi, shuningdek sezgi (ovoz, hid, yorug‘lik, tegish) reaksiyalari baholanadi. Savollar shuni aniqlashga yordam beradi: bola qanchalik takroriy harakatlar qiladi, o‘zgarishlarga qanchalik moslashadi va sezgi ta’sirlariga qanday javob beradi.",
+  },
+];
+
+export const professionalQuestions: ScreeningQuestion[] = [
+  // ——— A: Ijtimoiy aloqa (11 ta) ———
+  {
+    id: "SCREENING_A_01",
+    domain: "A",
+    weight: 1,
+    isRedFlag: false,
+    text: "Bola siz bilan muloqot qilganda yuzingizga qaraydimi va ko‘z aloqasini ushlab turadimi?",
+    example: "Siz unga biror narsa ko‘rsatsangiz yoki unga murojaat qilsangiz, sizning yuzingizga 2–3 soniya davomida qaraydimi?",
+    explanation: "Vizual aloqa ijtimoiy o‘zaro ta’sirning asosiy elementi. Bu ko‘nikma bola boshqa odamlar bilan bog‘lanish va ularning e’tiborini olish uchun muhimdir.",
+  },
+  {
+    id: "SCREENING_A_02",
+    domain: "A",
+    weight: 1,
+    isRedFlag: false,
+    text: "Bola siz biror narsaga qaraganingizda, o‘sha tomonga qaraydimi va narsani qidirishga harakat qiladimi?",
+    example: "Siz biror narsaga (masalan, deraza, o‘yinchoq) qarasangiz — bola ham shu yo‘nalishga qaraydimi yoki «qayerda?» deb qidiradimi?",
+    explanation: "Boshqalarning qarash yo‘nalishini kuzatish va shunga moslashish (gaze following) ijtimoiy kognitsiya va birgalikda diqqatning muhim ko‘rsatkichidir.",
+  },
+  {
+    id: "SCREENING_A_03",
+    domain: "A",
+    weight: 1,
+    isRedFlag: false,
+    text: "Bola sizning yuz ifodangizdagi farqlarni (xursand, xafa, g‘azablangan, hayron) idrok qiladimi va ularga ma’no beradimi?",
+    example: "Masalan: siz yuzingizni jiddiy qilsangiz yoki g‘azablangan ko‘rinsangiz, bola biror narsa noto‘g‘ri bo‘lganini sezadi; tabassum qilsangiz — xavfsiz his qiladi va javoban kuladi.",
+    explanation: "Yuz ifodalarini ajratish va ularga ma’no berish (emotsional tushunish) ijtimoiy kognitsiya va xavfsiz bog‘lanishning asosiy ko‘rsatkichidir.",
+  },
+  {
+    id: "SCREENING_A_04",
+    domain: "A",
+    weight: 1,
+    isRedFlag: false,
+    text: "Bola tanish kishilarni ko‘rganda salomlashadimi va ketishda xayrlashadimi (qo‘l silkitish, bosh irg‘atish, tabassum yoki so‘z bilan)?",
+    example: "Mehmon kirsa yoki siz uyga kirsangiz, qo‘lini silkitadi yoki tabassum qiladi; mehmon ketganda «xayr» yoki qo‘l silkitish bilan xayrlashadi.",
+    explanation: "Salomlashish va xayrlashish ijtimoiy odob va boshqalar bilan an’anaviy ijtimoiy aloqa shakllarini qo‘llash qobiliyatini ko‘rsatadi.",
+  },
+  {
+    id: "SCREENING_A_05",
+    domain: "A",
+    weight: 1,
+    isRedFlag: true,
+    text: "Bola siz bilan qiziqarli narsalarni bo‘lishadimi va sizning reaksiyangizni kutadimi?",
+    example: "Yangi o‘yinchoqni ko‘rsatib, sizning reaksiyangizni kutadi yoki sizga qarata kuladi.",
+    explanation: "Ijtimoiy bo‘lishish va boshqalarning reaksiyasini kutish ijtimoiy motivatsiya va birgalikda tajriba yaratish qobiliyatini ko‘rsatadi.",
+  },
+  {
+    id: "SCREENING_A_06",
+    domain: "A",
+    weight: 1,
+    isRedFlag: true,
+    text: "Bola ismiga chaqirilganda yoki siz uni chaqirganingizda sizga qarab javob beradimi?",
+    example: "Xonada boshqa shovqin yoki o‘yinchoq bilan band bo‘lsa ham, ismi aytilganda boshini sizga qaratadi, qisqa murojaat qiladi yoki sizga yaqinlashadi.",
+    explanation: "Ismga javob berish ijtimoiy yo‘nalish (social orienting) va boshqalar bilan aloqada bo‘lish istagining asosiy ko‘rsatkichidir; rivojlanish davomida tez-tez baholanadigan ko‘nikmadir.",
+  },
+  {
+    id: "SCREENING_A_07",
+    domain: "A",
+    weight: 1,
+    isRedFlag: true,
+    text: "Siz biror narsaga barmoq bilan ishora qilsangiz, bola shu tomonga qaraydimi va narsani topadimi?",
+    example: "«U yerda, qara» desangiz, barmog‘ingiz yo‘nalishiga qarab qidiradi va topadi.",
+    explanation: "Boshqalarning ko‘rsatmalariga e’tibor berish va ularga moslashish ijtimoiy o‘zaro ta’sir va til rivojlanishining muhim belgisidir.",
+  },
+  {
+    id: "SCREENING_A_08",
+    domain: "A",
+    weight: 1,
+    isRedFlag: false,
+    text: "Bola qo‘rqganda, yig‘laganda yoki og‘riq sezganda sizga kelib quchoq yoki yordam so‘raydimi?",
+    example: "Masalan: baland ovoz, it yoki noma’lum kishi qo‘rqitganda sizga yuguradi; yiqilganda yoki biror joyi og‘riganda sizdan quchoq yoki og‘riq joyiga «puf» qilishni so‘raydi.",
+    explanation: "Stress vaqtida yaqin kishidan yordam va qulaylik so‘rash xavfsiz bog‘lanish va emotsional tartibga solishning muhim belgisidir.",
+  },
+  {
+    id: "SCREENING_A_09",
+    domain: "A",
+    weight: 1,
+    isRedFlag: false,
+    text: "Bola siz bilan oddiy ijtimoiy o‘yinlarda (masalan, «ku-ku», quvlashmachoq) qatnashadimi?",
+    example: "Siz «qoch» desangiz, qochadi va kuladi; siz uni tutib olmoqchi bo‘lsangiz, qochadi va o‘yin davom etadi.",
+    explanation: "Ijtimoiy o‘yinlar ijtimoiy qoidalarni tushunish va boshqalar bilan o‘zaro ta’sir qilish qobiliyatini ko‘rsatadi.",
+  },
+  {
+    id: "SCREENING_A_10",
+    domain: "A",
+    weight: 1,
+    isRedFlag: false,
+    text: "Bola tengdoshlari yoki kattalar bilan o‘ynashga qiziqadimi va ularga yaqinlashadimi?",
+    example: "Boshqa bolalar o‘ynasa, ularga yaqinlashadi va o‘yinga qo‘shilishga harakat qiladi.",
+    explanation: "Ijtimoiy motivatsiya va tengdoshlar bilan o‘zaro ta’sir ijtimoiy rivojlanishning muhim ko‘rsatkichidir.",
+  },
+  {
+    id: "SCREENING_A_11",
+    domain: "A",
+    weight: 1,
+    isRedFlag: false,
+    text: "Bola o‘yinda navbatni kutish va boshqalar bilan hamkorlik qilishni tushunadimi?",
+    example: "«Avval men, keyin sen» o‘yinida navbatni kutadi va boshqalar bilan birga o‘ynaydi.",
+    explanation: "Ijtimoiy qoidalarni tushunish va hamkorlik qilish ijtimoiy kompetensiyaning muhim belgisidir.",
+  },
+  // ——— B: Muloqot va til (7 ta) ———
+  {
+    id: "SCREENING_B_01",
+    domain: "B",
+    weight: 1,
+    isRedFlag: false,
+    text: "Bola ehtiyojlarini va istaklarini bildirish uchun so‘z, imo-ishora yoki yuz ifodasini ishlatadimi?",
+    example: "Suv kerak bo‘lsa, «suv» deydi yoki barmoq bilan ko‘rsatadi; yordam kerak bo‘lsa, sizga qarab tovush chiqaradi yoki qo‘lingizdan tortadi.",
+    explanation: "Muloqot qilish qobiliyati bola ehtiyojlarini va istaklarini boshqalarga yetkazish uchun zarurdir.",
+  },
+  {
+    id: "SCREENING_B_02",
+    domain: "B",
+    weight: 1,
+    isRedFlag: false,
+    text: "Bola oddiy savol yoki buyruqlarga (masalan, «Qayerda?», «Oling», «Keling») javob bera oladimi?",
+    example: "«To‘p qayerda?» deb so‘rasangiz, qidiradi yoki ko‘rsatadi; «Oling» desangiz, oladi.",
+    explanation: "Tushunish va javob berish muloqotning ikki tomonlama jarayonidir va til rivojlanishining muhim ko‘rsatkichidir.",
+  },
+  {
+    id: "SCREENING_B_03",
+    domain: "B",
+    weight: 1,
+    isRedFlag: false,
+    text: "Bola sizning gapingizga mos ravishda javob berib, suhbatni davom ettiradimi?",
+    example: "Siz «Bu nima?» desangiz, javob beradi va keyin o‘zi ham savol beradi yoki mavzuni davom ettiradi.",
+    explanation: "Dialogik muloqot va suhbatni davom ettirish muloqot qobiliyatining muhim belgisidir.",
+  },
+  {
+    id: "SCREENING_B_04",
+    domain: "B",
+    weight: 1,
+    isRedFlag: true,
+    text: "Bola sizning oddiy harakatlaringizni (masalan, qo‘l silkitish, bosh irg‘atish, qo‘l ko‘tarish) taqlid qiladimi?",
+    example: "Siz «xayr» deb qo‘l silkitsangiz, u ham qo‘lini silkitadi; siz bosh irg‘asangiz, u ham boshini irg‘atadi.",
+    explanation: "Taqlid qilish o‘rganishning asosiy mexanizmi bo‘lib, ijtimoiy o‘rganish va muloqot rivojlanishida muhimdir.",
+  },
+  {
+    id: "SCREENING_B_05",
+    domain: "B",
+    weight: 1,
+    isRedFlag: false,
+    text: "Bola sizning gapingizni yoki tovushlarni takrorlashga harakat qiladimi?",
+    example: "Siz «mama» desangiz, u ham «mama» deydi; siz hayvon ovozini chiqarsangiz, u ham shunga o‘xshash ovoz chiqaradi.",
+    explanation: "Ovoz va nutqni takrorlash til rivojlanishining muhim bosqichidir.",
+  },
+  {
+    id: "SCREENING_B_06",
+    domain: "B",
+    weight: 1,
+    isRedFlag: false,
+    text: "Bola «aslida» bo‘lmagan narsalarni o‘yinda ishlatadimi? (Masalan: qo‘g‘irchoqni uxlatadi, bo‘sh idishdan «ichadi», o‘yinchoqni «hayvon» qilib o‘ynaydi)",
+    example: "Bananni telefon qilib «gaplashadi»; qo‘g‘irchoqni ovqatlantiradi; bo‘sh idishdan ichadi.",
+    explanation: "Fantaziya o‘yini va tasavvur qobiliyati kognitiv rivojlanish va ijtimoiy o‘rganishning muhim ko‘rsatkichidir.",
+  },
+  {
+    id: "SCREENING_B_07",
+    domain: "B",
+    weight: 1,
+    isRedFlag: false,
+    text: "Bola o‘yinda rollarni o‘zgartira oladimi va turli xil ssenariylarni yaratadimi?",
+    example: "Bir vaqtda o‘zi «doktor», keyin «ota», keyin «bola» bo‘ladi; turli xil vaziyatlarni yaratadi.",
+    explanation: "Rolli o‘yin va ssenariy yaratish ijtimoiy tushunish va ijodiy fikrlash qobiliyatini ko‘rsatadi.",
+  },
+  // ——— C: Cheklangan va takroriy (9 ta) ———
+  {
+    id: "SCREENING_C_01",
+    domain: "C",
+    weight: 1,
+    isRedFlag: false,
+    text: "Bola qo‘lini silkitish, o‘z atrofida aylanish, barmoqlarni harakatlantirish, qo‘lini ko‘tarib turish kabi takroriy harakatlarni ko‘p qiladimi?",
+    example: "Hayajonlanganda yoki zerikkanda bir xil harakatni uzoq vaqt takrorlaydi; qo‘lini oldinga ko‘tarib, barmoqlarini harakatlantirib turadi.",
+    explanation: "Takroriy harakatlar ba’zi hollarda normal rivojlanishning bir qismi bo‘lishi mumkin, lekin haddan tashqari va doimiy takrorlanishi e’tiborga olinishi kerak.",
+  },
+  {
+    id: "SCREENING_C_02",
+    domain: "C",
+    weight: 1,
+    isRedFlag: false,
+    text: "Bola ma’lum narsalar yoki mavzularga haddan tashqari qiziqadimi va boshqa narsalardan voz kechadimi?",
+    example: "Faqat bitta o‘yinchoq turi yoki bitta video mavzusi bilan shug‘ullanadi; boshqa narsalarni rad etadi.",
+    explanation: "Cheklangan qiziqishlar va haddan tashqari fokus ba’zi hollarda rivojlanishning bir qismi bo‘lishi mumkin, lekin haddan tashqari cheklanish e’tiborga olinishi kerak.",
+  },
+  {
+    id: "SCREENING_C_03",
+    domain: "C",
+    weight: 1,
+    isRedFlag: false,
+    text: "Bola ma’lum narsalarni ma’lum tartibda yoki shaklda joylashtirishga haddan tashqari e’tibor beradimi?",
+    example: "O‘yinchoqlarni qator qiladi yoki ma’lum shaklda joylashtiradi; tartib buzilsa, bezovta bo‘ladi.",
+    explanation: "Tartib va tashkilot qilish ba’zi hollarda normal, lekin haddan tashqari qat’iylik va moslashmaslik e’tiborga olinishi kerak.",
+  },
+  {
+    id: "SCREENING_C_04",
+    domain: "C",
+    weight: 1,
+    isRedFlag: false,
+    text: "Kundalik tartib yoki atrof-muhit o‘zgarganda bola juda bezovta bo‘ladimi yoki norozilik qiladimi?",
+    example: "Yo‘l o‘zgarsa, ovqat tartibi o‘zgarsa yoki buyumlar joyi o‘zgarsa, yig‘laydi yoki bezovta bo‘ladi.",
+    explanation: "O‘zgarishlarga moslashish qobiliyati rivojlanishning muhim qismidir; haddan tashqari qarshilik e’tiborga olinishi kerak.",
+  },
+  {
+    id: "SCREENING_C_05",
+    domain: "C",
+    weight: 1,
+    isRedFlag: false,
+    text: "Bola ma’lum tartib yoki ketma-ketlikni qat’iy talab qiladimi va o‘zgarmasligini kutadimi?",
+    example: "Har kuni bir xil tartibda ovqat yeyishi kerak; o‘yinchoqlar bir xil joyda bo‘lishi kerak; ketma-ketlik buzilsa, bezovta bo‘ladi.",
+    explanation: "Tartib va ketma-ketlik ba’zi hollarda yaxshi, lekin haddan tashqari qat’iylik va moslashmaslik e’tiborga olinishi kerak.",
+  },
+  {
+    id: "SCREENING_C_06",
+    domain: "C",
+    weight: 1,
+    isRedFlag: false,
+    text: "Bola o‘yinda yoki faoliyatda bir xil usulni qat’iy talab qiladimi va boshqa usullarni rad etadimi?",
+    example: "Faqat bir xil usulda o‘ynaydi; boshqa usulni taklif qilsangiz, rad etadi yoki bezovta bo‘ladi.",
+    explanation: "Moslashuvchanlik va turli xil usullarni qabul qilish rivojlanishning muhim qismidir.",
+  },
+  {
+    id: "SCREENING_C_07",
+    domain: "C",
+    weight: 1,
+    isRedFlag: false,
+    text: "Bola ovoz, hid, yorug‘lik yoki tegishga haddan tashqari yuqori yoki juda past sezgirlik ko‘rsatadimi?",
+    example: "Ba’zi ovozlardan quloqlarini yopadi yoki juda baland ovozga reaksiya bermaydi; ba’zi hidlar yoki yorug‘likka haddan tashqari reaksiya ko‘rsatadi.",
+    explanation: "Sezgi reaksiyalari har bir bolada turlicha bo‘lishi mumkin; haddan tashqari yoki kam reaksiya e’tiborga olinishi kerak.",
+  },
+  {
+    id: "SCREENING_C_08",
+    domain: "C",
+    weight: 1,
+    isRedFlag: false,
+    text: "Bola ma’lum tovushlar, ranglar, shakllar yoki harakatlarga haddan tashqari qiziqadimi yoki ularga haddan tashqari reaksiya ko‘rsatadimi?",
+    example: "Ma’lum tovushni uzoq vaqt tinglaydi; ma’lum rangga yoki shaklga haddan tashqari qiziqadi.",
+    explanation: "Sezgi qiziqishlari ba’zi hollarda normal, lekin haddan tashqari va cheklangan qiziqish e’tiborga olinishi kerak.",
+  },
+  {
+    id: "SCREENING_C_09",
+    domain: "C",
+    weight: 1,
+    isRedFlag: false,
+    text: "Bola kiyim, ovqat yoki atrof-muhitga nisbatan haddan tashqari yuqori yoki juda past sezgirlik ko‘rsatadimi?",
+    example: "Ma’lum kiyimlarni kiyishni rad etadi; ma’lum ovqatlarni yeyishni rad etadi; yangi joyga moslashishi juda qiyin.",
+    explanation: "Sezgi moslashuvi har bir bolada turlicha bo‘lishi mumkin; haddan tashqari qarshilik yoki moslashmaslik e’tiborga olinishi kerak.",
+  },
+];
+
+/** Yosh guruhiga mos kelmaydigan savollar (ID lar uz va ru da bir xil). */
+export const AGE_EXCLUDED_QUESTION_IDS: Record<string, string[]> = {
+  // 1,5–2 yosh: navbat/hamkorlik, suhbatni davom ettirish va rollarni almashtirish hali kutilmaydi
+  AGE_1_5_2: ["SCREENING_A_11", "SCREENING_B_03", "SCREENING_B_07"],
+  // 7–9 yosh: so‘z va tovushlarni takrorlash bu yoshda ma’lumot bermaydi
+  AGE_7_9: ["SCREENING_B_05"],
+};
+
+export type QuestionOverride = Partial<Pick<ScreeningQuestion, "text" | "example" | "explanation">>;
+
+/** Yosh guruhiga moslashtirilgan matnlar (o‘zbekcha). */
+export const professionalAgeOverrides: Record<string, Record<string, QuestionOverride>> = {
+  AGE_7_9: {
+    SCREENING_A_09: {
+      text: "Bola siz yoki boshqa bolalar bilan qoidali birgalikdagi o‘yinlarda (masalan, berkinmachoq, quvlashmachoq, stol o‘yinlari) qatnashadimi?",
+      example: "Berkinmachoqda navbat bilan qidiradi va yashirinadi; stol o‘yinida qoidaga amal qiladi va yutqazsa ham o‘yinni davom ettiradi.",
+    },
+  },
+};
+
+/** Savollar ro‘yxatini yosh guruhiga moslaydi: mos kelmaydiganlarini olib tashlaydi va matnlarni almashtiradi. */
+export function questionsForAge(
+  questions: ScreeningQuestion[],
+  ageGroupId: string,
+  overrides: Record<string, Record<string, QuestionOverride>>
+): ScreeningQuestion[] {
+  const excluded = AGE_EXCLUDED_QUESTION_IDS[ageGroupId] ?? [];
+  const ageOverrides = overrides[ageGroupId] ?? {};
+  return questions.filter((q) => !excluded.includes(q.id)).map((q) => ({ ...q, ...ageOverrides[q.id] }));
+}

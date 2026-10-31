@@ -14,6 +14,7 @@ export async function POST(req: Request) {
     const phone = normalizePhone(String(body?.phone || ""));
     const code = String(body?.code || "").trim();
     const flow = body?.flow === "test";
+    const mobile = body?.flow === "mobile";
 
     if (!/^\+998\d{9}$/.test(phone)) {
       return NextResponse.json(
@@ -54,6 +55,17 @@ export async function POST(req: Request) {
     if (!user) {
       user = await prisma.user.create({
         data: { phone, pinHash: null },
+      });
+    }
+
+    // Mobil ilova: sessiya tokeni cookie o'rniga javobda qaytariladi
+    if (mobile) {
+      const { token, expiresAt } = await createUserSession(user.id);
+      return NextResponse.json({
+        ok: true,
+        token,
+        expiresAt: expiresAt.toISOString(),
+        user: { id: user.id, phone: user.phone },
       });
     }
 

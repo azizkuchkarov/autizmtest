@@ -7,7 +7,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <nav className="flex gap-4 text-sm font-semibold text-slate-600">
             <a href="/admin" className="hover:text-slate-900">Dashboard</a>
             <a href="/admin/aba-centers" className="hover:text-slate-900">ABA markazlar</a>
+            <a href="/admin/content" className="hover:text-slate-900">Video darslar</a>
+            <a href="/admin/sounds" className="hover:text-slate-900">Ovozli darslar</a>
+            <a href="/admin/aac" className="hover:text-slate-900">Rasmli muloqot</a>
             <a href="/admin/logs" className="hover:text-slate-900">Loglar</a>
+            <a href="/admin/push" className="hover:text-slate-900">Push xabarlar</a>
             <a href="/admin/feedback" className="hover:text-slate-900">Feedback</a>
           </nav>
         </div>

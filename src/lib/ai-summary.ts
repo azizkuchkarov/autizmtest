@@ -14,6 +14,12 @@ const DEFAULT_DISCLAIMER =
   "Bu skrining natijasi — tibbiy tashxis emas. Yakuniy baho va tavsiyalar uchun mutaxassis (pediatr, bolalar nevrologi yoki rivoj mutaxassisi) bilan muloqot qilishingiz tavsiya etiladi.";
 
 const AI_JSON_ERROR = "AI javobi JSON emas.";
+const AI_NOT_CONFIGURED = "OPENAI_API_KEY o'rnatilmagan.";
+
+/** Kalit yo'q paytda eski versiya "ready" sifatida saqlagan soxta xulosa — ota-onaga ko'rsatilmaydi. */
+export function isPlaceholderAiPayload(payload: unknown): boolean {
+  return (payload as AiSummaryPayload | null)?.summary?.shortConclusion === "AI xulosa sozlamasi topilmadi.";
+}
 
 /** Birinchi { dan boshlanib, mos } gacha bo‘lgan qatorni topadi (ichki qavslar hisobga olinadi). */
 function extractFirstJsonObject(s: string): string | null {
@@ -81,18 +87,7 @@ JSON (to'liq va professional):
 
 export async function generateAiSummary(aiFacts: Record<string, unknown>): Promise<AiSummaryPayload> {
   const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return {
-      summary: {
-        shortConclusion: "AI xulosa sozlamasi topilmadi.",
-        whyThisLevel: "OPENAI_API_KEY .env da o'rnatilmagan.",
-      },
-      strengths: { examples: [] },
-      needsFocus: { priority: [] },
-      nextSteps: { homePlan: [] },
-      disclaimer: { text: DEFAULT_DISCLAIMER },
-    };
-  }
+  if (!apiKey) throw new Error(AI_NOT_CONFIGURED);
 
   const userContent = `Quyidagi skrining natijasi asosida TO'LIQ va PROFESSIONAL JSON xulosa yozing. Faqat JSON. shortConclusion 2–4 jumla, whyThisLevel 4–7 jumla, strengths 3–5 ta, homePlan 4–6 ta element (har birida how da 4–6 ta qadam).\n\n${JSON.stringify(aiFacts, null, 2)}`;
 
@@ -266,18 +261,7 @@ export async function generateAiSummaryForScreeningV2(
   ageGroupId?: string | null
 ): Promise<AiSummaryPayload> {
   const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return {
-      summary: {
-        shortConclusion: "AI xulosa sozlamasi topilmadi.",
-        whyThisLevel: "OPENAI_API_KEY .env da o'rnatilmagan.",
-      },
-      strengths: { examples: [] },
-      needsFocus: { priority: [] },
-      nextSteps: { homePlan: [] },
-      disclaimer: { text: DEFAULT_DISCLAIMER },
-    };
-  }
+  if (!apiKey) throw new Error(AI_NOT_CONFIGURED);
 
   const ageLabel = getAgeGroupLabel(ageGroupId, locale ?? "uz");
   const ageLine =
@@ -426,18 +410,7 @@ export async function generateAiSummaryForMonitoring(
   monitoringResult: MonitoringResult
 ): Promise<AiSummaryPayload> {
   const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return {
-      summary: {
-        shortConclusion: "AI xulosa sozlamasi topilmadi.",
-        whyThisLevel: "OPENAI_API_KEY .env da o'rnatilmagan.",
-      },
-      strengths: { examples: [] },
-      needsFocus: { priority: [] },
-      nextSteps: { homePlan: [] },
-      disclaimer: { text: MONITORING_DISCLAIMER },
-    };
-  }
+  if (!apiKey) throw new Error(AI_NOT_CONFIGURED);
 
   const facts = {
     ageGroup: monitoringResult.ageGroup,

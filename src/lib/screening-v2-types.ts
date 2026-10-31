@@ -29,7 +29,7 @@ export type TestSchema = {
   version: string;
   scale: { min: number; max: number };
   blocks: Block[];
-  scoring: any;
+  scoring: Record<string, unknown>;
 };
 
 export type Answers = Record<string, AnswerValue | null | undefined>;

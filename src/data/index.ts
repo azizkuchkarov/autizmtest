@@ -8,8 +8,10 @@ import {
   professionalAnswerScaleRu,
   professionalDomainsRu,
   professionalQuestionsRu,
+  professionalAgeOverridesRu,
   AGE_GROUP_LABELS_RU,
 } from "./screening-questions-professional-ru";
+import { questionsForAge } from "./screening-questions-professional";
 
 export type AgeGroupId = "AGE_1_5_2" | "AGE_3_4" | "AGE_5_6" | "AGE_7_9";
 
@@ -26,7 +28,7 @@ function getScreeningConfigRu(ageGroupId: AgeGroupId): ScreeningConfig {
     ageGroup: { id: ageGroupId, label: AGE_GROUP_LABELS_RU[ageGroupId] ?? ageGroupId },
     answerScale: [...professionalAnswerScaleRu],
     domains: [...professionalDomainsRu],
-    questions: [...professionalQuestionsRu],
+    questions: questionsForAge(professionalQuestionsRu, ageGroupId, professionalAgeOverridesRu),
   };
 }
 

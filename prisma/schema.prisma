@@ -8,10 +8,10 @@ datasource db {
 }
 
 model Admin {
-  id        String   @id @default(uuid())
-  email     String   @unique
+  id        String         @id @default(uuid())
+  email     String         @unique
   password  String
-  createdAt DateTime @default(now())
+  createdAt DateTime       @default(now())
   sessions  AdminSession[]
 }
 
@@ -25,31 +25,31 @@ model AdminSession {
 }
 
 model Block {
-  id        String   @id
-  titleUz   String
+  id         String   @id
+  titleUz    String
   subtitleUz String
-  titleRu   String
+  titleRu    String
   subtitleRu String
-  order     Int
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  order      Int
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model Question {
-  id          String   @id
-  block       String
-  text        String
-  example     String
-  explain     String
-  bands       String[]
-  direction   String
-  isCoreFlag  Boolean  @default(false)
-  isRedFlag   Boolean  @default(false)
-  order       Int
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id
+  block      String
+  text       String
+  example    String
+  explain    String
+  bands      String[]
+  direction  String
+  isCoreFlag Boolean  @default(false)
+  isRedFlag  Boolean  @default(false)
+  order      Int
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model ScoringConfig {
@@ -80,35 +80,103 @@ model Feedback {
 }
 
 model AbaCenter {
-  id                String   @id @default(uuid())
-  region            String
-  district          String?  // Toshkent shahar tanlanganida: tuman
-  name              String
-  phone             String?
-  address           String?
-  url               String?  // Veb-sayt / sahifa manzili
-  instagram         String?  // Instagram profil havolasi
-  note              String?
-  imageUrl          String?  // Yuklangan rasm yo'li (upload)
+  id                   String   @id @default(uuid())
+  region               String
+  district             String? // Toshkent shahar tanlanganida: tuman
+  name                 String
+  phone                String?
+  address              String?
+  url                  String? // Veb-sayt / sahifa manzili
+  instagram            String? // Instagram profil havolasi
+  note                 String?
+  imageUrl             String? // Yuklangan rasm yo'li (upload)
   // Portfolio — Batafsil modal uchun
-  directorName      String?  // Markaz rahbari
-  directorImageUrl  String?  // Rahbar rasmi
-  directorBio       String?  // Ish faoliyati / qisqacha tavsif
-  amenities         Json?   // [{ "title": "Qulaylik nomi", "imageUrl": "/uploads/..." }]
-  portfolioDescription String?  // Markaz haqida qo'shimcha matn
-  telegramId          String?  // Telegram chat_id — Ro'yxatga yozilish xabarlari shu yerga yuboriladi
-  order             Int
-  active            Boolean  @default(true)  // Admin panelda ochiq/yopiq
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  directorName         String? // Markaz rahbari
+  directorImageUrl     String? // Rahbar rasmi
+  directorBio          String? // Ish faoliyati / qisqacha tavsif
+  amenities            Json? // [{ "title": "Qulaylik nomi", "imageUrl": "/uploads/..." }]
+  portfolioDescription String? // Markaz haqida qo'shimcha matn
+  telegramId           String? // Telegram chat_id — Ro'yxatga yozilish xabarlari shu yerga yuboriladi
+  order                Int
+  active               Boolean  @default(true) // Admin panelda ochiq/yopiq
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 }
 
 model User {
-  id        String        @id @default(uuid())
-  phone     String        @unique
-  pinHash   String?       // PIN bilan kirish uchun; OTP foydalanuvchilarda null
-  createdAt DateTime      @default(now())
-  sessions  UserSession[]
+  id          String        @id @default(uuid())
+  phone       String        @unique
+  pinHash     String? // PIN bilan kirish uchun; OTP foydalanuvchilarda null
+  guideSeenAt DateTime? // ota-ona qo'llanmasini ko'rib chiqqan vaqt
+  createdAt   DateTime      @default(now())
+  sessions    UserSession[]
+  children    Child[]
+  pushTokens  PushToken[]
+}
+
+/// Mobil ilovaning Expo push tokeni: bir foydalanuvchida bir nechta qurilma bo'lishi mumkin
+model PushToken {
+  token     String   @id // ExponentPushToken[...]
+  userId    String
+  platform  String // ios | android
+  locale    String   @default("uz") // xabar shu tilda yuboriladi
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Mobil ilovada ro'yxatdan o'tishda kiritiladigan bola profili
+model Child {
+  id           String        @id @default(uuid())
+  userId       String
+  name         String
+  birthYear    Int
+  birthMonth   Int? // 1–12; testni bolaning aniq yoshiga (oy) moslash uchun
+  gender       String // Qiz | O'g'il
+  avatar       String // mobil ilovadagi avatar identifikatori, masalan "girl-1"
+  practiceTime String? // kunlik mashg'ulot vaqti "HH:MM" — 15 daqiqa oldin eslatiladi
+  diaryTime    String? // ertalabki kundalik eslatmasi "HH:MM"
+  remindersOn  Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  diary        DiaryEntry[]
+  assessments  Assessment[]
+  soundAnswers SoundAnswer[]
+  playSessions PlaySession[]
+  aacDays      AacDay[]
+  syncReceipts SyncReceipt[]
+
+  @@index([userId])
+}
+
+/// Ertalabki kundalik: ota-ona har kuni bolaning uyqusi, ovqati, kayfiyati va xulqini belgilaydi.
+model DiaryEntry {
+  id           String   @id @default(uuid())
+  childId      String
+  date         String // mahalliy sana "YYYY-MM-DD"
+  bedTime      String? // kecha uxlagan vaqti "HH:MM"
+  wakeTime     String? // ertalab uyg'ongan vaqti "HH:MM"
+  nightWakings Int? // 0 — yo'q, 1 — 1–2 marta, 2 — ko'p
+  mood         Int? // 1 (juda yomon) – 5 (juda yaxshi)
+  breakfast    String? // full | little | none
+  appetite     String? // good | normal | poor
+  meltdowns    Int? // 0 — yo'q, 1 — 1–2 marta, 2 — 3 va undan ko'p
+  selfHarm     Boolean?
+  repetitive   String? // low | mid | high
+  eyeContact   String? // good | some | none
+  requests     String? // words | gestures | none
+  sick         Boolean?
+  constipation Boolean?
+  medicine     Boolean?
+  note         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  child        Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@unique([childId, date])
 }
 
 model OtpCode {
@@ -117,16 +185,17 @@ model OtpCode {
   code      String
   expiresAt DateTime
   createdAt DateTime @default(now())
+
   @@index([phone])
 }
 
 model UserSession {
   id        String   @id @default(uuid())
-  userId   String
-  token    String   @unique
+  userId    String
+  token     String   @unique
   createdAt DateTime @default(now())
   expiresAt DateTime
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model PinSetupToken {
@@ -138,17 +207,203 @@ model PinSetupToken {
 }
 
 model Assessment {
-  id                String   @id @default(uuid())
-  testType          String   @default("screening") // screening | progress
-  ageGroup          String   // AGE_1_5_2 | AGE_3_4 | AGE_5_6 | AGE_7_9
-  answers           Json     // Record<questionId, 0|1|2|3>
-  scoring           Json     // OverallResult from scoring.ts
-  aiSummaryStatus   String   @default("pending") // pending | ready | failed
-  aiSummaryPayload  Json?    // AI structured output
-  aiSummaryLocale   String?  // uz | ru — qaysi tilda yaratilgan
-  aiSummaryError    String?
-  respondent        String?  // Ota | Ona | Vasiy
-  childGender       String?  // Qiz | O'g'il
-  phone             String?  // +998XXXXXXXXX
-  createdAt         DateTime @default(now())
+  id               String   @id @default(uuid())
+  testType         String   @default("screening") // screening | progress
+  ageGroup         String // AGE_1_5_2 | AGE_3_4 | AGE_5_6 | AGE_7_9
+  answers          Json // Record<questionId, 0|1|2|3>
+  scoring          Json // OverallResult from scoring.ts
+  aiSummaryStatus  String   @default("pending") // pending | ready | failed
+  aiSummaryPayload Json? // AI structured output
+  aiSummaryLocale  String? // uz | ru — qaysi tilda yaratilgan
+  aiSummaryError   String?
+  respondent       String? // Ota | Ona | Vasiy
+  childGender      String? // Qiz | O'g'il
+  phone            String? // +998XXXXXXXXX
+  childId          String? // akkauntdagi bola — natijalar telefon almashsa ham saqlanadi
+  child            Child?   @relation(fields: [childId], references: [id], onDelete: SetNull)
+  createdAt        DateTime @default(now())
+
+  @@index([childId])
+}
+
+/// Video kontent yo'nalishi (kasb): autizm, logoped, sensor integratsiya va h.k.
+model Profession {
+  id         String            @id @default(uuid())
+  slug       String            @unique
+  titleUz    String
+  titleRu    String
+  order      Int               @default(0)
+  active     Boolean           @default(true)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  categories ContentCategory[]
+}
+
+/// Video mavzusi (bir yoki bir nechta video). kind: "lesson" — darslar, "exercise" — uyda mashqlar
+model ContentCategory {
+  id            String     @id @default(uuid())
+  slug          String     @unique
+  kind          String // lesson | exercise
+  professionId  String
+  profession    Profession @relation(fields: [professionId], references: [id], onDelete: Restrict)
+  titleUz       String
+  titleRu       String
+  descriptionUz String?
+  descriptionRu String?
+  order         Int        @default(0)
+  active        Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  videos        Video[]
+
+  @@index([kind])
+  @@index([professionId])
+}
+
+model Video {
+  id            String          @id @default(uuid())
+  categoryId    String
+  titleUz       String
+  titleRu       String
+  descriptionUz String?
+  descriptionRu String?
+  videoUrl      String // HLS (.m3u8) yoki MP4 manzili
+  thumbnailUrl  String?
+  durationSec   Int?
+  ageGroups     String[] // AGE_1_5_2 | AGE_3_4 | AGE_5_6 | AGE_7_9; bo'sh = barcha yoshlar
+  domains       String[] // Skrining sohalari A | B | C — natijaga qarab tavsiya qilish uchun
+  order         Int             @default(0)
+  active        Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  category      ContentCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId])
+}
+
+/// Ovozli darslar to'plami: uy hayvonlari, transport, uydagi tovushlar va h.k.
+model SoundSet {
+  id            String      @id @default(uuid())
+  slug          String      @unique
+  titleUz       String
+  titleRu       String
+  descriptionUz String?
+  descriptionRu String?
+  emoji         String? // rasm bo'lmasa muqova o'rnida
+  imageUrl      String?
+  order         Int         @default(0)
+  active        Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  cards         SoundCard[]
+}
+
+/// Bitta ovoz: bola eshitib, kimning/nimaning ovozi ekanini topadi.
+model SoundCard {
+  id        String   @id @default(uuid())
+  setId     String
+  titleUz   String
+  titleRu   String
+  audioUrl  String // MP3 / M4A manzili
+  imageUrl  String?
+  emoji     String?
+  loud      Boolean  @default(false) // keskin/baland tovush — sezgir bolalar uchun standart holatda yashiriladi
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  set       SoundSet @relation(fields: [setId], references: [id], onDelete: Cascade)
+
+  @@index([setId])
+}
+
+/// Rasmli muloqot (AAC/PECS) bo'limi: Ehtiyojlar, Ovqat, His-tuyg'ular va h.k.
+model AacCategory {
+  id        String    @id @default(uuid())
+  slug      String    @unique
+  titleUz   String
+  titleRu   String
+  emoji     String?
+  order     Int       @default(0)
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  cards     AacCard[]
+}
+
+/// Muloqot kartasi: bola bosadi — telefon so'zni aytadi.
+model AacCard {
+  id         String      @id @default(uuid())
+  categoryId String
+  titleUz    String
+  titleRu    String
+  speakUz    String? // aytiladigan matn, bo'sh bo'lsa sarlavha aytiladi
+  speakRu    String?
+  emoji      String?
+  imageUrl   String?
+  audioUzUrl String? // oldindan yozilgan ovoz (qurilmada o'zbek TTS bo'lmasa kerak)
+  audioRuUrl String?
+  wordType   String      @default("noun") // Fitzgerald kaliti: pronoun | verb | descriptor | noun | social | question | negation | misc
+  core       Boolean     @default(false) // asosiy so'z — doim ko'rinadigan qatorda
+  order      Int         @default(0)
+  active     Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  category   AacCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId])
+}
+
+/// Ovozli mashqdagi har bir javob. id — qurilmada yaratiladi (qayta yuborilsa takrorlanmaydi).
+model SoundAnswer {
+  id        String   @id
+  childId   String
+  cardId    String? // eski (karta saqlanmagan) yozuvlarda null
+  level     Int
+  result    String // ok | help | miss
+  day       String // mahalliy sana "YYYY-MM-DD"
+  snapshot  Boolean  @default(false) // eski qurilmadan ko'chirilgan "oxirgi natija" — haftalik grafikka kirmaydi
+  at        DateTime // qurilmadagi vaqt — tartib uchun
+  createdAt DateTime @default(now())
+  child     Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@index([childId, at])
+}
+
+/// "Bugungi 5 daqiqa" mashg'uloti
+model PlaySession {
+  id         String   @id
+  childId    String
+  activityId String
+  rating     String // great | ok | hard
+  day        String
+  at         DateTime
+  createdAt  DateTime @default(now())
+  child      Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@index([childId, at])
+}
+
+/// Rasmli muloqot: kunlik yig'indi (bir nechta qurilmadan kelgan qo'shimchalar jamlanadi)
+model AacDay {
+  childId       String
+  day           String
+  taps          Int      @default(0)
+  sentences     Int      @default(0)
+  sentenceWords Int      @default(0)
+  cards         Json     @default("{}") // karta id → bosilganlar soni
+  updatedAt     DateTime @updatedAt
+  child         Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@id([childId, day])
+}
+
+/// Qurilmadan kelgan hodisa id lari — AAC qo'shimchalari ikki marta qo'shilmasligi uchun
+model SyncReceipt {
+  id        String   @id
+  childId   String
+  createdAt DateTime @default(now())
+  child     Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@index([childId])
 }

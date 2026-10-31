@@ -32,10 +32,10 @@ export function convertScreeningToV2(
     const help = helpParts.length > 0 ? helpParts.join("\n\n") : undefined;
 
     // Professional savollar uchun mantiq:
-    // - A va B sohalari: savollar asosan ijobiy ko‘nikmalar haqida → yuqori javob = yaxshi,
-    //   shuning uchun risk past bo‘lishi kerak → reverse = true (risk = 3 - javob).
-    // - C sohasi: cheklangan / takroriy / sezgi xatti-harakatlari → yuqori javob = ko‘proq belgi,
-    //   shuning uchun risk to‘g‘ridan-to‘g‘ri oshadi → reverse = false (risk = javob).
+    // - A va B sohalari: savollar asosan ijobiy ko‘nikmalar haqida → yuqori javob = yaxshi → reverse = true.
+    // - C sohasi: cheklangan / takroriy / sezgi xatti-harakatlari → yuqori javob = ko‘proq belgi → reverse = false.
+    // Eslatma: risk qiymati `reverse` dan emas, screening-v2-scoring.ts dagi computeRiskForBlock
+    // (soha bo‘yicha 0 / 0.5 / 2 / 3 jadvali) orqali hisoblanadi; `reverse` faqat ma’lumot uchun.
     const isPositiveSkillDomain = oldQ.domain === "A" || oldQ.domain === "B";
 
     // Red-flag: A va B da past javob (Yo'q/Kamdan-kam) = xavf; C da yuqori javob (Ko'pincha/Doim) = xavf

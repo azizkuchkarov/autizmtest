@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getScreeningConfig } from "@/data";
 import { getProgressConfig } from "@/data/progress";
 import { getScreeningSchemaV2 } from "@/data/screening-v2";
 import type { AgeGroupId } from "@/data";
 import type { TestType } from "@/lib/test-types";
-import { scoreAssessment, type Question } from "@/lib/scoring";
 import { scoreTest } from "@/lib/screening-v2-scoring";
 import { scoreMonitoringTest, toMonitoringAgeGroup } from "@/lib/monitoringScoring";
 import type { ScoreResponse } from "@/types/api";
 import { logUserEvent } from "@/lib/user-event";
+import { getSessionUser } from "@/lib/user-auth";
 
 export async function POST(req: Request) {
   try {
@@ -21,9 +20,19 @@ export async function POST(req: Request) {
     const childGender = typeof body?.childGender === "string" && body.childGender ? body.childGender : undefined;
     const phoneRaw = typeof body?.phone === "string" ? body.phone.replace(/\s+/g, "").trim() : "";
     const phone = /^\+998\d{9}$/.test(phoneRaw) ? phoneRaw : undefined;
+    // Akkauntga kirgan ota-ona: natija bolaga bog'lanadi (telefon almashsa ham tarixda qoladi)
+    const childIdRaw = typeof body?.childId === "string" ? body.childId : null;
+    const sessionUser = childIdRaw ? await getSessionUser().catch(() => null) : null;
+    const childId =
+      sessionUser && childIdRaw && (await prisma.child.findFirst({ where: { id: childIdRaw, userId: sessionUser.id }, select: { id: true } }))
+        ? childIdRaw
+        : undefined;
 
     if (!ageGroup || !answers || typeof answers !== "object") {
       return NextResponse.json({ error: "ageGroup va answers majburiy." }, { status: 400 });
+    }
+    if (!["AGE_1_5_2", "AGE_3_4", "AGE_5_6", "AGE_7_9"].includes(ageGroup)) {
+      return NextResponse.json({ error: "Noma'lum yosh guruhi." }, { status: 400 });
     }
 
     let scoring: object;
@@ -87,6 +96,7 @@ export async function POST(req: Request) {
         ...(respondent && { respondent }),
         ...(childGender && { childGender }),
         ...(phone && { phone }),
+        ...(childId && { childId }),
       },
     });
 

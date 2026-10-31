@@ -9,7 +9,7 @@
  *   Ko'pincha/Doim = e'tibor kerak. Shuning uchun 0 va 1 → risk 0, 2 → 2, 3 → 3.
  */
 
-import type { AnswerValue, Question, TestSchema, Answers, Trigger } from "./screening-v2-types";
+import type { AnswerValue, Question, TestSchema, Answers } from "./screening-v2-types";
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -73,6 +73,7 @@ export function scoreTest(
 ) {
   const blocks = schema.blocks;
 
+  const answeredBlockIds = new Set<string>();
   const blockResults = blocks.map((b) => {
     const applicable = b.questions.filter((q) => q.ageGroupIds.includes(ageGroupId));
 
@@ -91,7 +92,7 @@ export function scoreTest(
       answer?: AnswerValue;
     }> = [];
 
-    let redFlags: Array<{ questionId: string; text: string }> = [];
+    const redFlags: Array<{ questionId: string; text: string }> = [];
 
     for (const q of applicable) {
       const a = answers[q.id];
@@ -119,6 +120,7 @@ export function scoreTest(
     }
 
     const blockScore = wSum > 0 ? (wrSum / wSum) * 100 : 0;
+    if (wSum > 0) answeredBlockIds.add(b.id);
 
     // Barcha javob berilgan savollar (weightedRisk bo‘yicha kamayish tartibida) — "Autizmga moyilligi bor" bo‘limida to‘liq ko‘rsatish uchun
     issues.sort((x, y) => y.weightedRisk - x.weightedRisk);
@@ -138,19 +140,23 @@ export function scoreTest(
     B: 0.3,
     C: 0.2,
   };
+  // Javobsiz soha (0%) umumiy ballni sun'iy pasaytirmasligi uchun faqat javob berilgan sohalar
+  // hisobga olinadi va vaznlar qayta normallanadi. To'liq testda natija o'zgarmaydi (vaznlar yig'indisi 1).
+  const scoredBlocks = blockResults.filter((b) => answeredBlockIds.has(b.blockId));
+  const weightOf = (blockId: string) => BLOCK_WEIGHTS[blockId] ?? 1 / blockResults.length;
+  const weightTotal = scoredBlocks.reduce((s, b) => s + weightOf(b.blockId), 0);
   const totalScore =
-    blockResults.length > 0
-      ? blockResults.reduce(
-          (s, b) => s + b.score * (BLOCK_WEIGHTS[b.blockId] ?? 1 / blockResults.length),
-          0
-        )
+    weightTotal > 0
+      ? scoredBlocks.reduce((s, b) => s + b.score * weightOf(b.blockId), 0) / weightTotal
       : 0;
 
   const allRedFlags = blockResults.flatMap((b) => b.redFlags);
 
-  // Darajalar: Past 0–30%, O'rta 31–60%, Yuqori 61%+
+  // Darajalar: Past 0–30%, O'rta 31–60%, Yuqori 61%+. Foiz ekranda butun songa yaxlitlab
+  // ko'rsatiladi, shuning uchun daraja ham yaxlitlangan ball bo'yicha (30,4% → "30%" → past).
+  const roundedTotal = Math.round(totalScore);
   const riskLabel =
-    totalScore <= 30 ? "Past xavf" : totalScore <= 60 ? "O'rtacha xavf" : "Yuqori xavf";
+    roundedTotal <= 30 ? "Past xavf" : roundedTotal <= 60 ? "O'rtacha xavf" : "Yuqori xavf";
 
   // Barcha bloklardagi barcha ball olgan savollar (cheklovsiz) — natija sahifasida "Autizmga moyilligi bor savollar va javoblari" to‘liq chiqishi uchun
   const topOverall = blockResults

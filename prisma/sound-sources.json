@@ -1,0 +1,240 @@
+{
+  "airplane": {
+    "file": "airplane.mp3",
+    "title": "Sound of AN-24 airplane.ogg",
+    "license": "Public domain",
+    "author": "Grachev.\n\nThe original uploader was Grachev at Russian Wikipedia.",
+    "source": "https://commons.wikimedia.org/wiki/File:Sound_of_AN-24_airplane.ogg"
+  },
+  "ambulance": {
+    "file": "ambulance.mp3",
+    "title": "American police siren i.ogg",
+    "license": "Public domain",
+    "author": "lezer",
+    "source": "https://commons.wikimedia.org/wiki/File:American_police_siren_i.ogg"
+  },
+  "bear": {
+    "file": "bear.mp3",
+    "title": "Yellowstone sound library - Grizzly Bears Roar - 001.mp3",
+    "license": "Public domain",
+    "author": "NPS &amp; MSU Acoustic Atlas / Jennifer Jerrett",
+    "source": "https://commons.wikimedia.org/wiki/File:Yellowstone_sound_library_-_Grizzly_Bears_Roar_-_001.mp3"
+  },
+  "bicycle-bell": {
+    "file": "bicycle-bell.mp3",
+    "title": "Bicycle-bell-1.wav",
+    "license": "CC0",
+    "author": "Soundscape_Leuphana",
+    "source": "https://commons.wikimedia.org/wiki/File:Bicycle-bell-1.wav"
+  },
+  "bus": {
+    "file": "bus.mp3",
+    "title": "Abashiri bus Ki200F 0091.OGG",
+    "license": "Public domain",
+    "author": "221.20 (talk)",
+    "source": "https://commons.wikimedia.org/wiki/File:Abashiri_bus_Ki200F_0091.OGG"
+  },
+  "car-horn": {
+    "file": "car-horn.mp3",
+    "title": "Car Horn.wav",
+    "license": "CC0",
+    "author": "15HPanska_Ruttner_Jan",
+    "source": "https://commons.wikimedia.org/wiki/File:Car_Horn.wav"
+  },
+  "cat": {
+    "file": "cat.mp3",
+    "title": "Meow of a pleading cat.oga",
+    "license": "Public domain",
+    "author": "Heismark",
+    "source": "https://commons.wikimedia.org/wiki/File:Meow_of_a_pleading_cat.oga"
+  },
+  "clap": {
+    "file": "clap.mp3",
+    "title": "Clapping hurray (cropped).oga",
+    "license": "Public domain",
+    "author": "Starlite",
+    "source": "https://commons.wikimedia.org/wiki/File:Clapping_hurray_(cropped).oga"
+  },
+  "clock": {
+    "file": "clock.mp3",
+    "title": "Clock ticking.ogg",
+    "license": "Public domain",
+    "author": "natalie",
+    "source": "https://commons.wikimedia.org/wiki/File:Clock_ticking.ogg"
+  },
+  "cough": {
+    "file": "cough.mp3",
+    "title": "Short coughs.ogg",
+    "license": "Public domain",
+    "author": "stilgar",
+    "source": "https://commons.wikimedia.org/wiki/File:Short_coughs.ogg"
+  },
+  "crow": {
+    "file": "crow.mp3",
+    "title": "American Crow.ogg",
+    "license": "Public domain",
+    "author": "G McGrane",
+    "source": "https://commons.wikimedia.org/wiki/File:American_Crow.ogg"
+  },
+  "cry": {
+    "file": "cry.mp3",
+    "title": "Baby long wanting cry.ogg",
+    "license": "Public domain",
+    "author": "natalie",
+    "source": "https://commons.wikimedia.org/wiki/File:Baby_long_wanting_cry.ogg"
+  },
+  "donkey": {
+    "file": "donkey.mp3",
+    "title": "157763 felix-blume a-donkey-is-braying-in-his-enclosure-in-south-of-france.wav",
+    "license": "CC0",
+    "author": "felix-blume",
+    "source": "https://commons.wikimedia.org/wiki/File:157763_felix-blume_a-donkey-is-braying-in-his-enclosure-in-south-of-france.wav"
+  },
+  "door-knock": {
+    "file": "door-knock.mp3",
+    "title": "Knocking on wood or door.ogg",
+    "license": "Public domain",
+    "author": "stephan",
+    "source": "https://commons.wikimedia.org/wiki/File:Knocking_on_wood_or_door.ogg"
+  },
+  "duck": {
+    "file": "duck.mp3",
+    "title": "Ducks snatching.ogg",
+    "license": "CC0",
+    "author": "Bert76",
+    "source": "https://commons.wikimedia.org/wiki/File:Ducks_snatching.ogg"
+  },
+  "elephant": {
+    "file": "elephant.mp3",
+    "title": "Elephant voice - trumpeting.ogg",
+    "license": "CC0",
+    "author": "தகவலுழவன்",
+    "source": "https://commons.wikimedia.org/wiki/File:Elephant_voice_-_trumpeting.ogg"
+  },
+  "frog": {
+    "file": "frog.mp3",
+    "title": "Laubfrosch Balzruf.OGG",
+    "license": "Public domain",
+    "author": "Rabe19 (Diskussion)",
+    "source": "https://commons.wikimedia.org/wiki/File:Laubfrosch_Balzruf.OGG"
+  },
+  "goat": {
+    "file": "goat.mp3",
+    "title": "Herd of goats bleating.ogg",
+    "license": "Public domain",
+    "author": "stephan",
+    "source": "https://commons.wikimedia.org/wiki/File:Herd_of_goats_bleating.ogg"
+  },
+  "helicopter": {
+    "file": "helicopter.mp3",
+    "title": "Helicopter over a lake.ogg",
+    "license": "Public domain",
+    "author": "ezwa",
+    "source": "https://commons.wikimedia.org/wiki/File:Helicopter_over_a_lake.ogg"
+  },
+  "hen": {
+    "file": "hen.mp3",
+    "title": "Hen announcing shes lain an egg.ogg",
+    "license": "Public domain",
+    "author": "alys",
+    "source": "https://commons.wikimedia.org/wiki/File:Hen_announcing_shes_lain_an_egg.ogg"
+  },
+  "horse": {
+    "file": "horse.mp3",
+    "title": "Wiehern.ogg",
+    "license": "Public domain",
+    "author": "Hü.",
+    "source": "https://commons.wikimedia.org/wiki/File:Wiehern.ogg"
+  },
+  "laugh": {
+    "file": "laugh.mp3",
+    "title": "Bursting out laughing.ogg",
+    "license": "Public domain",
+    "author": "ezwa",
+    "source": "https://commons.wikimedia.org/wiki/File:Bursting_out_laughing.ogg"
+  },
+  "lion": {
+    "file": "lion.mp3",
+    "title": "Lion raring-sound1TamilNadu178.ogg",
+    "license": "Public domain",
+    "author": "த*உழவன்",
+    "source": "https://commons.wikimedia.org/wiki/File:Lion_raring-sound1TamilNadu178.ogg"
+  },
+  "monkey": {
+    "file": "monkey.mp3",
+    "title": "Hylobates syndactylus calling 3588.ogg",
+    "license": "Public domain",
+    "author": "Dori",
+    "source": "https://commons.wikimedia.org/wiki/File:Hylobates_syndactylus_calling_3588.ogg"
+  },
+  "owl": {
+    "file": "owl.mp3",
+    "title": "Barred Owl, Yellowstone National Park.oga",
+    "license": "Public domain",
+    "author": "National Park Service",
+    "source": "https://commons.wikimedia.org/wiki/File:Barred_Owl,_Yellowstone_National_Park.oga"
+  },
+  "phone": {
+    "file": "phone.mp3",
+    "title": "Telephone.ogg",
+    "license": "Public domain",
+    "author": "Dsw4.",
+    "source": "https://commons.wikimedia.org/wiki/File:Telephone.ogg"
+  },
+  "pigeon": {
+    "file": "pigeon.mp3",
+    "title": "Dove cooing.ogg",
+    "license": "Public domain",
+    "author": "mary905",
+    "source": "https://commons.wikimedia.org/wiki/File:Dove_cooing.ogg"
+  },
+  "rooster": {
+    "file": "rooster.mp3",
+    "title": "Small rooster crowing.ogg",
+    "license": "Public domain",
+    "author": "alys",
+    "source": "https://commons.wikimedia.org/wiki/File:Small_rooster_crowing.ogg"
+  },
+  "sheep": {
+    "file": "sheep.mp3",
+    "title": "Sheep bleating.ogg",
+    "license": "Public domain",
+    "author": "earthcalling",
+    "source": "https://commons.wikimedia.org/wiki/File:Sheep_bleating.ogg"
+  },
+  "sneeze": {
+    "file": "sneeze.mp3",
+    "title": "Sneezing.ogg",
+    "license": "Public domain",
+    "author": "jc",
+    "source": "https://commons.wikimedia.org/wiki/File:Sneezing.ogg"
+  },
+  "sparrow": {
+    "file": "sparrow.mp3",
+    "title": "House Sparrow.ogg",
+    "license": "Public domain",
+    "author": "Gypsypkd",
+    "source": "https://commons.wikimedia.org/wiki/File:House_Sparrow.ogg"
+  },
+  "train": {
+    "file": "train.mp3",
+    "title": "Parovoz sound.ogg",
+    "license": "Public domain",
+    "author": "Alex Alex Lep",
+    "source": "https://commons.wikimedia.org/wiki/File:Parovoz_sound.ogg"
+  },
+  "water": {
+    "file": "water.mp3",
+    "title": "Faucet water into sink.ogg",
+    "license": "Public domain",
+    "author": "stephan",
+    "source": "https://commons.wikimedia.org/wiki/File:Faucet_water_into_sink.ogg"
+  },
+  "wolf": {
+    "file": "wolf.mp3",
+    "title": "Wolf howls.ogg",
+    "license": "Public domain",
+    "author": null,
+    "source": "https://commons.wikimedia.org/wiki/File:Wolf_howls.ogg"
+  }
+}

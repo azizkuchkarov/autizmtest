@@ -43,12 +43,21 @@ export async function POST(req: Request) {
       devCode &&
       /^\d{4,6}$/.test(devCode);
 
-    const code = useDevCode ? devCode : generateCode();
+    // App Store / Google Play tekshiruvchilari uchun demo akkaunt: SMS yuborilmaydi, kod .env dan olinadi
+    const reviewPhone = process.env.REVIEW_PHONE ? normalizePhone(process.env.REVIEW_PHONE) : "";
+    const reviewCode = process.env.REVIEW_OTP_CODE?.trim();
+    const isReview = !!reviewPhone && phone === reviewPhone && !!reviewCode && /^(\d{4}|\d{6})$/.test(reviewCode);
+
+    const code = isReview ? reviewCode : useDevCode ? devCode : generateCode();
     const expiresAt = new Date(now.getTime() + OTP_TTL_MINUTES * 60 * 1000);
 
     await prisma.otpCode.create({
       data: { phone, code, expiresAt },
     });
+
+    if (isReview) {
+      return NextResponse.json({ ok: true, message: "SMS yuborildi. Kodni kiriting." });
+    }
 
     if (useDevCode) {
       return NextResponse.json({

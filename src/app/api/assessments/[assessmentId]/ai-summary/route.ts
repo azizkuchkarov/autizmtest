@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { generateAiSummary, generateAiSummaryForMonitoring, generateAiSummaryForScreeningV2 } from "@/lib/ai-summary";
+import { generateAiSummary, generateAiSummaryForMonitoring, generateAiSummaryForScreeningV2, isPlaceholderAiPayload } from "@/lib/ai-summary";
 import type { AiSummaryResponse, ScoreResponse, ScreeningV2Result } from "@/types/api";
 import type { MonitoringResult } from "@/lib/monitoringScoring";
 
@@ -46,7 +46,9 @@ export async function POST(
 
     const storedLocale = (assessment.aiSummaryLocale as "uz" | "ru" | null) ?? null;
     const wantLocale = locale;
-    const needRegenerate = assessment.aiSummaryStatus === "ready" && storedLocale !== null && storedLocale !== wantLocale;
+    const needRegenerate =
+      assessment.aiSummaryStatus === "ready" &&
+      ((storedLocale !== null && storedLocale !== wantLocale) || isPlaceholderAiPayload(assessment.aiSummaryPayload));
 
     if (assessment.aiSummaryStatus === "ready" && assessment.aiSummaryPayload && !needRegenerate) {
       return NextResponse.json({

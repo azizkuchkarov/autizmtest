@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { prisma } from "@/lib/db";
 
 const USER_SESSION_COOKIE = "user_session";
@@ -46,6 +46,9 @@ export async function setUserSessionCookie(token: string, expiresAt: Date) {
 
 export async function clearUserSessionCookie() {
   const cookieStore = await cookies();
+  // Bazadagi sessiyani ham o'chiramiz — cookie o'g'irlangan bo'lsa ham qayta ishlatib bo'lmaydi
+  const token = cookieStore.get(USER_SESSION_COOKIE)?.value;
+  if (token) await prisma.userSession.deleteMany({ where: { token } });
   cookieStore.set(USER_SESSION_COOKIE, "", {
     httpOnly: true,
     sameSite: "lax",
@@ -107,8 +110,15 @@ export async function consumePinSetupToken(): Promise<void> {
   }
 }
 
+/** Mobil ilova sessiya tokenini `Authorization: Bearer <token>` sarlavhasida yuboradi. */
+async function getBearerToken(): Promise<string | null> {
+  const auth = (await headers()).get("authorization");
+  const match = auth?.match(/^Bearer\s+(.+)$/i);
+  return match ? match[1].trim() : null;
+}
+
 export async function getSessionUser() {
-  const token = (await cookies()).get(USER_SESSION_COOKIE)?.value;
+  const token = (await getBearerToken()) ?? (await cookies()).get(USER_SESSION_COOKIE)?.value;
   if (!token) return null;
   const session = await prisma.userSession.findUnique({
     where: { token },
@@ -120,4 +130,10 @@ export async function getSessionUser() {
     return null;
   }
   return session.user;
+}
+
+/** Mobil ilovadan chiqish: Bearer tokenga tegishli sessiyani o'chiradi. */
+export async function deleteBearerSession(): Promise<void> {
+  const token = await getBearerToken();
+  if (token) await prisma.userSession.deleteMany({ where: { token } });
 }

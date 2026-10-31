@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1030658653810",
+    "project_id": "autizm-75a70",
+    "storage_bucket": "autizm-75a70.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1030658653810:android:aeebcdc16a145e84c08ceb",
+        "android_client_info": {
+          "package_name": "uz.autizmtest.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCeZ40TJA0wQ44SWbs4Km0LH_LHxnmi6qU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
