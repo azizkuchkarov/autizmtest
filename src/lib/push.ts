@@ -12,11 +12,20 @@ const CHUNK = 500;
 /** Bu xatolar — ilova o'chirilgan yoki token eskirgan: token bazadan tozalanadi */
 const STALE_ERRORS = new Set(["messaging/registration-token-not-registered", "messaging/invalid-registration-token"]);
 
+/** .env o'quvchilari private_key ichidagi "\n" ni haqiqiy yangi qatorga aylantirishi mumkin — JSON uchun qaytariladi. */
+function parseServiceAccount(raw: string) {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return JSON.parse(raw.replace(/\r?\n/g, "\\n"));
+  }
+}
+
 function firebaseApp(): App {
   const existing = getApps()[0];
   if (existing) return existing;
   const json = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (json) return initializeApp({ credential: cert(JSON.parse(json)) });
+  if (json) return initializeApp({ credential: cert(parseServiceAccount(json)) });
   if (process.env.GOOGLE_APPLICATION_CREDENTIALS) return initializeApp({ credential: applicationDefault() });
   throw new Error("Firebase sozlanmagan: FIREBASE_SERVICE_ACCOUNT yoki GOOGLE_APPLICATION_CREDENTIALS kerak.");
 }
