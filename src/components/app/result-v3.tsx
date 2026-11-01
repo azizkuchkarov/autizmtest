@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertOctagon, AlertTriangle, CheckCircle2, ChevronDown, Info, ListChecks } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 
 import { useLocale } from "@/components/app/providers";
@@ -218,7 +219,12 @@ export function ResultV3Details({ result }: { result: ScreeningV3Result }) {
         </>
       )}
 
-      <p className="t-small text-center text-ink-3">{t("r3.provisional")}</p>
+      <p className="t-small text-center text-ink-3">
+        {t("r3.provisional")}{" "}
+        <Link href="/about-test" className="text-tint hover:underline">
+          {t("about.link")}
+        </Link>
+      </p>
     </>
   );
 }

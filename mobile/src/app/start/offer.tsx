@@ -64,11 +64,11 @@ export default function OfferScreen() {
               haptics.select();
               setAgreed((v) => !v);
             }}
-            style={styles.agreeRow}>
-            <View style={[styles.checkbox, { borderColor: agreed ? theme.tint : theme.border, backgroundColor: agreed ? theme.tint : theme.backgroundElement }]}>
-              {agreed ? <SymbolView name={sym('checkmark', 'check')} size={14} tintColor="#FFFFFF" weight="bold" /> : null}
+            style={[styles.agreeRow, { borderColor: agreed ? theme.tint : theme.border, backgroundColor: agreed ? theme.tintSoft : theme.backgroundElement }]}>
+            <View style={[styles.checkbox, { borderColor: agreed ? theme.tint : theme.textTertiary, backgroundColor: agreed ? theme.tint : theme.backgroundElement }]}>
+              {agreed ? <SymbolView name={sym('checkmark', 'check')} size={20} tintColor="#FFFFFF" weight="bold" /> : null}
             </View>
-            <ThemedText type="small" style={{ flex: 1 }}>
+            <ThemedText type="heading" style={{ flex: 1, fontSize: 16, lineHeight: 22 }}>
               {t('offer.agree')}
             </ThemedText>
           </Pressable>
@@ -135,13 +135,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
-    paddingVertical: Spacing.two,
+    minHeight: 68,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: 14,
+    borderRadius: Radius.md,
+    borderWidth: 2,
+    marginBottom: Spacing.one,
   },
   checkbox: {
-    width: 26,
-    height: 26,
-    borderRadius: 8,
-    borderWidth: 2,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    borderWidth: 2.5,
     alignItems: 'center',
     justifyContent: 'center',
   },

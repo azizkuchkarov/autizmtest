@@ -69,6 +69,7 @@ function RootStack({ fontsLoaded }: { fontsLoaded: boolean }) {
       <Stack.Screen name="video/[id]" options={{ title: '' }} />
       <Stack.Screen name="sounds/[id]" options={{ title: '' }} />
       <Stack.Screen name="centers" options={{ title: t('centers.title') }} />
+      <Stack.Screen name="about-test" options={{ title: t('about.title') }} />
       <Stack.Screen name="talk" options={{ title: t('talk.title') }} />
       <Stack.Screen name="diary" options={{ title: t('diary.title') }} />
       <Stack.Screen name="progress" options={{ title: t('progress.title') }} />

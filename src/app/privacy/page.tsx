@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 const CONTACT_EMAIL = "aziz.kuchkarov91@gmail.com";
-const UPDATED = "2026-10-31";
+const UPDATED = "2026-11-01";
 
 type Section = { title: string; body: string[] };
 type Policy = { id: string; lang: string; title: string; updated: string; intro: string; sections: Section[] };
@@ -28,7 +28,7 @@ const POLICIES: Policy[] = [
       {
         title: "1. Qanday ma'lumot yig'iladi",
         body: [
-          "Telefon raqamingiz — tizimga kirish uchun (SMS kod yuboriladi).",
+          "Telefon raqamingiz — tizimga kirish uchun (kod SMS yoki Telegram orqali yuboriladi). Telegram orqali kirsangiz, Telegram ID va chat ID ham saqlanadi.",
           "Bola profili: ismi, tug'ilgan yili va oyi, jinsi, tanlangan avatar.",
           "Skrining va ko'nikmalar testlaridagi javoblar va natijalar.",
           "Ertalabki kundalik: uyqu, kayfiyat, ovqatlanish, xulq, dori qabul qilish kabi belgilaringiz.",
@@ -53,6 +53,7 @@ const POLICIES: Policy[] = [
         title: "4. Uchinchi tomon xizmatlari",
         body: [
           "Eskiz.uz — tizimga kirish kodi bilan SMS yuborish uchun telefon raqamingiz uzatiladi.",
+          "Telegram — bot orqali kirishni tanlasangiz, kirish kodi Telegram orqali yuboriladi; raqamingizni tasdiqlash uchun kontaktingizni o'zingiz ulashasiz.",
           "OpenAI — ixtiyoriy AI xulosa uchun test natijalari (ballar, yosh guruhi) yuboriladi; telefon raqami va bola ismi yuborilmaydi.",
           "Google Firebase Cloud Messaging va Apple Push Notification service — bildirishnomalarni yetkazish uchun qurilma tokeni ishlatiladi.",
           "Ma'lumotlar xizmat serverlarimizda saqlanadi.",
@@ -62,7 +63,7 @@ const POLICIES: Policy[] = [
         title: "5. Saqlash muddati va o'chirish",
         body: [
           "Ma'lumotlar akkauntingiz mavjud ekan saqlanadi. Ilovada Profil → «Akkauntni o'chirish» orqali akkauntni va unga bog'liq barcha ma'lumotlarni (bola profili, testlar, kundalik, mashg'ulotlar tarixi, qurilma tokenlari) istalgan vaqtda butunlay o'chirishingiz mumkin.",
-          `Ma'lumotlaringiz nusxasini olish yoki o'chirish bo'yicha savollar uchun ${CONTACT_EMAIL} manziliga yozing.`,
+          `Ma'lumotlaringiz nusxasini olish yoki o'chirish bo'yicha savollar uchun ${CONTACT_EMAIL} manziliga yozing. Batafsil: https://autizmtest.uz/delete-account`,
         ],
       },
       {
@@ -98,7 +99,7 @@ const POLICIES: Policy[] = [
       {
         title: "1. Какие данные собираются",
         body: [
-          "Номер телефона — для входа (приходит SMS-код).",
+          "Номер телефона — для входа (код приходит по SMS или в Telegram). При входе через Telegram также сохраняются Telegram ID и ID чата.",
           "Профиль ребёнка: имя, год и месяц рождения, пол, выбранный аватар.",
           "Ответы и результаты скрининга и теста навыков.",
           "Утренний дневник: сон, настроение, питание, поведение, приём лекарств — то, что вы отмечаете.",
@@ -123,6 +124,7 @@ const POLICIES: Policy[] = [
         title: "4. Сторонние сервисы",
         body: [
           "Eskiz.uz — для отправки SMS с кодом входа передаётся номер телефона.",
+          "Telegram — если вы выбрали вход через бота, код отправляется в Telegram; для подтверждения номера вы сами делитесь своим контактом.",
           "OpenAI — для необязательного AI-заключения передаются результаты теста (баллы, возрастная группа); номер телефона и имя ребёнка не передаются.",
           "Google Firebase Cloud Messaging и Apple Push Notification service — токен устройства для доставки уведомлений.",
           "Данные хранятся на серверах сервиса.",
@@ -132,7 +134,7 @@ const POLICIES: Policy[] = [
         title: "5. Срок хранения и удаление",
         body: [
           "Данные хранятся, пока существует аккаунт. В приложении: Профиль → «Удалить аккаунт» — аккаунт и все связанные данные (профиль ребёнка, тесты, дневник, история занятий, токены устройств) удаляются полностью.",
-          `По вопросам получения копии или удаления данных пишите на ${CONTACT_EMAIL}.`,
+          `По вопросам получения копии или удаления данных пишите на ${CONTACT_EMAIL}. Подробнее: https://autizmtest.uz/delete-account`,
         ],
       },
       {
@@ -166,7 +168,7 @@ const POLICIES: Policy[] = [
       {
         title: "1. Data we collect",
         body: [
-          "Your phone number — to sign in (we send an SMS code).",
+          "Your phone number — to sign in (we send a code by SMS or Telegram). If you sign in with Telegram, your Telegram ID and chat ID are also stored.",
           "Child profile: first name, birth year and month, gender, chosen avatar.",
           "Answers and results of the screening and skills tests.",
           "Morning diary: sleep, mood, meals, behaviour and medication entries you record.",
@@ -191,6 +193,7 @@ const POLICIES: Policy[] = [
         title: "4. Third-party services",
         body: [
           "Eskiz.uz — receives your phone number to deliver the sign-in SMS.",
+          "Telegram — if you choose to sign in with the bot, the code is sent via Telegram; you share your own contact to confirm your number.",
           "OpenAI — receives test results (scores, age group) for the optional AI summary; your phone number and the child's name are not sent.",
           "Google Firebase Cloud Messaging and Apple Push Notification service — use a device token to deliver notifications.",
           "Data is stored on our service's servers.",
@@ -200,7 +203,7 @@ const POLICIES: Policy[] = [
         title: "5. Retention and deletion",
         body: [
           "Data is kept while your account exists. In the app, Profile → “Delete account” permanently deletes the account and all related data (child profile, tests, diary, practice history, device tokens).",
-          `For a copy of your data or deletion requests, email ${CONTACT_EMAIL}.`,
+          `For a copy of your data or deletion requests, email ${CONTACT_EMAIL}. Details: https://autizmtest.uz/delete-account`,
         ],
       },
       {

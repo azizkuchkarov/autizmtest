@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, BellRing, BookOpen, Building2, FileText, HandHeart, Info, LogOut, MonitorPlay, Pencil, Phone } from "lucide-react";
+import { BarChart3, BellRing, BookOpen, Building2, ClipboardList, FileText, HandHeart, Info, LogOut, MonitorPlay, Pencil, Phone, Shield } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -119,6 +119,8 @@ export default function ProfilePage() {
         {phone ? (
           <ListRow icon={Phone} iconColor="var(--text-secondary)" iconBackground="var(--muted)" title={t("profile.phone")} value={prettyPhone(phone)} />
         ) : null}
+        <ListRow icon={ClipboardList} iconColor="var(--text-secondary)" iconBackground="var(--muted)" title={t("about.title")} href="/about-test" />
+        <ListRow icon={Shield} iconColor="var(--text-secondary)" iconBackground="var(--muted)" title={t("profile.privacy")} href={`/privacy#${locale}`} />
         <ListRow icon={FileText} iconColor="var(--text-secondary)" iconBackground="var(--muted)" title={t("offer.title")} href="/offer" />
         <ListRow icon={Info} iconColor="var(--text-secondary)" iconBackground="var(--muted)" title={t("profile.version")} value="1.0.0" last />
       </Card>

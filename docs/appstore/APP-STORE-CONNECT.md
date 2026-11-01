@@ -52,7 +52,7 @@ SCREENING IN 10 MINUTES
 Answer simple questions about your child's everyday behaviour. Questions are matched to the child's exact age (16 months to 10 years) and cover 7 areas: social contact, shared attention and gestures, speech, play and imitation, repetitive behaviour, adapting to change and sensory reactions.
 
 A CLEAR RESULT AND NEXT STEPS
-No confusing numbers — you see a simple level (low, moderate or high likelihood) and three concrete steps: whether and when to see a specialist, what to start at home today, and when to check again.
+No confusing numbers — you see a simple result (few, some or many signs observed) and three concrete steps: whether and when to see a specialist, what to start at home today, and when to check again.
 
 5 MINUTES A DAY AT HOME
 Every day the app suggests one short game to play together with your child — taking turns, imitation, requesting, attention. Step-by-step instructions, no special equipment.
@@ -68,7 +68,7 @@ ALSO INSIDE
 
 Available in Uzbek and Russian.
 
-IMPORTANT: AutizmTest is a screening and education tool. It does not provide a medical diagnosis. For a diagnosis, consult a paediatrician, child neurologist or developmental specialist.
+IMPORTANT: AutizmTest is a screening questionnaire and education tool for parents. It is not a medical device and does not diagnose, treat, cure or prevent any medical condition. The test has not yet been clinically validated; the app explains its structure, sources and limits under "About the test". Always consult a paediatrician, child neurologist or developmental specialist for medical advice and diagnosis.
 ```
 
 **Keywords** (100)
@@ -96,7 +96,7 @@ AutizmTest помогает родителям заметить ранние п�
 Ответьте на простые вопросы о повседневном поведении ребёнка. Вопросы подбираются по точному возрасту (от 16 месяцев до 10 лет) и охватывают 7 разделов: социальный контакт, совместное внимание и жесты, речь, игра и подражание, повторяющееся поведение, адаптация к изменениям и сенсорные реакции.
 
 ПОНЯТНЫЙ РЕЗУЛЬТАТ И СЛЕДУЮЩИЕ ШАГИ
-Без запутанных цифр — простой уровень (низкая, средняя или высокая вероятность) и три конкретных шага: нужно ли и когда идти к специалисту, что начать дома уже сегодня и когда проверить снова.
+Без запутанных цифр — простой результат (признаков мало, есть отдельные признаки или признаков много) и три конкретных шага: нужно ли и когда идти к специалисту, что начать дома уже сегодня и когда проверить снова.
 
 5 МИНУТ В ДЕНЬ ДОМА
 Каждый день приложение предлагает одну короткую игру вместе с ребёнком — по очереди, подражание, просьбы, внимание. Пошаговые инструкции, без специального оборудования.
@@ -112,7 +112,7 @@ AutizmTest помогает родителям заметить ранние п�
 
 Доступно на узбекском и русском языках.
 
-ВАЖНО: AutizmTest — инструмент скрининга и обучения. Он не ставит медицинский диагноз. Для диагноза обратитесь к педиатру, детскому неврологу или специалисту по развитию.
+ВАЖНО: AutizmTest — скрининговый опросник и обучающий инструмент для родителей. Это не медицинское изделие: приложение не диагностирует, не лечит и не предотвращает заболевания. Тест пока не подтверждён клиническим исследованием; его устройство, источники и ограничения описаны в разделе «О тесте». За медицинской консультацией и диагнозом всегда обращайтесь к педиатру, детскому неврологу или специалисту по развитию.
 ```
 
 **Keywords**
@@ -132,7 +132,7 @@ AutizmTest помогает родителям заметить ранние п�
 | Support URL | https://autizmtest.uz |
 | Marketing URL | https://autizmtest.uz |
 | Copyright | 2026 AutizmTest |
-| Version | 1.0.0 |
+| Version | 1.0.0 (build 4) |
 
 ### Skrinshotlar — 6.9" Display
 `docs/appstore/screenshots-6.9/` papkasidagi 5 ta fayl (1320 × 2868), shu tartibda:
@@ -154,11 +154,11 @@ Barcha turlar uchun: **Linked to the user: Yes · Used for tracking: No · Purpo
 
 | Apple toifasi | Tur | Nima |
 |---|---|---|
-| Contact Info | Phone Number | Tizimga kirish (SMS kod) |
+| Contact Info | Phone Number | Tizimga kirish (SMS yoki Telegram kodi) |
 | Contact Info | Name | Bolaning ismi |
 | Health & Fitness | Health | Skrining va ko'nikmalar testi javoblari/natijalari, kundalik (uyqu, xulq, dori) |
 | User Content | Other User Content | Kundalikdagi izoh matni |
-| Identifiers | User ID | Akkaunt ID |
+| Identifiers | User ID | Akkaunt ID, Telegram orqali kirilsa Telegram ID |
 | Usage Data | Product Interaction | Mashg'ulotlar tarixi, ovozli dars javoblari, karta bosishlar soni |
 | Other Data | Other Data Types | Bolaning tug'ilgan yili/oyi va jinsi |
 
@@ -206,6 +206,8 @@ The app interface is in Uzbek and Russian (language switch: top-right on the int
 About the app: AutizmTest is a screening and parent-education tool, not a diagnostic device. Every result screen states that it is not a medical diagnosis and recommends consulting a specialist.
 
 Account deletion: Profile → "Akkauntni o'chirish" (Delete account) permanently deletes the account and all data.
+
+Methodology: Profile → "Test haqida" (About the test), also linked from the Test tab and the result screen, explains the test's structure, sources (DSM-5 structure, CDC milestones, AAP/AAN guidance) and limitations, including that it is not yet clinically validated. The privacy policy is linked in Profile.
 
 Permissions: camera, photo library and microphone are requested only when a parent adds a custom picture card with their own photo or voice; these files stay on the device.
 ```

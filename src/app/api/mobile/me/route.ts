@@ -27,7 +27,11 @@ export async function PATCH(req: Request) {
   return NextResponse.json({ ok: true });
 }
 
-/** Mobil ilova va web: akkauntni butunlay o'chirish (App Store talabi). Bolalar va sessiyalar ham o'chadi. */
+/**
+ * Mobil ilova va web: akkauntni butunlay o'chirish (App Store talabi). Bolalar va sessiyalar ham o'chadi.
+ * Assessment, TelegramLink, Feedback va UserEvent User'ga cascade bilan bog'lanmagan — alohida o'chiriladi.
+ * Matn o'zgarsa: /delete-account va /privacy sahifalarini ham yangilang.
+ */
 export async function DELETE() {
   const { user, denied } = await requireUser();
   if (denied) return denied;
@@ -35,6 +39,10 @@ export async function DELETE() {
   await prisma.$transaction([
     prisma.pinSetupToken.deleteMany({ where: { userId: user.id } }),
     prisma.otpCode.deleteMany({ where: { phone: user.phone } }),
+    prisma.telegramLink.deleteMany({ where: { phone: user.phone } }),
+    prisma.feedback.deleteMany({ where: { phone: user.phone } }),
+    prisma.assessment.deleteMany({ where: { OR: [{ phone: user.phone }, { child: { userId: user.id } }] } }),
+    prisma.userEvent.deleteMany({ where: { metadata: { path: ["phone"], equals: user.phone } } }),
     prisma.user.delete({ where: { id: user.id } }),
   ]);
   // Web: sessiya cookie'sini ham tozalaymiz (mobil ilovada cookie yo'q — zararsiz)

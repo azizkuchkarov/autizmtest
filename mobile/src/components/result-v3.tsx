@@ -267,7 +267,10 @@ export function ResultV3Details({ result }: { result: ScreeningV3Result }) {
       )}
 
       <ThemedText type="small" themeColor="textTertiary" style={{ textAlign: 'center' }}>
-        {t('r3.provisional')}
+        {t('r3.provisional')}{' '}
+        <ThemedText type="small" themeColor="tint" onPress={() => router.push('/about-test')}>
+          {t('about.link')}
+        </ThemedText>
       </ThemedText>
     </>
   );

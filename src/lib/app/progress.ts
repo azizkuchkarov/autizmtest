@@ -5,17 +5,15 @@
 import type { AacDayLog } from "@/lib/app/aac-store";
 import type { DiaryEntry } from "@/lib/app/api";
 import { sleepHours } from "@/lib/app/diary";
-import type { SkillsResult } from "@/lib/screening-v3/score";
+import { THRESHOLDS, type SkillsResult } from "@/lib/screening-v3/score";
 import { SKILL_SECTIONS } from "@/lib/screening-v3/skills";
-import type { StoredAssessment } from "@/lib/app/history";
+import { assessmentTier, nextScreeningDate, type StoredAssessment } from "@/lib/app/history";
 import { dayKey, lastDays, PLAY_ACTIVITIES, PLAY_SKILLS, type ChildPlay, type PlayRating, type PlaySkill } from "@/lib/app/play-activities";
 import { riskTier, type RiskTier } from "@/lib/app/screening";
 import { levelMastery, SOUND_LEVELS, type SoundLevel, type SoundLogEntry, type SoundResult } from "@/lib/app/sound-progress";
 
 /** Ikki test orasidagi shu chegaradan kichik farq "o'zgarmadi" deb hisoblanadi. */
 export const SAME_THRESHOLD = 3;
-/** Skriningni qayta topshirish oralig'i. Oyma-oy o'zgarish ko'nikmalar testida o'lchanadi (skrining bunga mo'ljallanmagan). */
-export const RETEST_DAYS = 180;
 
 export type Trend = "better" | "same" | "worse";
 
@@ -42,7 +40,16 @@ export type ScreeningPoint = {
   blocks: Record<string, number>;
   /** 3 — yangi test (bo'limlar), 2 — eski test (A/B/C sohalari) */
   version: 2 | 3;
+  /** Test paytidagi aniq yosh (eski testlarda yo'q) */
+  ageMonths: number | null;
 };
+
+/** Bo'lim holati: yangi testda bo'lim chegaralari, eski testda umumiy chegaralar. */
+function domainTier(score: number, version: 2 | 3): RiskTier {
+  if (version === 2) return riskTier(score);
+  if (score >= THRESHOLDS.high) return "high";
+  return score >= THRESHOLDS.moderate ? "moderate" : "low";
+}
 
 export function screeningProgress(assessments: StoredAssessment[], now = new Date()) {
   const points: ScreeningPoint[] = [...assessments]
@@ -51,9 +58,10 @@ export function screeningProgress(assessments: StoredAssessment[], now = new Dat
       id: a.id,
       date: new Date(a.createdAt),
       score: Math.round(a.result.totalScore),
-      tier: riskTier(a.result.totalScore),
+      tier: assessmentTier(a),
       blocks: Object.fromEntries(a.result.blocks.map((b) => [b.blockId, Math.round(b.score)])),
       version: (a.result as { version?: number }).version === 3 ? (3 as const) : (2 as const),
+      ageMonths: (a.result as { ageMonths?: number }).ageMonths ?? null,
     }));
 
   const first = points[0] ?? null;
@@ -62,17 +70,24 @@ export function screeningProgress(assessments: StoredAssessment[], now = new Dat
 
   // Sohalar faqat bir xil versiyadagi testlar orasida solishtiriladi (eski va yangi testning bo'limlari har xil)
   const base = latest ? points.find((p) => p.version === latest.version)! : null;
+  const compared = !!latest && !!base && base.id !== latest.id;
   const domains = latest
     ? Object.keys(latest.blocks)
         .filter((id) => latest.version === 2 || id !== "history")
         .map((id) => {
           const from = base!.blocks[id] ?? latest.blocks[id];
           const to = latest.blocks[id];
-          return { id, from, to, delta: to - from, trend: scoreTrend(to - from) };
+          return { id, from, to, delta: to - from, trend: scoreTrend(to - from), tier: domainTier(to, latest.version) };
         })
+        // Eng ko'p e'tibor talab qiladigani tepada
+        .sort((a, b) => b.to - a.to)
     : [];
 
-  const nextTest = latest ? new Date(latest.date.getTime() + RETEST_DAYS * 86400000) : null;
+  // Keyingi test: natija sahifasidagi qoida bilan bir xil (past daraja — 6 oy, o'rta va yuqori — 3 oy)
+  const nextTest = latest ? new Date(nextScreeningDate(latest.date.toISOString(), latest.tier)) : null;
+  const daysLeft = nextTest ? Math.ceil((nextTest.getTime() - now.getTime()) / 86400000) : null;
+  const retestProgress =
+    latest && nextTest ? Math.min(100, Math.max(0, ((now.getTime() - latest.date.getTime()) / (nextTest.getTime() - latest.date.getTime())) * 100)) : 0;
 
   return {
     points,
@@ -84,7 +99,12 @@ export function screeningProgress(assessments: StoredAssessment[], now = new Dat
     /** Oxirgi test birinchisiga nisbatan */
     totalDelta: latest && first && points.length > 1 ? latest.score - first.score : null,
     domains,
+    /** Bo'limlar solishtirildimi (oxirgi test bilan bir xil versiyadagi oldingi test bor) */
+    compared,
     nextTest,
+    daysLeft,
+    /** Oxirgi testdan keyingi testgacha o'tgan vaqt, % */
+    retestProgress,
     retestDue: nextTest ? nextTest <= now : false,
   };
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { Play } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { useLocale, useProfile } from "@/components/app/providers";
@@ -86,6 +87,10 @@ export default function TestPage() {
           <Button title={t("test.skillsLink")} href="/skills" size="md" variant="secondary" />
         </div>
       </Card>
+
+      <Link href="/about-test" className="t-small-bold text-center text-tint hover:underline">
+        {t("about.link")} →
+      </Link>
 
       {history.length > 0 && (
         <>

@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { Alert, Linking, StyleSheet, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
 import { ThemedText } from '@/components/themed-text';
@@ -12,6 +12,7 @@ import { useLocale } from '@/contexts/locale';
 import { useProfile } from '@/contexts/profile';
 import { useAccent, useTheme } from '@/hooks/use-theme';
 import { formatAge } from '@/lib/age';
+import { API_URL } from '@/lib/api';
 import { listAssessments } from '@/lib/history';
 import type { TranslationKey } from '@/lib/i18n';
 import { ageInMonths } from '@/shared/lib/screening-v3/score';
@@ -184,6 +185,20 @@ export default function ProfileTab() {
             value={prettyPhone(phone)}
           />
         ) : null}
+        <ListRow
+          icon={sym('doc.text.magnifyingglass', 'fact_check')}
+          iconColor={theme.textSecondary}
+          iconBackground={theme.backgroundMuted}
+          title={t('about.title')}
+          onPress={() => router.push('/about-test')}
+        />
+        <ListRow
+          icon={sym('hand.raised.fill', 'privacy_tip')}
+          iconColor={theme.textSecondary}
+          iconBackground={theme.backgroundMuted}
+          title={t('profile.privacy')}
+          onPress={() => Linking.openURL(`${API_URL}/privacy#${locale}`).catch(() => {})}
+        />
         <ListRow
           icon={sym('info.circle.fill', 'info')}
           iconColor={theme.textSecondary}

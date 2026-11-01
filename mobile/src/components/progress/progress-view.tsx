@@ -12,10 +12,10 @@ import {
   ColumnChart,
   Legend,
   Meter,
-  ScoreLineChart,
   ShareBar,
   TrendBadge,
 } from '@/components/progress/charts';
+import { ScreeningDynamics } from '@/components/progress/screening-dynamics';
 import { useFormatDate, useRiskColors } from '@/components/result-summary';
 import { CardPicture } from '@/components/talk/tile';
 import { ThemedText } from '@/components/themed-text';
@@ -46,7 +46,6 @@ import { domainTitles } from '@/lib/screening';
 import { nextSkillsDue, useSkillsHistory } from '@/lib/skills-store';
 import { useSoundLog, useSoundProgress, useSoundSettings, type SoundLevel } from '@/lib/sound-progress';
 import { WEEKDAYS } from '@/shared/data/play-activities';
-import { SECTIONS } from '@/shared/lib/screening-v3/items';
 import { SKILL_SECTIONS } from '@/shared/lib/screening-v3/skills';
 
 const TREND_LABEL: Record<Trend, TranslationKey> = { better: 'progress.better', same: 'progress.same', worse: 'progress.worse' };
@@ -157,30 +156,6 @@ function Kpi({
       {badge ?? <View style={{ height: 22 }} />}
       <ThemedText type="small" themeColor="textTertiary" style={{ fontSize: 12, lineHeight: 16 }}>
         {caption}
-      </ThemedText>
-    </PressableScale>
-  );
-}
-
-function HistoryRow({ point, delta, label, date }: { point: ScreeningPoint; delta: number | null; label: string; date: string }) {
-  const theme = useTheme();
-  const colors = useRiskColors(point.tier);
-  return (
-    <PressableScale
-      onPress={() => router.push(`/result/${point.id}`)}
-      scaleTo={0.99}
-      style={[styles.historyRow, { borderTopColor: theme.border }]}>
-      <View style={{ flex: 1 }}>
-        <ThemedText type="smallBold" style={{ fontSize: 14 }}>
-          {date}
-        </ThemedText>
-        <ThemedText type="small" themeColor="textTertiary">
-          {label}
-        </ThemedText>
-      </View>
-      {delta !== null ? <TrendBadge trend={scoreTrend(delta)} value={signed(delta)} label="" /> : null}
-      <ThemedText type="number" style={{ width: 56, textAlign: 'right', fontSize: 18, color: colors.fg }}>
-        {point.score}
       </ThemedText>
     </PressableScale>
   );
@@ -370,10 +345,10 @@ export function ProgressView() {
             icon={sym('stethoscope', 'stethoscope')}
             accent="test"
             label={t('progress.kpiScreening')}
-            value={screening.latest ? String(screening.latest.score) : '—'}
+            value={screening.latest ? tiers[screening.latest.tier] : '—'}
             badge={
               screening.delta !== null ? (
-                <TrendBadge trend={scoreTrend(screening.delta)} value={signed(screening.delta)} label={t(TREND_LABEL[scoreTrend(screening.delta)])} />
+                <TrendBadge trend={scoreTrend(screening.delta)} label={t(TREND_LABEL[scoreTrend(screening.delta)])} />
               ) : screening.latest ? (
                 <TierPill point={screening.latest} label={tiers[screening.latest.tier]} />
               ) : undefined
@@ -441,85 +416,12 @@ export function ProgressView() {
         {!screening.latest ? (
           <Empty title={t('progress.noTests')} body={t('progress.noTestsBody')} cta={t('progress.takeTest')} onPress={() => router.push('/screening/run')} />
         ) : (
-          <>
-            <Card style={{ gap: Spacing.two + 4 }}>
-              <View style={{ gap: Spacing.two }}>
-                <ThemedText type="small" themeColor="textTertiary">
-                  {t('progress.sinceFirst')}
-                </ThemedText>
-                {screening.totalDelta !== null ? (
-                  <View style={[styles.row, { flexWrap: 'wrap' }]}>
-                    <ThemedText type="number" style={{ fontSize: 26, lineHeight: 30 }}>
-                      {screening.first!.score} → {screening.latest.score}
-                    </ThemedText>
-                    <TrendBadge trend={scoreTrend(screening.totalDelta)} value={signed(screening.totalDelta)} label={t(TREND_LABEL[scoreTrend(screening.totalDelta)])} />
-                  </View>
-                ) : (
-                  <ThemedText type="number" style={{ fontSize: 26, lineHeight: 30 }}>
-                    {screening.latest.score}
-                  </ThemedText>
-                )}
-                <View style={[styles.retest, { backgroundColor: screening.retestDue ? theme.warningSoft : theme.backgroundMuted }]}>
-                  <SymbolView name={sym('calendar.badge.clock', 'event')} size={15} tintColor={screening.retestDue ? theme.warning : theme.textSecondary} />
-                  <ThemedText type="smallBold" style={{ fontSize: 12.5, color: screening.retestDue ? theme.warning : theme.textSecondary }}>
-                    {screening.retestDue ? t('progress.retestDue') : t('progress.nextTest').replace('{date}', formatDate(screening.nextTest!.toISOString()))}
-                  </ThemedText>
-                </View>
-              </View>
-              <View style={[styles.row, { alignItems: 'flex-start' }]}>
-                <SymbolView name={sym('info.circle', 'info')} size={14} tintColor={theme.textSecondary} style={{ marginTop: 3 }} />
-                <ThemedText type="small" themeColor="textSecondary" style={{ flex: 1 }}>
-                  {t('progress.screeningHint')}
-                </ThemedText>
-              </View>
-              <ScoreLineChart
-                zones={tiers}
-                points={screening.points.map((p) => ({ id: p.id, label: shortDate(p.date), date: formatDate(p.date.toISOString()), time: p.date.getTime(), score: p.score }))}
-              />
-              {screening.points.length === 1 ? (
-                <ThemedText type="small" themeColor="textTertiary">
-                  {t('progress.oneTest')}
-                </ThemedText>
-              ) : null}
-              {screening.retestDue ? <Button title={t('progress.takeTest')} onPress={() => router.push('/screening/run')} size="md" /> : null}
-            </Card>
-
-            {screening.points.length > 1 && (
-              <Card style={{ gap: Spacing.three }}>
-                <CardTitle title={t('progress.domainsTitle')} hint={t('progress.domainsHint')} />
-                {screening.domains.map((d) => (
-                  <ChangeRow
-                    key={d.id}
-                    label={SECTIONS.find((x) => x.id === d.id)?.title[locale] ?? domainNames[d.id] ?? d.id}
-                    from={d.from}
-                    to={d.to}
-                    badge={<TrendBadge trend={d.trend} value={signed(d.delta)} label={t(TREND_LABEL[d.trend])} />}
-                  />
-                ))}
-              </Card>
-            )}
-
-            <Card flat style={{ padding: 0, gap: 0 }}>
-              <View style={{ paddingHorizontal: 18, paddingTop: Spacing.three, paddingBottom: Spacing.two }}>
-                <CardTitle title={t('progress.historyTitle')} />
-              </View>
-              {[...screening.points].reverse().map((p, i, arr) => {
-                const prev = arr[i + 1];
-                return (
-                  <HistoryRow
-                    key={p.id}
-                    point={p}
-                    delta={prev ? p.score - prev.score : null}
-                    label={tiers[p.tier]}
-                    date={formatDate(p.date.toISOString())}
-                  />
-                );
-              })}
-            </Card>
-            <ThemedText type="small" themeColor="textTertiary">
-              {t('progress.retestHint')}
-            </ThemedText>
-          </>
+          <ScreeningDynamics
+            screening={screening}
+            tiers={tiers}
+            domainName={(id) => domainNames[id] ?? id}
+            shortDate={shortDate}
+          />
         )}
       </Section>
 

@@ -1,6 +1,6 @@
 # Google Play Console — AutizmTest (uz.autizmtest.app)
 
-Hammasi shu yerda: nusxalab joylashtiring. Play o'zbek tilini qo'llab-quvvatlaydi — **asosiy til: O'zbek (uz)**, qo'shimcha: Русский (ru-RU), English (en-US).
+Hammasi shu yerda: nusxalab joylashtiring. Asosiy til: ro'yxatda **Uzbek** bo'lsa o'zbekcha; bo'lmasa **Русский (ru-RU)**. Qo'shimcha: English (en-US).
 
 ---
 
@@ -9,7 +9,8 @@ Hammasi shu yerda: nusxalab joylashtiring. Play o'zbek tilini qo'llab-quvvatlayd
 | Maydon | Qiymat |
 |---|---|
 | App name | AutizmTest |
-| Default language | Uzbek – uz |
+| Default language | Uzbek (bo'lmasa Russian – ru-RU) |
+| Package name | uz.autizmtest.app |
 | App or game | App |
 | Free or paid | Free |
 | Declarations | ikkala belgini qo'ying |
@@ -21,7 +22,6 @@ Hammasi shu yerda: nusxalab joylashtiring. Play o'zbek tilini qo'llab-quvvatlayd
 | Nima | Fayl |
 |---|---|
 | Play'ga yuklanadigan build | `docs/googleplay/build/AutizmTest-1.0.0-1.aab` |
-| Telefonda sinash uchun | `docs/googleplay/build/AutizmTest-1.0.0-1.apk` |
 | App icon (512×512) | `docs/googleplay/icon-512.png` |
 | Feature graphic (1024×500) | `docs/googleplay/feature-graphic-1024x500.png` |
 | Phone screenshots (5 ta) | `docs/googleplay/screenshots/` (tartib bo'yicha 1–5) |
@@ -53,7 +53,7 @@ AutizmTest — ota-onalarga autizmning erta belgilarini sezish va bola rivojlani
 Bolangizning odatdagi xulqi haqida oddiy savollarga javob bering. Savollar bolaning aniq yoshiga (16 oylikdan 10 yoshgacha) moslanadi va 7 bo'limni qamraydi: ijtimoiy aloqa, birgalikdagi diqqat va imo-ishoralar, nutq, o'yin va taqlid, takroriy xatti-harakatlar, o'zgarishlarga moslashish va sezgi reaksiyalari.
 
 TUSHUNARLI NATIJA VA KEYINGI QADAMLAR
-Chalkash raqamlar yo'q — oddiy daraja (past, o'rtacha yoki yuqori ehtimollik) va 3 ta aniq qadam: mutaxassisga borish kerakmi va qachon, uyda bugun nimadan boshlash, qachon qayta tekshirish.
+Chalkash raqamlar yo'q — oddiy natija (kam, ba'zi yoki ko'p belgilar kuzatildi) va 3 ta aniq qadam: mutaxassisga borish kerakmi va qachon, uyda bugun nimadan boshlash, qachon qayta tekshirish.
 
 HAR KUNI UYDA 5 DAQIQA
 Ilova har kuni bola bilan birga o'ynaladigan bitta qisqa o'yin taklif qiladi: navbat bilan o'ynash, taqlid, so'rash, diqqat. Qadamma-qadam ko'rsatmalar, maxsus jihoz kerak emas.
@@ -69,7 +69,7 @@ YANA ILOVADA
 
 O'zbek va rus tillarida. Kirish — Telegram yoki SMS kodi orqali.
 
-MUHIM: AutizmTest — skrining va ota-onalarni o'qitish vositasi, tibbiy tashxis qo'ymaydi. Tashxis uchun pediatr, bolalar nevrologi yoki rivojlanish mutaxassisiga murojaat qiling.
+MUHIM: AutizmTest — ota-onalar uchun skrining savolnomasi va o'quv vositasi. U tibbiy qurilma emas: kasalliklarni aniqlamaydi, davolamaydi va oldini olmaydi. Test hali klinik tadqiqotda tasdiqlanmagan; uning tuzilishi, manbalari va cheklovlari ilovadagi «Test haqida» bo'limida yozilgan. Tibbiy maslahat va tashxis uchun doimo pediatr, bolalar nevrologi yoki rivojlanish mutaxassisiga murojaat qiling.
 ```
 
 ### Русский (ru-RU)
@@ -87,7 +87,7 @@ AutizmTest помогает родителям заметить ранние п�
 Ответьте на простые вопросы о повседневном поведении ребёнка. Вопросы подбираются по точному возрасту (от 16 месяцев до 10 лет) и охватывают 7 разделов: социальный контакт, совместное внимание и жесты, речь, игра и подражание, повторяющееся поведение, адаптация к изменениям и сенсорные реакции.
 
 ПОНЯТНЫЙ РЕЗУЛЬТАТ И СЛЕДУЮЩИЕ ШАГИ
-Без запутанных цифр — простой уровень (низкая, средняя или высокая вероятность) и три конкретных шага: нужно ли и когда идти к специалисту, что начать дома уже сегодня и когда проверить снова.
+Без запутанных цифр — простой результат (признаков мало, есть отдельные признаки или признаков много) и три конкретных шага: нужно ли и когда идти к специалисту, что начать дома уже сегодня и когда проверить снова.
 
 5 МИНУТ В ДЕНЬ ДОМА
 Каждый день приложение предлагает одну короткую игру вместе с ребёнком — по очереди, подражание, просьбы, внимание. Пошаговые инструкции, без специального оборудования.
@@ -103,7 +103,7 @@ AutizmTest помогает родителям заметить ранние п�
 
 На узбекском и русском языках. Вход — по коду в Telegram или SMS.
 
-ВАЖНО: AutizmTest — инструмент скрининга и обучения, он не ставит медицинский диагноз. Для диагноза обратитесь к педиатру, детскому неврологу или специалисту по развитию.
+ВАЖНО: AutizmTest — скрининговый опросник и обучающий инструмент для родителей. Это не медицинское изделие: приложение не диагностирует, не лечит и не предотвращает заболевания. Тест пока не подтверждён клиническим исследованием; его устройство, источники и ограничения описаны в разделе «О тесте». За медицинской консультацией и диагнозом всегда обращайтесь к педиатру, детскому неврологу или специалисту по развитию.
 ```
 
 ### English (en-US)
@@ -113,7 +113,7 @@ AutizmTest помогает родителям заметить ранние п�
 Child development screening and 5-minute daily practice at home
 ```
 
-**Full description** — `docs/appstore/APP-STORE-CONNECT.md` → 3-bo'lim → English → Description (oxiriga qo'shing: "Sign in with a code via Telegram or SMS.")
+**Full description** — `docs/appstore/APP-STORE-CONNECT.md` → 3-bo'lim → English → Description (oxiridagi IMPORTANT qismidan oldin qo'shing: "Sign in with a code via Telegram or SMS.")
 
 ---
 
@@ -170,20 +170,21 @@ Ilova **tibbiy qurilma emas** va tashxis qo'ymaydi. Belgilang:
 **Does your app collect or share any of the required user data types?** → **Yes**
 **Is all of the user data collected by your app encrypted in transit?** → **Yes**
 **Which methods of account creation?** → **Username and other authentication** (telefon raqami + bir martalik kod)
-**Account deletion URL** → `https://autizmtest.uz/privacy` (5-bo'limda o'chirish tartibi yozilgan)
-**Can users request data deletion without deleting account?** → **Yes** (email orqali)
+**Delete account URL** → `https://autizmtest.uz/delete-account`
+**Can users request data deletion without deleting account?** → **Yes**, Delete data URL → `https://autizmtest.uz/delete-account` (email so'rovi 30 kun ichida bajariladi)
 
-Har bir tur uchun: **Collected: Yes · Shared: No · Processed ephemerally: No · Required (not optional) · Purpose: App functionality, Account management**
+Har bir tur uchun: **Collected: Yes · Shared: No · Processed ephemerally: No · Purpose: App functionality** (Phone number va User IDs uchun **Account management** ham). Required/Optional — jadvalda.
 
-| Toifa | Tur | Izoh |
-|---|---|---|
-| Personal info | Phone number | Kirish |
-| Personal info | Name | Bolaning ismi |
-| Personal info | Other info | Bolaning tug'ilgan yili/oyi, jinsi |
-| Health and fitness | Health info | Test javoblari/natijalari, kundalik |
-| App activity | App interactions | Mashg'ulotlar tarixi |
-| App activity | Other user-generated content | Kundalik izohi |
-| Device or other IDs | Device or other IDs | Push bildirishnoma tokeni |
+| Toifa | Tur | Required/Optional | Izoh |
+|---|---|---|---|
+| Personal info | Name | Required | Bolaning ismi |
+| Personal info | Phone number | Required | Kirish |
+| Personal info | User IDs | Required | Akkaunt ID, Telegram orqali kirilsa Telegram ID |
+| Personal info | Other info | Required | Bolaning tug'ilgan yili/oyi, jinsi |
+| Health and fitness | Health info | Required | Test javoblari/natijalari, kundalik |
+| App activity | App interactions | Required | Mashg'ulotlar tarixi |
+| App activity | Other user-generated content | Optional | Kundalik izohi |
+| Device or other IDs | Device or other IDs | Optional | Push bildirishnoma tokeni |
 
 **Belgilanmaydi:** Location, Financial info, Messages, Photos and videos, Audio (rasm va ovozlar faqat qurilmada qoladi), Files and docs, Calendar, Contacts, Web browsing, App info and performance (crash yig'ilmaydi).
 

@@ -1,10 +1,10 @@
 "use client";
 
 import { CalendarClock, Ear, HandHeart, Info, Lightbulb, MessagesSquare, NotebookPen, Stethoscope, TrendingUp, type LucideIcon } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 
-import { ActivityBadge, BarList, CalendarHeat, ChangeRow, ColumnChart, Legend, Meter, ScoreLineChart, ShareBar, TrendBadge } from "@/components/app/progress/charts";
+import { ActivityBadge, BarList, CalendarHeat, ChangeRow, ColumnChart, Legend, Meter, ShareBar, TrendBadge } from "@/components/app/progress/charts";
+import { ScreeningDynamics } from "@/components/app/progress/screening-dynamics";
 import { useLocale, useProfile } from "@/components/app/providers";
 import { riskColors, useFormatDate } from "@/components/app/result-summary";
 import { CardPicture } from "@/components/app/talk/tile";
@@ -12,7 +12,6 @@ import { Button, Card, FadeIn, PageHeader, Pill, Skeleton } from "@/components/a
 import { useAacLocalData, useAacLog } from "@/lib/app/aac-store";
 import { fetchAac, fetchSoundSets, type AacCard } from "@/lib/app/api";
 import { domainStyle } from "@/lib/app/domains";
-import { SECTIONS } from "@/lib/screening-v3/items";
 import { useDiary } from "@/lib/app/diary";
 import { listAssessments, useAssessmentsVersion, type StoredAssessment } from "@/lib/app/history";
 import { WEEKDAYS } from "@/lib/app/play-activities";
@@ -230,10 +229,10 @@ export function ProgressView() {
           icon={Stethoscope}
           color="test"
           label={t("progress.kpiScreening")}
-          value={screening.latest ? String(screening.latest.score) : "—"}
+          value={screening.latest ? tiers[screening.latest.tier] : "—"}
           badge={
             screening.delta !== null ? (
-              <TrendBadge trend={scoreTrend(screening.delta)} value={signed(screening.delta)} label={t(TREND_LABEL[scoreTrend(screening.delta)])} />
+              <TrendBadge trend={scoreTrend(screening.delta)} label={t(TREND_LABEL[scoreTrend(screening.delta)])} />
             ) : screening.latest ? (
               <Pill label={tiers[screening.latest.tier]} color={riskColors(screening.latest.tier).fg} background={riskColors(screening.latest.tier).bg} />
             ) : undefined
@@ -294,89 +293,7 @@ export function ProgressView() {
         {!screening.latest ? (
           <Empty title={t("progress.noTests")} body={t("progress.noTestsBody")} cta={t("progress.takeTest")} href="/screening" />
         ) : (
-          <>
-            <Card className="!gap-3">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="flex flex-col gap-1">
-                  <span className="t-small text-ink-3">{t("progress.sinceFirst")}</span>
-                  {screening.totalDelta !== null ? (
-                    <span className="flex flex-wrap items-center gap-2">
-                      <span className="text-[26px] font-bold leading-none tabular-nums">
-                        {screening.first!.score} → {screening.latest.score}
-                      </span>
-                      <TrendBadge trend={scoreTrend(screening.totalDelta)} value={signed(screening.totalDelta)} label={t(TREND_LABEL[scoreTrend(screening.totalDelta)])} />
-                    </span>
-                  ) : (
-                    <span className="text-[26px] font-bold leading-none">{screening.latest.score}</span>
-                  )}
-                </div>
-                <span
-                  className="t-small-bold flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px]"
-                  style={{
-                    background: screening.retestDue ? "var(--warning-soft)" : "var(--muted)",
-                    color: screening.retestDue ? "var(--warning)" : "var(--text-secondary)",
-                  }}
-                >
-                  <CalendarClock className="h-4 w-4" />
-                  {screening.retestDue ? t("progress.retestDue") : t("progress.nextTest").replace("{date}", formatDate(screening.nextTest!.toISOString()))}
-                </span>
-              </div>
-              <p className="t-small flex items-start gap-1.5 text-ink-2">
-                <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                {t("progress.screeningHint")}
-              </p>
-              <ScoreLineChart
-                zones={tiers}
-                points={screening.points.map((p) => ({ id: p.id, label: shortDate(p.date), date: formatDate(p.date.toISOString()), time: p.date.getTime(), score: p.score }))}
-              />
-              {screening.points.length === 1 ? <p className="t-small text-ink-3">{t("progress.oneTest")}</p> : null}
-              {screening.retestDue ? (
-                <div className="sm:max-w-[260px]">
-                  <Button title={t("progress.takeTest")} href="/screening" size="md" />
-                </div>
-              ) : null}
-            </Card>
-
-            {screening.points.length > 1 && (
-              <Card className="!gap-4">
-                <div className="flex flex-col">
-                  <span className="t-small-bold text-[15px]">{t("progress.domainsTitle")}</span>
-                  <span className="t-small text-ink-3">{t("progress.domainsHint")}</span>
-                </div>
-                {screening.domains.map((d) => (
-                  <ChangeRow
-                    key={d.id}
-                    label={SECTIONS.find((x) => x.id === d.id)?.title[locale] ?? t(domainStyle(d.id).title)}
-                    from={d.from}
-                    to={d.to}
-                    badge={<TrendBadge trend={d.trend} value={signed(d.delta)} label={t(TREND_LABEL[d.trend])} />}
-                  />
-                ))}
-              </Card>
-            )}
-
-            <Card flat className="!gap-0 !p-0">
-              <span className="t-small-bold px-[18px] pb-2 pt-4 text-[15px]">{t("progress.historyTitle")}</span>
-              {[...screening.points].reverse().map((p, i, arr) => {
-                const prev = arr[i + 1];
-                const delta = prev ? p.score - prev.score : null;
-                const colors = riskColors(p.tier);
-                return (
-                  <Link key={p.id} href={`/result/${p.id}`} className="flex items-center gap-3 border-t border-line px-[18px] py-3 hover:bg-muted/60">
-                    <span className="flex min-w-0 flex-1 flex-col">
-                      <span className="t-small-bold text-[14px]">{formatDate(p.date.toISOString())}</span>
-                      <span className="t-small text-ink-3">{tiers[p.tier]}</span>
-                    </span>
-                    {delta !== null ? <TrendBadge trend={scoreTrend(delta)} value={signed(delta)} label="" /> : null}
-                    <span className="w-14 text-right text-[18px] font-bold tabular-nums" style={{ color: colors.fg }}>
-                      {p.score}
-                    </span>
-                  </Link>
-                );
-              })}
-            </Card>
-            <p className="t-small text-ink-3">{t("progress.retestHint")}</p>
-          </>
+          <ScreeningDynamics screening={screening} tiers={tiers} domainName={(id) => t(domainStyle(id).title)} shortDate={shortDate} />
         )}
       </Section>
 

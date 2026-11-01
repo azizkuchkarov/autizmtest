@@ -34,15 +34,18 @@ export default function OfferPage() {
       back={false}
       footer={
         <>
-          <label className="flex cursor-pointer items-center gap-4 py-2">
+          <label
+            className="mb-1 flex min-h-[68px] cursor-pointer items-center gap-4 rounded-[18px] border-2 px-4 py-3.5 transition-colors"
+            style={{ borderColor: agreed ? "var(--tint)" : "var(--border)", background: agreed ? "var(--tint-soft)" : "var(--element)" }}
+          >
             <input type="checkbox" className="peer sr-only" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
             <span
-              className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-lg border-2 text-white peer-focus-visible:ring-2 peer-focus-visible:ring-tint"
-              style={{ borderColor: agreed ? "var(--tint)" : "var(--border)", background: agreed ? "var(--tint)" : "var(--element)" }}
+              className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] border-[2.5px] text-white peer-focus-visible:ring-2 peer-focus-visible:ring-tint"
+              style={{ borderColor: agreed ? "var(--tint)" : "var(--text-tertiary)", background: agreed ? "var(--tint)" : "var(--element)" }}
             >
-              {agreed ? <Check className="h-3.5 w-3.5" strokeWidth={3.5} /> : null}
+              {agreed ? <Check className="h-5 w-5" strokeWidth={3.5} /> : null}
             </span>
-            <span className="t-small flex-1">{t("offer.agree")}</span>
+            <span className="t-heading flex-1 text-[16px]">{t("offer.agree")}</span>
           </label>
           <Button title={t("offer.continue")} onClick={onContinue} disabled={!agreed} icon={ArrowRight} />
         </>

@@ -5,8 +5,10 @@ import { AlertCircle, AlertTriangle, Check, ChevronRight, type LucideIcon } from
 import { useLocale } from "@/components/app/providers";
 import { Card } from "@/components/app/ui";
 import { formatAge } from "@/lib/app/age";
-import type { StoredAssessment } from "@/lib/app/history";
-import { riskTier, type RiskTier } from "@/lib/app/screening";
+import { assessmentTier, type StoredAssessment } from "@/lib/app/history";
+
+export { assessmentTier, nextScreeningDate } from "@/lib/app/history";
+import type { RiskTier } from "@/lib/app/screening";
 import { isScreeningV3 } from "@/lib/screening-v3/score";
 
 export function riskColors(tier: RiskTier) {
@@ -25,18 +27,6 @@ export function useFormatDate() {
     if (locale === "ru") return d.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
     return `${d.getDate()}-${UZ_MONTHS[d.getMonth()]}, ${d.getFullYear()}`;
   };
-}
-
-/** Natija darajasi: v3 da hisoblangan daraja, eski testlarda — ball bo'yicha. */
-export function assessmentTier(item: StoredAssessment): RiskTier {
-  return isScreeningV3(item.result) ? item.result.level : riskTier(item.result.totalScore);
-}
-
-/** Keyingi skrining sanasi: past darajada 6 oydan, o'rtacha va yuqorida 3 oydan keyin. */
-export function nextScreeningDate(createdAt: string, tier: RiskTier) {
-  const d = new Date(createdAt);
-  d.setMonth(d.getMonth() + (tier === "low" ? 6 : 3));
-  return d.toISOString();
 }
 
 /** Test topshirilgan paytdagi aniq yosh (eski testlarda — yosh guruhi). */

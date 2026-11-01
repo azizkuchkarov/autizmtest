@@ -114,6 +114,10 @@ export default function TestTab() {
         </View>
       </Card>
 
+      <ThemedText type="smallBold" themeColor="tint" style={{ textAlign: 'center' }} onPress={() => router.push('/about-test')}>
+        {t('about.link')} →
+      </ThemedText>
+
       {history.length > 0 && (
         <>
           <SectionHeader title={t('test.history')} />
