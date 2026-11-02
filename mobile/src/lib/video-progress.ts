@@ -86,22 +86,19 @@ export type VideoSection = {
   next: Video | null;
 };
 
-/** Faqat videosi bor yo'nalishlar bo'lim bo'lib ko'rsatiladi. */
+/** Har bir yo'nalish — bo'lim; videosi yo'qlari "Tez orada" bo'lib ko'rsatiladi. */
 export function buildSections(professions: Profession[], categories: ContentCategory[], progress: Progress): VideoSection[] {
-  return professions.flatMap((p) => {
+  return professions.map((p) => {
     const own = categories.filter((c) => c.profession === p.slug && c.videos.length > 0);
     const videos = own.flatMap((c) => c.videos);
-    if (videos.length === 0) return [];
-    return [
-      {
-        slug: p.slug,
-        title: p.title,
-        categories: own,
-        videos,
-        done: videos.filter((v) => progress[v.id]?.done).length,
-        totalSec: videos.reduce((n, v) => n + (v.durationSec ?? 0), 0),
-        next: nextVideo(videos, progress),
-      },
-    ];
+    return {
+      slug: p.slug,
+      title: p.title,
+      categories: own,
+      videos,
+      done: videos.filter((v) => progress[v.id]?.done).length,
+      totalSec: videos.reduce((n, v) => n + (v.durationSec ?? 0), 0),
+      next: nextVideo(videos, progress),
+    };
   });
 }

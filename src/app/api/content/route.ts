@@ -15,7 +15,8 @@ export async function GET(req: Request) {
 
   const [professions, categories] = await Promise.all([
     prisma.profession.findMany({
-      where: { active: true, categories: { some: { kind, active: true, videos: { some: { active: true, status: "ready" } } } } },
+      // Bo'sh yo'nalishlar ham qaytariladi: ilovada "Tez orada" bo'lib ko'rinadi
+      where: { active: true },
       orderBy: { order: "asc" },
     }),
     prisma.contentCategory.findMany({

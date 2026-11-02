@@ -7,12 +7,16 @@ import { useLocale, useProfile } from "@/components/app/providers";
 import { Card, ProgressBar } from "@/components/app/ui";
 import { useAacLog } from "@/lib/app/aac-store";
 import { useDiary } from "@/lib/app/diary";
-import { dayKey } from "@/lib/app/play-activities";
+import { currentWeek, dayKey, WEEKDAYS } from "@/lib/app/play-activities";
 import { useChildPlay } from "@/lib/app/play-store";
 import { nextSkillsDue, useSkillsHistory } from "@/lib/app/skills-store";
 import { useSoundLog } from "@/lib/app/sound-progress";
 import { useVideoDays } from "@/lib/app/video-log";
 import type { TranslationKey } from "@/lib/app-i18n";
+
+/** Har kungi asosiy vazifalar: kundalik, 5 daqiqa, video, ovozli mashq yoki muloqot */
+const WEEK_TASKS = 4;
+const WEEK_MINT = "#5EEAD4";
 
 type PlanItem = { id: string; emoji: string; title: TranslationKey; hint?: string; time?: string | null; href: string; done: boolean };
 
@@ -55,6 +59,81 @@ export function useTodayPlan(): PlanItem[] {
   if (child && (skillsDue.due || skillsDoneToday))
     plan.push({ id: "skills", emoji: "📈", title: "today.skills", hint: t("today.skillsHint"), href: "/skills", done: skillsDoneToday });
   return plan;
+}
+
+/** Hafta bo'yicha: har kuni nechta asosiy vazifa bajarilgani (Dushanbadan boshlanadi). */
+export function WeekSchedule() {
+  const { t, locale } = useLocale();
+  const { child } = useProfile();
+  const childKey = child?.id ?? "default";
+  const diary = useDiary(child?.id);
+  const play = useChildPlay(childKey);
+  const videoDays = useVideoDays(childKey);
+  const soundLog = useSoundLog(childKey);
+  const aacLog = useAacLog(childKey);
+  const today = dayKey();
+  const days = currentWeek().map((day) => {
+    const [y, m, dd] = day.split("-").map(Number);
+    const count = [
+      !!diary.byDate(day),
+      !!play?.entries.some((e) => e.day === day),
+      videoDays.includes(day),
+      soundLog.some((e) => e.day === day) || (aacLog[day]?.taps ?? 0) > 0,
+    ].filter(Boolean).length;
+    return { day, count, label: WEEKDAYS[locale][new Date(y, m - 1, dd).getDay()], isToday: day === today, future: day > today };
+  });
+  const active = days.filter((d) => d.count > 0).length;
+  const totalTasks = WEEK_TASKS * 7;
+  const doneTasks = days.reduce((n, d) => n + d.count, 0);
+  const message = active === 0 ? "today.weekMsg0" : active === 7 ? "today.weekMsg3" : active >= 3 ? "today.weekMsg2" : "today.weekMsg1";
+
+  return (
+    <div className="relative flex flex-col gap-[18px] overflow-hidden rounded-[24px] p-5 shadow-card" style={{ background: "linear-gradient(135deg, #1E1B4B, #312E81, #4338CA)" }}>
+      <span className="absolute -right-12 -top-[70px] h-[190px] w-[190px] rounded-full bg-[rgb(129_140_248/0.22)]" />
+      <div className="relative flex items-center gap-3">
+        <div className="flex flex-1 flex-col gap-[3px]">
+          <span className="text-[13px] font-bold text-white/70">{t("today.week")}</span>
+          <span className="t-subtitle tabular-nums !text-[24px] !leading-[30px] text-white">{t("today.weekDays").replace("{n}", String(active))}</span>
+          <span className="t-small font-semibold" style={{ color: WEEK_MINT }}>
+            {t(message)}
+          </span>
+        </div>
+        <WeekRing value={doneTasks / totalTasks} />
+      </div>
+      <div className="relative flex gap-1.5">
+        {days.map((d) => (
+          <div key={d.day} className="flex flex-1 flex-col items-center gap-[7px]">
+            <span
+              className={`flex w-full max-w-10 flex-col gap-[3px] rounded-[13px] border-[1.5px] p-1 ${d.isToday ? "border-white/75 bg-white/[0.16]" : "border-transparent bg-white/[0.07]"} ${d.future ? "opacity-60" : ""}`}
+            >
+              {[3, 2, 1, 0].map((slot) => (
+                <span key={slot} className="block h-[13px] rounded-[5px]" style={{ background: slot < d.count ? WEEK_MINT : "rgba(255,255,255,0.1)" }} />
+              ))}
+            </span>
+            <span className={`text-[12px] ${d.isToday ? "font-bold text-white" : "font-medium text-white/60"}`}>{d.label}</span>
+          </div>
+        ))}
+      </div>
+      <span className="relative text-[12.5px] text-white/60">{t("today.weekTasks").replace("{n}", String(doneTasks)).replace("{total}", String(totalTasks))}</span>
+    </div>
+  );
+}
+
+/** Hafta natijasi halqada: bajarilgan vazifalar ulushi. */
+function WeekRing({ value }: { value: number }) {
+  const size = 68;
+  const stroke = 7;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  return (
+    <span className="relative flex shrink-0 items-center justify-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="absolute inset-0" aria-hidden>
+        <circle cx={size / 2} cy={size / 2} r={r} stroke="rgba(255,255,255,0.14)" strokeWidth={stroke} fill="none" />
+        <circle cx={size / 2} cy={size / 2} r={r} stroke={WEEK_MINT} strokeWidth={stroke} fill="none" strokeLinecap="round" strokeDasharray={`${c * value} ${c}`} transform={`rotate(-90 ${size / 2} ${size / 2})`} />
+      </svg>
+      <span className="text-[15px] font-bold tabular-nums text-white">{Math.round(value * 100)}%</span>
+    </span>
+  );
 }
 
 export function TodayPlan() {

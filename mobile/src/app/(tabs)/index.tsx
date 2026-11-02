@@ -6,7 +6,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Avatar } from '@/components/avatar';
 import { HomeLessonCard, HomeProgressCard, NextStepCard } from '@/components/home-cards';
 import { ThemedText } from '@/components/themed-text';
-import { TodayPlan } from '@/components/today-plan';
+import { TodayPlan, WeekSchedule } from '@/components/today-plan';
 import { Button, Card, GradientCard, IconBadge, Pill, PressableScale, Screen, sym } from '@/components/ui';
 import { HeroGradient, Radius, Spacing } from '@/constants/theme';
 import { useLocale } from '@/contexts/locale';
@@ -76,6 +76,10 @@ export default function HomeScreen() {
 
       <Animated.View entering={FadeInDown.delay(120).duration(450)}>
         <TodayPlan />
+      </Animated.View>
+
+      <Animated.View entering={FadeInDown.delay(140).duration(450)}>
+        <WeekSchedule />
       </Animated.View>
 
       <Animated.View entering={FadeInDown.delay(160).duration(450)}>

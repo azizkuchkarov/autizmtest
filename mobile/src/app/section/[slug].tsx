@@ -57,6 +57,14 @@ export default function SectionScreen() {
     );
 
   const total = section.videos.length;
+  if (total === 0)
+    return (
+      <Screen>
+        <Stack.Screen options={{ title: section.title }} />
+        <EmptyState icon={look.icon} title={t('content.emptyTitle')} body={t('content.empty')} color={a.fg} background={a.soft} />
+      </Screen>
+    );
+
   const allDone = section.done === total;
 
   return (

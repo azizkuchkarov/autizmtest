@@ -1,6 +1,8 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { StyleSheet, View } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
 
 import { ThemedText } from '@/components/themed-text';
 import { Card, ProgressBar, PressableScale, sym } from '@/components/ui';
@@ -15,7 +17,12 @@ import { useChildPlay } from '@/lib/play-store';
 import { nextSkillsDue, useSkillsHistory } from '@/lib/skills-store';
 import { useSoundLog } from '@/lib/sound-progress';
 import { useVideoDays } from '@/lib/video-log';
-import { dayKey } from '@/shared/data/play-activities';
+import { currentWeek, dayKey, WEEKDAYS } from '@/shared/data/play-activities';
+
+/** Har kungi asosiy vazifalar: kundalik, 5 daqiqa, video, ovozli mashq yoki muloqot */
+const WEEK_TASKS = 4;
+const WEEK_GRADIENT = ['#1E1B4B', '#312E81', '#4338CA'] as const;
+const WEEK_MINT = '#5EEAD4';
 
 type PlanItem = { id: string; emoji: string; title: TranslationKey; hint?: string; time?: string | null; open: () => void; done: boolean };
 
@@ -58,6 +65,111 @@ export function useTodayPlan(): PlanItem[] {
   if (child && (skillsDue.due || skillsDoneToday))
     plan.push({ id: 'skills', emoji: '📈', title: 'today.skills', hint: t('today.skillsHint'), open: () => router.push('/skills/run'), done: skillsDoneToday });
   return plan;
+}
+
+/** Hafta bo'yicha: har kuni nechta asosiy vazifa bajarilgani (Dushanbadan boshlanadi). */
+export function WeekSchedule() {
+  const { t, locale } = useLocale();
+  const { child } = useProfile();
+  const childKey = child?.id ?? 'default';
+  const diary = useDiary(child?.id);
+  const play = useChildPlay(childKey);
+  const videoDays = useVideoDays(childKey);
+  const soundLog = useSoundLog(childKey);
+  const aacLog = useAacLog(childKey);
+  const today = dayKey();
+  const days = currentWeek().map((day) => {
+    const [y, m, dd] = day.split('-').map(Number);
+    const count = [
+      !!diary.byDate(day),
+      !!play?.entries.some((e) => e.day === day),
+      videoDays.includes(day),
+      soundLog.some((e) => e.day === day) || (aacLog[day]?.taps ?? 0) > 0,
+    ].filter(Boolean).length;
+    return { day, count, label: WEEKDAYS[locale][new Date(y, m - 1, dd).getDay()], isToday: day === today, future: day > today };
+  });
+  const active = days.filter((d) => d.count > 0).length;
+  const totalTasks = WEEK_TASKS * 7;
+  const doneTasks = days.reduce((n, d) => n + d.count, 0);
+  const message = active === 0 ? 'today.weekMsg0' : active === 7 ? 'today.weekMsg3' : active >= 3 ? 'today.weekMsg2' : 'today.weekMsg1';
+
+  return (
+    <LinearGradient colors={WEEK_GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.week}>
+      <View style={styles.weekGlow} />
+      <View style={styles.row}>
+        <View style={{ flex: 1, gap: 3 }}>
+          <ThemedText type="smallBold" style={{ color: 'rgba(255,255,255,0.68)', fontSize: 13 }}>
+            {t('today.week')}
+          </ThemedText>
+          <ThemedText type="subtitle" style={{ color: '#FFFFFF', fontSize: 24, lineHeight: 30, fontVariant: ['tabular-nums'] }}>
+            {t('today.weekDays').replace('{n}', String(active))}
+          </ThemedText>
+          <ThemedText type="small" style={{ color: WEEK_MINT, fontWeight: '600' }}>
+            {t(message)}
+          </ThemedText>
+        </View>
+        <WeekRing value={doneTasks / totalTasks} />
+      </View>
+
+      <View style={styles.weekBars}>
+        {days.map((d) => (
+          <View key={d.day} style={{ flex: 1, alignItems: 'center', gap: 7 }}>
+            <View
+              style={[
+                styles.weekBar,
+                {
+                  backgroundColor: d.isToday ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.07)',
+                  borderColor: d.isToday ? 'rgba(255,255,255,0.75)' : 'transparent',
+                  opacity: d.future ? 0.6 : 1,
+                },
+              ]}>
+              {[3, 2, 1, 0].map((slot) => (
+                <View key={slot} style={[styles.weekSlot, { backgroundColor: slot < d.count ? WEEK_MINT : 'rgba(255,255,255,0.1)' }]} />
+              ))}
+            </View>
+            <ThemedText
+              type="small"
+              style={{ fontSize: 12, color: d.isToday ? '#FFFFFF' : 'rgba(255,255,255,0.6)', fontWeight: d.isToday ? '700' : '500' }}>
+              {d.label}
+            </ThemedText>
+          </View>
+        ))}
+      </View>
+
+      <ThemedText type="small" style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12.5 }}>
+        {t('today.weekTasks').replace('{n}', String(doneTasks)).replace('{total}', String(totalTasks))}
+      </ThemedText>
+    </LinearGradient>
+  );
+}
+
+/** Hafta natijasi halqada: bajarilgan vazifalar ulushi. */
+function WeekRing({ value }: { value: number }) {
+  const size = 68;
+  const stroke = 7;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  return (
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
+        <Circle cx={size / 2} cy={size / 2} r={r} stroke="rgba(255,255,255,0.14)" strokeWidth={stroke} fill="none" />
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          stroke={WEEK_MINT}
+          strokeWidth={stroke}
+          fill="none"
+          strokeLinecap="round"
+          strokeDasharray={`${c * value} ${c}`}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        />
+      </Svg>
+      <ThemedText type="smallBold" style={{ color: '#FFFFFF', fontSize: 15, fontVariant: ['tabular-nums'] }}>
+        {Math.round(value * 100)}%
+      </ThemedText>
+    </View>
+  );
 }
 
 export function TodayPlan() {
@@ -143,6 +255,37 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  week: {
+    gap: Spacing.three + 2,
+    padding: 20,
+    borderRadius: Radius.lg,
+    overflow: 'hidden',
+  },
+  weekGlow: {
+    position: 'absolute',
+    top: -70,
+    right: -50,
+    width: 190,
+    height: 190,
+    borderRadius: 95,
+    backgroundColor: 'rgba(129,140,248,0.22)',
+  },
+  weekBars: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  weekBar: {
+    width: '100%',
+    maxWidth: 40,
+    gap: 3,
+    padding: 4,
+    borderRadius: 13,
+    borderWidth: 1.5,
+  },
+  weekSlot: {
+    height: 13,
+    borderRadius: 5,
   },
   time: {
     flexDirection: 'row',

@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Avatar } from "@/components/app/avatar";
 import { HomeLessonCard, HomeProgressCard, NextStepCard } from "@/components/app/home-cards";
 import { useLocale, useProfile } from "@/components/app/providers";
-import { TodayPlan } from "@/components/app/today-plan";
+import { TodayPlan, WeekSchedule } from "@/components/app/today-plan";
 import { accent as accentOf, Button, Card, FadeIn, HeroCard, IconBadge, Pill, Screen } from "@/components/app/ui";
 import type { TranslationKey } from "@/lib/app-i18n";
 import { listAssessments, useAssessmentsVersion, type StoredAssessment } from "@/lib/app/history";
@@ -71,6 +71,10 @@ export default function HomePage() {
 
       <FadeIn delay={120}>
         <TodayPlan />
+      </FadeIn>
+
+      <FadeIn delay={140}>
+        <WeekSchedule />
       </FadeIn>
 
       <FadeIn delay={160}>

@@ -15,7 +15,7 @@
         "ITSAppUsesNonExemptEncryption": false
       },
       "googleServicesFile": "./GoogleService-Info.plist",
-      "buildNumber": "6",
+      "buildNumber": "7",
       "appleTeamId": "AYDZA5WTAD"
     },
     "android": {
@@ -37,7 +37,7 @@
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
       "googleServicesFile": "./google-services.json",
-      "versionCode": 3
+      "versionCode": 4
     },
     "web": {
       "output": "server",

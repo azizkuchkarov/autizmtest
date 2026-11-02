@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Hand, HeartHandshake, MessagesSquare, MonitorPlay, Play, Puzzle, RefreshCw, WifiOff, type LucideIcon } from "lucide-react";
+import { Brain, CalendarDays, ChevronRight, Hand, HeartHandshake, MessagesSquare, MonitorPlay, Play, Puzzle, RefreshCw, WifiOff, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 
@@ -16,6 +16,8 @@ const SECTION_LOOK: Record<string, { accent: AccentName; icon: LucideIcon }> = {
   speech: { accent: "lessons", icon: MessagesSquare },
   sensory: { accent: "exercises", icon: Hand },
   psychology: { accent: "centers", icon: HeartHandshake },
+  defectology: { accent: "test", icon: Brain },
+  autizm: { accent: "lessons", icon: CalendarDays },
 };
 const DEFAULT_LOOK = { accent: "test" as AccentName, icon: MonitorPlay };
 
@@ -67,17 +69,19 @@ function SectionCard({ section, index }: { section: VideoSection; index: number 
           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span className="t-heading text-[19px]">{section.title}</span>
             <span className="t-small text-ink-2">
-              {t("lessons.sectionMeta").replace("{n}", String(total)).replace("{m}", String(Math.max(1, Math.round(section.totalSec / 60))))}
+              {total > 0 ? t("lessons.sectionMeta").replace("{n}", String(total)).replace("{m}", String(Math.max(1, Math.round(section.totalSec / 60)))) : t("lessons.soon")}
             </span>
           </span>
           <ChevronRight className="h-4 w-4 shrink-0 text-ink-3" />
         </span>
+        {total > 0 ? (
         <span className="flex flex-col gap-1.5">
           <ProgressBar value={(section.done / total) * 100} color={color} height={7} />
           <span className={`text-[12.5px] font-bold ${section.done > 0 ? "" : "text-ink-3"}`} style={section.done > 0 ? { color } : undefined}>
             {t("lessons.watchedOf").replace("{done}", String(section.done)).replace("{total}", String(total))}
           </span>
         </span>
+        ) : null}
       </Link>
     </FadeIn>
   );

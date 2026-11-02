@@ -21,6 +21,8 @@ const SECTION_LOOK: Record<string, { accent: AccentName; icon: ReturnType<typeof
   speech: { accent: 'lessons', icon: sym('bubble.left.and.bubble.right.fill', 'forum') },
   sensory: { accent: 'exercises', icon: sym('hand.raised.fill', 'back_hand') },
   psychology: { accent: 'centers', icon: sym('heart.fill', 'favorite') },
+  defectology: { accent: 'test', icon: sym('brain.head.profile', 'psychology') },
+  autizm: { accent: 'lessons', icon: sym('calendar', 'calendar_month') },
 };
 const DEFAULT_LOOK = { accent: 'test' as AccentName, icon: sym('play.rectangle.fill', 'smart_display') };
 
@@ -79,17 +81,19 @@ function SectionCard({ section, index }: { section: VideoSection; index: number 
               {section.title}
             </ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              {t('lessons.sectionMeta').replace('{n}', String(total)).replace('{m}', String(minutesOf(section.totalSec)))}
+              {total > 0 ? t('lessons.sectionMeta').replace('{n}', String(total)).replace('{m}', String(minutesOf(section.totalSec))) : t('lessons.soon')}
             </ThemedText>
           </View>
           <SymbolView name={sym('chevron.right', 'chevron_right')} size={15} tintColor={theme.textTertiary} />
         </View>
-        <View style={{ gap: 7 }}>
-          <ProgressBar value={(section.done / total) * 100} color={section.done === total ? Accents.exercises.fg : a.fg} height={7} />
-          <ThemedText type="smallBold" style={{ fontSize: 12.5, color: section.done > 0 ? (section.done === total ? Accents.exercises.fg : a.fg) : theme.textTertiary }}>
-            {t('lessons.watchedOf').replace('{done}', String(section.done)).replace('{total}', String(total))}
-          </ThemedText>
-        </View>
+        {total > 0 ? (
+          <View style={{ gap: 7 }}>
+            <ProgressBar value={(section.done / total) * 100} color={section.done === total ? Accents.exercises.fg : a.fg} height={7} />
+            <ThemedText type="smallBold" style={{ fontSize: 12.5, color: section.done > 0 ? (section.done === total ? Accents.exercises.fg : a.fg) : theme.textTertiary }}>
+              {t('lessons.watchedOf').replace('{done}', String(section.done)).replace('{total}', String(total))}
+            </ThemedText>
+          </View>
+        ) : null}
       </PressableScale>
     </Animated.View>
   );
