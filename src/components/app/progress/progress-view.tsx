@@ -204,90 +204,6 @@ export function ProgressView() {
     <div className="flex flex-col gap-8">
       <PageHeader title={t("progress.title")} subtitle={child?.name ? t("progress.subtitle").replace("{name}", child.name) : t("progress.subtitleDefault")} />
 
-      {/* -------------------------- Umumiy ko'rinish -------------------------- */}
-      <FadeIn className="-mt-4 grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <Kpi
-          className="col-span-2 lg:col-span-1"
-          href="#diary"
-          icon={NotebookPen}
-          color="test"
-          label={t("progress.kpiDiary")}
-          value={notes.avgSleep !== null ? `${notes.avgSleep} ${t("progress.hoursUnit")}` : "—"}
-          badge={
-            notes.avgSleep !== null && notes.avgSleepPrev !== null ? (
-              <ActivityBadge
-                trend={activityTrend(notes.avgSleep, notes.avgSleepPrev)}
-                value={signed(Math.round((notes.avgSleep - notes.avgSleepPrev) * 10) / 10)}
-                label={t(TREND_LABEL[activityTrend(notes.avgSleep, notes.avgSleepPrev)])}
-              />
-            ) : undefined
-          }
-          caption={`${notes.loggedDays} ${t("progress.diaryDays")}`}
-        />
-        <Kpi
-          href="#screening"
-          icon={Stethoscope}
-          color="test"
-          label={t("progress.kpiScreening")}
-          value={screening.latest ? tiers[screening.latest.tier] : "—"}
-          badge={
-            screening.delta !== null ? (
-              <TrendBadge trend={scoreTrend(screening.delta)} label={t(TREND_LABEL[scoreTrend(screening.delta)])} />
-            ) : screening.latest ? (
-              <Pill label={tiers[screening.latest.tier]} color={riskColors(screening.latest.tier).fg} background={riskColors(screening.latest.tier).bg} />
-            ) : undefined
-          }
-          caption={screening.delta !== null ? t("progress.vsPrevTest") : screening.latest ? t("progress.lastTest") : t("progress.noTests")}
-        />
-        <Kpi
-          href="#sounds"
-          icon={Ear}
-          color="lessons"
-          label={t("progress.kpiSounds")}
-          value={sounds.independence !== null ? `${sounds.independence}%` : "—"}
-          badge={
-            sounds.independence !== null && sounds.independencePrev !== null ? (
-              <ActivityBadge
-                trend={activityTrend(sounds.independence, sounds.independencePrev)}
-                value={signed(sounds.independence - sounds.independencePrev)}
-                label={t(TREND_LABEL[activityTrend(sounds.independence, sounds.independencePrev)])}
-              />
-            ) : undefined
-          }
-          caption={sounds.independence !== null ? t("progress.independent") : t("progress.noData")}
-        />
-        <Kpi
-          href="#play"
-          icon={HandHeart}
-          color="exercises"
-          label={t("progress.kpiPlay")}
-          value={`${daily.activeDays}/30`}
-          badge={
-            daily.total > 0 ? (
-              <ActivityBadge
-                trend={activityTrend(daily.activeDays, daily.activeDaysPrev)}
-                value={signed(daily.activeDays - daily.activeDaysPrev)}
-                label={t(TREND_LABEL[activityTrend(daily.activeDays, daily.activeDaysPrev)])}
-              />
-            ) : undefined
-          }
-          caption={t("progress.activeDays")}
-        />
-        <Kpi
-          href="#talk"
-          icon={MessagesSquare}
-          color="centers"
-          label={t("progress.kpiTalk")}
-          value={String(talk.taps)}
-          badge={
-            talk.everUsed ? (
-              <ActivityBadge trend={activityTrend(talk.taps, talk.tapsPrev)} value={signed(talk.taps - talk.tapsPrev)} label={t(TREND_LABEL[activityTrend(talk.taps, talk.tapsPrev)])} />
-            ) : undefined
-          }
-          caption={t("progress.tapsUnit")}
-        />
-      </FadeIn>
-
       {/* ------------------------------ Skrining ------------------------------ */}
       <Section id="screening" icon={Stethoscope} title={t("progress.screeningTitle")} color="test">
         {!screening.latest ? (
@@ -340,6 +256,75 @@ export function ProgressView() {
           </Card>
         )}
       </Section>
+
+      {/* -------------------------- Umumiy ko'rinish -------------------------- */}
+      <h2 className="t-heading text-[18px]">{t("progress.overview")}</h2>
+      <FadeIn className="-mt-2 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Kpi
+          href="#diary"
+          icon={NotebookPen}
+          color="test"
+          label={t("progress.kpiDiary")}
+          value={notes.avgSleep !== null ? `${notes.avgSleep} ${t("progress.hoursUnit")}` : "—"}
+          badge={
+            notes.avgSleep !== null && notes.avgSleepPrev !== null ? (
+              <ActivityBadge
+                trend={activityTrend(notes.avgSleep, notes.avgSleepPrev)}
+                value={signed(Math.round((notes.avgSleep - notes.avgSleepPrev) * 10) / 10)}
+                label={t(TREND_LABEL[activityTrend(notes.avgSleep, notes.avgSleepPrev)])}
+              />
+            ) : undefined
+          }
+          caption={`${notes.loggedDays} ${t("progress.diaryDays")}`}
+        />
+        <Kpi
+          href="#sounds"
+          icon={Ear}
+          color="lessons"
+          label={t("progress.kpiSounds")}
+          value={sounds.independence !== null ? `${sounds.independence}%` : "—"}
+          badge={
+            sounds.independence !== null && sounds.independencePrev !== null ? (
+              <ActivityBadge
+                trend={activityTrend(sounds.independence, sounds.independencePrev)}
+                value={signed(sounds.independence - sounds.independencePrev)}
+                label={t(TREND_LABEL[activityTrend(sounds.independence, sounds.independencePrev)])}
+              />
+            ) : undefined
+          }
+          caption={sounds.independence !== null ? t("progress.independent") : t("progress.noData")}
+        />
+        <Kpi
+          href="#play"
+          icon={HandHeart}
+          color="exercises"
+          label={t("progress.kpiPlay")}
+          value={`${daily.activeDays}/30`}
+          badge={
+            daily.total > 0 ? (
+              <ActivityBadge
+                trend={activityTrend(daily.activeDays, daily.activeDaysPrev)}
+                value={signed(daily.activeDays - daily.activeDaysPrev)}
+                label={t(TREND_LABEL[activityTrend(daily.activeDays, daily.activeDaysPrev)])}
+              />
+            ) : undefined
+          }
+          caption={t("progress.activeDays")}
+        />
+        <Kpi
+          href="#talk"
+          icon={MessagesSquare}
+          color="centers"
+          label={t("progress.kpiTalk")}
+          value={String(talk.taps)}
+          badge={
+            talk.everUsed ? (
+              <ActivityBadge trend={activityTrend(talk.taps, talk.tapsPrev)} value={signed(talk.taps - talk.tapsPrev)} label={t(TREND_LABEL[activityTrend(talk.taps, talk.tapsPrev)])} />
+            ) : undefined
+          }
+          caption={t("progress.tapsUnit")}
+        />
+      </FadeIn>
 
       {/* -------------------------------- Kundalik -------------------------------- */}
       <Section id="diary" icon={NotebookPen} title={t("progress.diaryTitle")} color="test">

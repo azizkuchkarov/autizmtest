@@ -132,7 +132,7 @@ AutizmTest помогает родителям заметить ранние п�
 | Support URL | https://autizmtest.uz |
 | Marketing URL | https://autizmtest.uz |
 | Copyright | 2026 AutizmTest |
-| Version | 1.0.0 (build 5) |
+| Version | 1.0.0 (build 6) |
 
 ### Skrinshotlar — 6.9" Display
 `docs/appstore/screenshots-6.9-v2/` papkasidagi 6 ta fayl (1320 × 2868), shu tartibda:

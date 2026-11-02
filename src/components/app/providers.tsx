@@ -15,6 +15,7 @@ import {
   type ChildRecord,
 } from "@/lib/app/api";
 import { clearAssessments } from "@/lib/app/history";
+import { clearVideoProgress } from "@/lib/app/video-progress";
 import { ageGroupFromBirthYear, type AgeGroupId } from "@/lib/app/screening";
 import { createLocalStore, useHydrated, useLocalStore } from "@/lib/app/local-store";
 import { DEFAULT_LOCALE, LOCALE_STORAGE_KEY, type Locale } from "@/lib/locale";
@@ -140,6 +141,7 @@ function ProfileProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     await logoutSession().catch(() => {});
+    clearVideoProgress();
     // Tanishtiruv va oferta qayta ko'rsatilmaydi
     profileStore.set({ ...EMPTY, introSeen: true, offerAccepted: true });
   }, []);
@@ -147,6 +149,7 @@ function ProfileProvider({ children }: { children: ReactNode }) {
   const deleteAccount = useCallback(async () => {
     await deleteAccountRequest();
     await clearAssessments();
+    clearVideoProgress();
     profileStore.set({ ...EMPTY, introSeen: true, offerAccepted: true });
   }, []);
 

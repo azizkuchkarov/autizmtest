@@ -74,7 +74,7 @@ export function ActivityBadge({ trend, label, value }: { trend: Trend; label: st
 
 /* ------------------------------ Skrining chizig'i ------------------------------ */
 
-export type ScorePoint = { id: string; label: string; date: string; time: number; score: number };
+export type ScorePoint = { id: string; label: string; date: string; time: number; score: number; level: string };
 
 /**
  * Skrining bali vaqt bo'yicha. Fonda xavf zonalari (past / o'rta / yuqori) — pastga tushish yaxshi.
@@ -84,7 +84,7 @@ export function ScoreLineChart({ points, zones }: { points: ScorePoint[]; zones:
   const [ref, width] = useWidth<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
   const H = 220;
-  const pad = { top: 16, right: 64, bottom: 28, left: 34 };
+  const pad = { top: 16, right: 64, bottom: 28, left: 6 };
   const w = Math.max(0, width - pad.left - pad.right);
   const h = H - pad.top - pad.bottom;
   const y = (v: number) => pad.top + h - (v / 100) * h;
@@ -100,7 +100,7 @@ export function ScoreLineChart({ points, zones }: { points: ScorePoint[]; zones:
   return (
     <div ref={ref} className="relative w-full" onMouseLeave={() => setHover(null)}>
       {width > 0 && (
-        <svg width={width} height={H} role="img" aria-label={points.map((p) => `${p.date}: ${p.score}`).join(", ")}>
+        <svg width={width} height={H} role="img" aria-label={points.map((p) => `${p.date}: ${p.level}`).join(", ")}>
           {/* Xavf zonalari */}
           {(
             [
@@ -117,16 +117,11 @@ export function ScoreLineChart({ points, zones }: { points: ScorePoint[]; zones:
             </g>
           ))}
           {[0, 30, 60, 100].map((v) => (
-            <g key={v}>
-              <line x1={pad.left} x2={pad.left + w} y1={y(v)} y2={y(v)} stroke="var(--viz-grid)" strokeWidth={1} />
-              <text x={pad.left - 8} y={y(v) + 4} textAnchor="end" className="fill-ink-3 text-[11px] tabular-nums">
-                {v}
-              </text>
-            </g>
+            <line key={v} x1={pad.left} x2={pad.left + w} y1={y(v)} y2={y(v)} stroke="var(--viz-grid)" strokeWidth={1} />
           ))}
           {points.map((p, i) =>
             i % step === 0 || i === last ? (
-              <text key={p.id} x={x(i)} y={H - 8} textAnchor="middle" className="fill-ink-3 text-[11px]">
+              <text key={p.id} x={x(i)} y={H - 8} textAnchor={i === 0 && points.length > 1 ? "start" : "middle"} className="fill-ink-3 text-[11px]">
                 {p.label}
               </text>
             ) : null,
@@ -146,17 +141,12 @@ export function ScoreLineChart({ points, zones }: { points: ScorePoint[]; zones:
               />
             </g>
           ))}
-          {points.length > 0 && (
-            <text x={x(last)} y={y(points[last].score) - 12} textAnchor="middle" className="fill-ink text-[13px] font-bold">
-              {points[last].score}
-            </text>
-          )}
         </svg>
       )}
       {hover !== null && points[hover] && (
         <Tooltip x={x(hover)} y={y(points[hover].score)} width={width}>
           <div className="text-ink-3">{points[hover].date}</div>
-          <div className="font-bold">{points[hover].score} / 100</div>
+          <div className="font-bold">{points[hover].level}</div>
         </Tooltip>
       )}
     </div>

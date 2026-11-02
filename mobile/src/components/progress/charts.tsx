@@ -78,11 +78,11 @@ export function ActivityBadge({ trend, label, value }: { trend: Trend; label: st
 
 /* ------------------------------ Skrining chizig'i ------------------------------ */
 
-export type ScorePoint = { id: string; label: string; date: string; time: number; score: number };
+export type ScorePoint = { id: string; label: string; date: string; time: number; score: number; level: string };
 
 /**
  * Skrining bali vaqt bo'yicha. Fonda xavf zonalari (past / o'rta / yuqori) — pastga tushish yaxshi.
- * Bitta seriya, shuning uchun legend yo'q; qiymat oxirgi nuqtada yoziladi.
+ * Ota-onaga son emas, zona muhim: chiziq yon tomondagi Kam / Ba'zi / Ko'p zonalari bo'ylab o'qiladi.
  */
 export function ScoreLineChart({ points, zones }: { points: ScorePoint[]; zones: { low: string; moderate: string; high: string } }) {
   const theme = useTheme();
@@ -90,7 +90,7 @@ export function ScoreLineChart({ points, zones }: { points: ScorePoint[]; zones:
   const [width, onLayout] = useWidth();
   const [hover, setHover] = useState<number | null>(null);
   const H = 220;
-  const pad = { top: 16, right: 60, bottom: 28, left: 30 };
+  const pad = { top: 16, right: 60, bottom: 28, left: 6 };
   const w = Math.max(0, width - pad.left - pad.right);
   const h = H - pad.top - pad.bottom;
   const y = (v: number) => pad.top + h - (v / 100) * h;
@@ -104,7 +104,7 @@ export function ScoreLineChart({ points, zones }: { points: ScorePoint[]; zones:
   const step = Math.max(1, Math.ceil(points.length / Math.max(1, Math.floor(w / 56))));
 
   return (
-    <View onLayout={onLayout} style={{ width: '100%', height: H }} accessible accessibilityLabel={points.map((p) => `${p.date}: ${p.score}`).join(', ')}>
+    <View onLayout={onLayout} style={{ width: '100%', height: H }} accessible accessibilityLabel={points.map((p) => `${p.date}: ${p.level}`).join(', ')}>
       {width > 0 && (
         <Svg width={width} height={H}>
           {(
@@ -122,16 +122,11 @@ export function ScoreLineChart({ points, zones }: { points: ScorePoint[]; zones:
             </G>
           ))}
           {[0, 30, 60, 100].map((v) => (
-            <G key={v}>
-              <Line x1={pad.left} x2={pad.left + w} y1={y(v)} y2={y(v)} stroke={viz.grid} strokeWidth={1} />
-              <SvgText x={pad.left - 6} y={y(v) + 4} textAnchor="end" fill={theme.textTertiary} {...AXIS_FONT}>
-                {v}
-              </SvgText>
-            </G>
+            <Line key={v} x1={pad.left} x2={pad.left + w} y1={y(v)} y2={y(v)} stroke={viz.grid} strokeWidth={1} />
           ))}
           {points.map((p, i) =>
             i % step === 0 || i === last ? (
-              <SvgText key={p.id} x={x(i)} y={H - 8} textAnchor="middle" fill={theme.textTertiary} {...AXIS_FONT}>
+              <SvgText key={p.id} x={x(i)} y={H - 8} textAnchor={i === 0 && points.length > 1 ? 'start' : 'middle'} fill={theme.textTertiary} {...AXIS_FONT}>
                 {p.label}
               </SvgText>
             ) : null,
@@ -144,18 +139,6 @@ export function ScoreLineChart({ points, zones }: { points: ScorePoint[]; zones:
               <Circle cx={x(i)} cy={y(p.score)} r={i === last || hover === i ? 6 : 4.5} fill={viz.one} stroke={theme.backgroundElement} strokeWidth={2} />
             </G>
           ))}
-          {points.length > 0 && (
-            // Oxirgi nuqta o'ng chekkada bo'lsa, yozuv zona nomlari ustiga tushmasligi uchun chapga suriladi
-            <SvgText
-              x={points.length > 1 ? x(last) + 4 : x(last)}
-              y={y(points[last].score) - 12}
-              textAnchor={points.length > 1 ? 'end' : 'middle'}
-              fill={theme.text}
-              fontFamily={FontFamily.bold}
-              fontSize={13}>
-              {String(points[last].score)}
-            </SvgText>
-          )}
         </Svg>
       )}
       {hover !== null && points[hover] && (
@@ -164,7 +147,7 @@ export function ScoreLineChart({ points, zones }: { points: ScorePoint[]; zones:
             {points[hover].date}
           </ThemedText>
           <ThemedText type="smallBold" style={styles.tipText}>
-            {points[hover].score} / 100
+            {points[hover].level}
           </ThemedText>
         </Tooltip>
       )}

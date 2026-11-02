@@ -21,7 +21,7 @@ Hammasi shu yerda: nusxalab joylashtiring. Asosiy til: ro'yxatda **Uzbek** bo'ls
 
 | Nima | Fayl |
 |---|---|
-| Play'ga yuklanadigan build | `docs/googleplay/build/AutizmTest-1.0.0-2.aab` |
+| Play'ga yuklanadigan build | `docs/googleplay/build/AutizmTest-1.0.0-3.aab` |
 | App icon (512×512) | `docs/googleplay/icon-512.png` |
 | Feature graphic (1024×500) | `docs/googleplay/feature-graphic-1024x500.png` |
 | Phone screenshots (6 ta, 9:16) | `docs/googleplay/screenshots-v2/` (tartib bo'yicha 1–6) |

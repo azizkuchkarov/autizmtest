@@ -224,6 +224,14 @@ export function fetchVideo(id: string, locale: Locale) {
   return request<{ video: Video }>(`/api/content/videos/${encodeURIComponent(id)}?locale=${locale}`);
 }
 
+export function fetchVideoProgress() {
+  return request<{ items: { videoId: string; positionSec: number; completed: boolean }[] }>('/api/mobile/video-progress');
+}
+
+export function saveVideoProgress(items: { videoId: string; positionSec: number; completed: boolean }[]) {
+  return request<{ ok: boolean }>('/api/mobile/video-progress', { method: 'POST', body: JSON.stringify({ items }) });
+}
+
 /* ----------------------------- ABA centers ----------------------------- */
 
 export type AbaCenter = {

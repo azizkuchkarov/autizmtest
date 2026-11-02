@@ -112,6 +112,7 @@ model User {
   sessions    UserSession[]
   children    Child[]
   pushTokens  PushToken[]
+  videoWatches VideoWatch[]
 }
 
 /// Mobil ilovaning Expo push tokeni: bir foydalanuvchida bir nechta qurilma bo'lishi mumkin
@@ -296,8 +297,23 @@ model Video {
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   category      ContentCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  watches       VideoWatch[]
 
   @@index([categoryId])
+}
+
+/// Ota-ona videoni qayergacha ko'rgani; completedAt — oxirigacha ko'rilgan ("Ko'rildi" belgisi).
+model VideoWatch {
+  userId      String
+  videoId     String
+  positionSec Int       @default(0)
+  completedAt DateTime?
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video       Video     @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@id([userId, videoId])
+  @@index([videoId])
 }
 
 /// Ovozli darslar to'plami: uy hayvonlari, transport, uydagi tovushlar va h.k.

@@ -176,7 +176,7 @@ export default function ResultScreen() {
   useEffect(() => {
     if (!item) return;
     const weak = isScreeningV3(item.result) ? v3WeakDomains(item.result) : weakDomains(item.result);
-    fetchContent('exercise', locale)
+    fetchContent('lesson', locale)
       .then(({ categories }) => {
         const videos = categories.flatMap((c) => c.videos);
         const matches = videos.filter(

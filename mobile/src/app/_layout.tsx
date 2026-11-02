@@ -67,6 +67,7 @@ function RootStack({ fontsLoaded }: { fontsLoaded: boolean }) {
       <Stack.Screen name="skills/run" options={{ title: '', gestureEnabled: false }} />
       <Stack.Screen name="skills/[id]" options={{ title: t('sk.resultTitle') }} />
       <Stack.Screen name="video/[id]" options={{ title: '' }} />
+      <Stack.Screen name="section/[slug]" options={{ title: '' }} />
       <Stack.Screen name="sounds/[id]" options={{ title: '' }} />
       <Stack.Screen name="centers" options={{ title: t('centers.title') }} />
       <Stack.Screen name="about-test" options={{ title: t('about.title') }} />

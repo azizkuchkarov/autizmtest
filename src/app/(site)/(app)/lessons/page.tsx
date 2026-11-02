@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
-import { ContentList } from "@/components/app/content-list";
+import { LessonSections } from "@/components/app/lesson-sections";
 import { useLocale } from "@/components/app/providers";
 import { SoundSetList } from "@/components/app/sounds";
 import { PageHeader, Screen, Segmented } from "@/components/app/ui";
@@ -27,7 +27,7 @@ function Lessons() {
     />
   );
 
-  if (tab === "video") return <ContentList kind="lesson" accent="lessons" title={t("lessons.title")} subtitle={t("lessons.subtitle")} extra={tabs} />;
+  if (tab === "video") return <LessonSections tabs={tabs} />;
 
   return (
     <Screen>

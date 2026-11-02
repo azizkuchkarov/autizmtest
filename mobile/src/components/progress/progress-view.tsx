@@ -162,11 +162,6 @@ function Kpi({
 }
 
 /** Oxirgi testning xavf darajasi — oldingi test bo'lmasa KPI da ko'rsatiladi. */
-function TierPill({ point, label }: { point: ScreeningPoint; label: string }) {
-  const colors = useRiskColors(point.tier);
-  return <Pill label={label} color={colors.fg} background={colors.bg} />;
-}
-
 const MOOD_EMOJI: Record<number, string> = { 1: '😣', 2: '🙁', 3: '😐', 4: '🙂', 5: '😄' };
 
 type StripDay = { day: string; logged: boolean; mood: number | null; meltdowns: 0 | 1 | 2 | null };
@@ -318,99 +313,6 @@ export function ProgressView() {
         {child?.name ? t('progress.subtitle').replace('{name}', child.name) : t('progress.subtitleDefault')}
       </ThemedText>
 
-      {/* -------------------------- Umumiy ko'rinish -------------------------- */}
-      <View style={[styles.grid, { marginTop: -Spacing.three }]}>
-        <View style={[styles.half, { width: '100%' }]}>
-          <Kpi
-            onPress={() => jump('diary')}
-            icon={sym('book.closed.fill', 'edit_note')}
-            accent="test"
-            label={t('progress.kpiDiary')}
-            value={notes.avgSleep !== null ? `${notes.avgSleep} ${t('progress.hoursUnit')}` : '—'}
-            badge={
-              notes.avgSleep !== null && notes.avgSleepPrev !== null ? (
-                <ActivityBadge
-                  trend={activityTrend(notes.avgSleep, notes.avgSleepPrev)}
-                  value={signed(Math.round((notes.avgSleep - notes.avgSleepPrev) * 10) / 10)}
-                  label={t(TREND_LABEL[activityTrend(notes.avgSleep, notes.avgSleepPrev)])}
-                />
-              ) : undefined
-            }
-            caption={`${notes.loggedDays} ${t('progress.diaryDays')}`}
-          />
-        </View>
-        <View style={styles.half}>
-          <Kpi
-            onPress={() => jump('screening')}
-            icon={sym('stethoscope', 'stethoscope')}
-            accent="test"
-            label={t('progress.kpiScreening')}
-            value={screening.latest ? tiers[screening.latest.tier] : '—'}
-            badge={
-              screening.delta !== null ? (
-                <TrendBadge trend={scoreTrend(screening.delta)} label={t(TREND_LABEL[scoreTrend(screening.delta)])} />
-              ) : screening.latest ? (
-                <TierPill point={screening.latest} label={tiers[screening.latest.tier]} />
-              ) : undefined
-            }
-            caption={screening.delta !== null ? t('progress.vsPrevTest') : screening.latest ? t('progress.lastTest') : t('progress.noTests')}
-          />
-        </View>
-        <View style={styles.half}>
-          <Kpi
-            onPress={() => jump('sounds')}
-            icon={sym('ear.fill', 'hearing')}
-            accent="lessons"
-            label={t('progress.kpiSounds')}
-            value={sounds.independence !== null ? `${sounds.independence}%` : '—'}
-            badge={
-              sounds.independence !== null && sounds.independencePrev !== null ? (
-                <ActivityBadge
-                  trend={activityTrend(sounds.independence, sounds.independencePrev)}
-                  value={signed(sounds.independence - sounds.independencePrev)}
-                  label={t(TREND_LABEL[activityTrend(sounds.independence, sounds.independencePrev)])}
-                />
-              ) : undefined
-            }
-            caption={sounds.independence !== null ? t('progress.independent') : t('progress.noData')}
-          />
-        </View>
-        <View style={styles.half}>
-          <Kpi
-            onPress={() => jump('play')}
-            icon={sym('figure.and.child.holdinghands', 'family_restroom')}
-            accent="exercises"
-            label={t('progress.kpiPlay')}
-            value={`${daily.activeDays}/30`}
-            badge={
-              daily.total > 0 ? (
-                <ActivityBadge
-                  trend={activityTrend(daily.activeDays, daily.activeDaysPrev)}
-                  value={signed(daily.activeDays - daily.activeDaysPrev)}
-                  label={t(TREND_LABEL[activityTrend(daily.activeDays, daily.activeDaysPrev)])}
-                />
-              ) : undefined
-            }
-            caption={t('progress.activeDays')}
-          />
-        </View>
-        <View style={styles.half}>
-          <Kpi
-            onPress={() => jump('talk')}
-            icon={sym('bubble.left.and.text.bubble.right.fill', 'forum')}
-            accent="centers"
-            label={t('progress.kpiTalk')}
-            value={String(talk.taps)}
-            badge={
-              talk.everUsed ? (
-                <ActivityBadge trend={activityTrend(talk.taps, talk.tapsPrev)} value={signed(talk.taps - talk.tapsPrev)} label={t(TREND_LABEL[activityTrend(talk.taps, talk.tapsPrev)])} />
-              ) : undefined
-            }
-            caption={t('progress.tapsUnit')}
-          />
-        </View>
-      </View>
-
       {/* ------------------------------ Skrining ------------------------------ */}
       <Section onLayoutY={at('screening')} icon={sym('stethoscope', 'stethoscope')} title={t('progress.screeningTitle')} accent="test">
         {!screening.latest ? (
@@ -468,6 +370,85 @@ export function ProgressView() {
           </Card>
         )}
       </Section>
+
+      {/* -------------------------- Umumiy ko'rinish -------------------------- */}
+      <ThemedText type="heading" style={{ fontSize: 18 }}>
+        {t('progress.overview')}
+      </ThemedText>
+      <View style={[styles.grid, { marginTop: -Spacing.two }]}>
+        <View style={styles.half}>
+          <Kpi
+            onPress={() => jump('diary')}
+            icon={sym('book.closed.fill', 'edit_note')}
+            accent="test"
+            label={t('progress.kpiDiary')}
+            value={notes.avgSleep !== null ? `${notes.avgSleep} ${t('progress.hoursUnit')}` : '—'}
+            badge={
+              notes.avgSleep !== null && notes.avgSleepPrev !== null ? (
+                <ActivityBadge
+                  trend={activityTrend(notes.avgSleep, notes.avgSleepPrev)}
+                  value={signed(Math.round((notes.avgSleep - notes.avgSleepPrev) * 10) / 10)}
+                  label={t(TREND_LABEL[activityTrend(notes.avgSleep, notes.avgSleepPrev)])}
+                />
+              ) : undefined
+            }
+            caption={`${notes.loggedDays} ${t('progress.diaryDays')}`}
+          />
+        </View>
+        <View style={styles.half}>
+          <Kpi
+            onPress={() => jump('sounds')}
+            icon={sym('ear.fill', 'hearing')}
+            accent="lessons"
+            label={t('progress.kpiSounds')}
+            value={sounds.independence !== null ? `${sounds.independence}%` : '—'}
+            badge={
+              sounds.independence !== null && sounds.independencePrev !== null ? (
+                <ActivityBadge
+                  trend={activityTrend(sounds.independence, sounds.independencePrev)}
+                  value={signed(sounds.independence - sounds.independencePrev)}
+                  label={t(TREND_LABEL[activityTrend(sounds.independence, sounds.independencePrev)])}
+                />
+              ) : undefined
+            }
+            caption={sounds.independence !== null ? t('progress.independent') : t('progress.noData')}
+          />
+        </View>
+        <View style={styles.half}>
+          <Kpi
+            onPress={() => jump('play')}
+            icon={sym('figure.and.child.holdinghands', 'family_restroom')}
+            accent="exercises"
+            label={t('progress.kpiPlay')}
+            value={`${daily.activeDays}/30`}
+            badge={
+              daily.total > 0 ? (
+                <ActivityBadge
+                  trend={activityTrend(daily.activeDays, daily.activeDaysPrev)}
+                  value={signed(daily.activeDays - daily.activeDaysPrev)}
+                  label={t(TREND_LABEL[activityTrend(daily.activeDays, daily.activeDaysPrev)])}
+                />
+              ) : undefined
+            }
+            caption={t('progress.activeDays')}
+          />
+        </View>
+        <View style={styles.half}>
+          <Kpi
+            onPress={() => jump('talk')}
+            icon={sym('bubble.left.and.text.bubble.right.fill', 'forum')}
+            accent="centers"
+            label={t('progress.kpiTalk')}
+            value={String(talk.taps)}
+            badge={
+              talk.everUsed ? (
+                <ActivityBadge trend={activityTrend(talk.taps, talk.tapsPrev)} value={signed(talk.taps - talk.tapsPrev)} label={t(TREND_LABEL[activityTrend(talk.taps, talk.tapsPrev)])} />
+              ) : undefined
+            }
+            caption={t('progress.tapsUnit')}
+          />
+        </View>
+      </View>
 
       {/* -------------------------------- Kundalik -------------------------------- */}
       <Section onLayoutY={at('diary')} icon={sym('book.closed.fill', 'edit_note')} title={t('progress.diaryTitle')} accent="test">

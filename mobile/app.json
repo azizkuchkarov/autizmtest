@@ -15,7 +15,8 @@
         "ITSAppUsesNonExemptEncryption": false
       },
       "googleServicesFile": "./GoogleService-Info.plist",
-      "buildNumber": "5"
+      "buildNumber": "6",
+      "appleTeamId": "AYDZA5WTAD"
     },
     "android": {
       "adaptiveIcon": {
@@ -36,7 +37,7 @@
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
       "googleServicesFile": "./google-services.json",
-      "versionCode": 2
+      "versionCode": 3
     },
     "web": {
       "output": "server",

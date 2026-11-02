@@ -1,12 +1,15 @@
-import { useLocalSearchParams } from 'expo-router';
-import { useEvent } from 'expo';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEventListener } from 'expo';
+import { SymbolView } from 'expo-symbols';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
-import { Card, EmptyState, Icon, Pill, Screen, Skeleton, sym } from '@/components/ui';
+import { sectionLook } from '@/components/lesson-sections';
+import { Button, Card, EmptyState, Icon, Pill, Screen, SectionHeader, Skeleton, sym } from '@/components/ui';
+import { VideoRow } from '@/components/video-cards';
 import { Radius, Spacing } from '@/constants/theme';
 import { useLocale } from '@/contexts/locale';
 import { useProfile } from '@/contexts/profile';
@@ -16,22 +19,78 @@ import { domainStyle } from '@/lib/domains';
 import { useAccent } from '@/hooks/use-theme';
 import type { TranslationKey } from '@/lib/i18n';
 import { markVideoWatched } from '@/lib/video-log';
+import { buildSections, flushVideoProgress, getVideoState, recordPosition, useVideoProgress } from '@/lib/video-progress';
+import { useContent } from '@/hooks/use-content';
 
-function Player({ uri }: { uri: string }) {
-  const player = useVideoPlayer(uri);
+/** Pleyer: to'xtagan joydan davom etadi va oxirigacha ko'rilganda belgi qo'yadi. */
+function Player({ uri, videoId, durationSec }: { uri: string; videoId: string; durationSec: number | null }) {
+  const startAt = getVideoState(videoId)?.pos ?? 0;
+  const player = useVideoPlayer(uri, (p) => {
+    p.timeUpdateEventInterval = 3;
+  });
   const { child } = useProfile();
   const childKey = child?.id ?? 'default';
-  const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
+  const resumed = useRef(false);
 
-  // "Bugungi reja": video boshlanganda bugun ko'rilgan deb belgilanadi
-  useEffect(() => {
-    if (isPlaying) markVideoWatched(childKey);
-  }, [isPlaying, childKey]);
+  const save = useCallback(
+    (position: number) => {
+      const duration = player.duration > 0 ? player.duration : durationSec;
+      if (recordPosition(videoId, position, duration)) {
+        // "Bugungi reja": video oxirigacha ko'rilganda bajarildi
+        markVideoWatched(childKey);
+        flushVideoProgress();
+      }
+    },
+    [player, durationSec, videoId, childKey],
+  );
+
+  useEventListener(player, 'statusChange', ({ status }) => {
+    if (status === 'readyToPlay' && !resumed.current) {
+      resumed.current = true;
+      if (startAt > 0) player.currentTime = startAt;
+    }
+  });
+  useEventListener(player, 'timeUpdate', ({ currentTime }) => {
+    if (resumed.current && currentTime > 0) save(currentTime);
+  });
+  useEventListener(player, 'playToEnd', () => {
+    const duration = player.duration > 0 ? player.duration : durationSec;
+    if (duration) save(duration);
+  });
+  useEventListener(player, 'playingChange', ({ isPlaying }) => {
+    if (!isPlaying) flushVideoProgress();
+  });
+  useEffect(() => () => void flushVideoProgress(), []);
 
   return (
     <View style={{ borderRadius: Radius.lg, overflow: 'hidden', backgroundColor: '#000' }}>
-      <VideoView player={player} style={{ width: '100%', aspectRatio: 16 / 9 }} nativeControls fullscreenOptions={{ enable: true }} allowsPictureInPicture />
+      <VideoView player={player} style={{ width: '100%', aspectRatio: 16 / 9 }} nativeControls fullscreenOptions={{ enable: true }} />
     </View>
+  );
+}
+
+/** Dars ko'rilgach: tasdiq va keyingi darsga bitta bosish. */
+function DoneCard({ next, sectionSlug }: { next: Video | null; sectionSlug: string | null }) {
+  const { t } = useLocale();
+  const green = useAccent('exercises');
+  return (
+    <Animated.View entering={FadeInDown.duration(350)}>
+      <Card style={{ backgroundColor: green.soft, borderColor: 'transparent' }}>
+        <View style={{ gap: Spacing.three }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+            <SymbolView name={sym('checkmark.circle.fill', 'check_circle')} size={24} tintColor={green.fg} />
+            <ThemedText type="heading" style={{ flex: 1, color: green.fg, fontSize: 17 }}>
+              {t('video.doneTitle')}
+            </ThemedText>
+          </View>
+          {next ? (
+            <Button title={`${t('video.next')}: ${next.title}`} size="md" onPress={() => router.replace(`/video/${next.id}`)} />
+          ) : sectionSlug ? (
+            <Button title={t('video.backToSection')} size="md" variant="secondary" onPress={() => router.replace(`/section/${sectionSlug}`)} />
+          ) : null}
+        </View>
+      </Card>
+    </Animated.View>
   );
 }
 
@@ -49,6 +108,8 @@ export default function VideoScreen() {
   const theme = useTheme();
   const [video, setVideo] = useState<Video | null>(null);
   const [error, setError] = useState(false);
+  const progress = useVideoProgress();
+  const { categories, professions } = useContent('lesson');
 
   const load = useCallback(() => {
     setError(false);
@@ -78,11 +139,19 @@ export default function VideoScreen() {
     );
 
   const uri = absoluteUrl(video.videoUrl);
+  const done = !!progress[video.id]?.done;
+  // Keyingi dars — shu bo'limdagi tartib bo'yicha
+  const section = categories ? buildSections(professions, categories, progress).find((sec) => sec.videos.some((v) => v.id === video.id)) : undefined;
+  const list = section?.videos ?? [];
+  const next = list.slice(list.findIndex((v) => v.id === video.id) + 1).find((v) => !progress[v.id]?.done) ?? null;
+  const upNext = list.slice(list.findIndex((v) => v.id === video.id) + 1).filter((v) => !progress[v.id]?.done && (!done || v.id !== next?.id)).slice(0, 3);
+  const look = sectionLook(section?.slug ?? '');
   const minutes = video.durationSec ? Math.max(1, Math.round(video.durationSec / 60)) : null;
 
   return (
     <Screen>
-      {uri ? <Player uri={uri} /> : null}
+      {uri ? <Player key={video.id} uri={uri} videoId={video.id} durationSec={video.durationSec} /> : null}
+      {done ? <DoneCard next={next} sectionSlug={section?.slug ?? null} /> : null}
       <Animated.View entering={FadeInDown.duration(400)} style={{ gap: Spacing.three }}>
         <ThemedText type="title" style={{ fontSize: 25, lineHeight: 31 }}>
           {video.title}
@@ -106,6 +175,14 @@ export default function VideoScreen() {
           </Card>
         ) : null}
       </Animated.View>
+      {upNext.length > 0 ? (
+        <View style={{ gap: Spacing.two + 2 }}>
+          <SectionHeader title={t('video.upNext')} />
+          {upNext.map((v) => (
+            <VideoRow key={v.id} video={v} accent={look.accent} onPress={() => router.replace(`/video/${v.id}`)} />
+          ))}
+        </View>
+      ) : null}
     </Screen>
   );
 }

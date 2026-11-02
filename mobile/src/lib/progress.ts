@@ -51,6 +51,13 @@ function domainTier(score: number, version: 2 | 3): RiskTier {
   return score >= THRESHOLDS.moderate ? 'moderate' : 'low';
 }
 
+/** Ikki test orasidagi o'zgarish: daraja o'zgargan bo'lsa daraja bo'yicha, aks holda ball bo'yicha. */
+export function pointTrend(prev: { score: number; tier: RiskTier }, cur: { score: number; tier: RiskTier }): Trend {
+  const rank = { low: 0, moderate: 1, high: 2 };
+  if (rank[cur.tier] !== rank[prev.tier]) return rank[cur.tier] < rank[prev.tier] ? 'better' : 'worse';
+  return scoreTrend(cur.score - prev.score);
+}
+
 export function screeningProgress(assessments: StoredAssessment[], now = new Date()) {
   const points: ScreeningPoint[] = [...assessments]
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
@@ -68,8 +75,8 @@ export function screeningProgress(assessments: StoredAssessment[], now = new Dat
   const latest = points.at(-1) ?? null;
   const previous = points.length > 1 ? points.at(-2)! : null;
 
-  // Sohalar faqat bir xil versiyadagi testlar orasida solishtiriladi (eski va yangi testning bo'limlari har xil)
-  const base = latest ? points.find((p) => p.version === latest.version)! : null;
+  // Bo'limlar oldingi test bilan solishtiriladi — faqat bir xil versiyadagi testlar orasida (eski va yangi testning bo'limlari har xil)
+  const base = latest ? ([...points].reverse().find((p) => p.id !== latest.id && p.version === latest.version) ?? latest) : null;
   const compared = !!latest && !!base && base.id !== latest.id;
   const domains = latest
     ? Object.keys(latest.blocks)
@@ -77,7 +84,7 @@ export function screeningProgress(assessments: StoredAssessment[], now = new Dat
         .map((id) => {
           const from = base!.blocks[id] ?? latest.blocks[id];
           const to = latest.blocks[id];
-          return { id, from, to, delta: to - from, trend: scoreTrend(to - from), tier: domainTier(to, latest.version) };
+          return { id, from, to, delta: to - from, trend: scoreTrend(to - from), tier: domainTier(to, latest.version), fromTier: domainTier(from, latest.version) };
         })
         // Eng ko'p e'tibor talab qiladigani tepada
         .sort((a, b) => b.to - a.to)
@@ -96,8 +103,8 @@ export function screeningProgress(assessments: StoredAssessment[], now = new Dat
     previous,
     /** Oxirgi test oldingisiga nisbatan */
     delta: latest && previous ? latest.score - previous.score : null,
-    /** Oxirgi test birinchisiga nisbatan */
-    totalDelta: latest && first && points.length > 1 ? latest.score - first.score : null,
+    /** Oxirgi test oldingisiga nisbatan: kamaydi, o'zgarmadi yoki ko'paydi */
+    trend: latest && previous ? pointTrend(previous, latest) : null,
     domains,
     /** Bo'limlar solishtirildimi (oxirgi test bilan bir xil versiyadagi oldingi test bor) */
     compared,

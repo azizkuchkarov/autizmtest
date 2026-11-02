@@ -15,6 +15,7 @@ import {
   type ChildRecord,
 } from '@/lib/api';
 import { clearAssessments } from '@/lib/history';
+import { clearVideoProgress } from '@/lib/video-progress';
 import { unregisterPushToken } from '@/lib/push';
 import { ageGroupFromBirthYear, type AgeGroupId } from '@/lib/screening';
 
@@ -142,6 +143,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     await unregisterPushToken();
     await logoutSession().catch(() => {});
     await SecureStore.deleteItemAsync(TOKEN_KEY).catch(() => {});
+    clearVideoProgress();
     setAuthToken(null);
     setToken(null);
     // Tanishtiruv va oferta qayta ko'rsatilmaydi
@@ -152,6 +154,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     await deleteAccountRequest();
     await SecureStore.deleteItemAsync(TOKEN_KEY).catch(() => {});
     await clearAssessments().catch(() => {});
+    clearVideoProgress();
     setAuthToken(null);
     setToken(null);
     persist({ ...EMPTY, introSeen: true, offerAccepted: true });

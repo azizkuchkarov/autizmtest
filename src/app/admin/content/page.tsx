@@ -34,7 +34,6 @@ type Profession = { id: string; titleUz: string };
 
 const TABS: { kind: Kind; label: string; hint: string }[] = [
   { kind: "lesson", label: "📚 Darslar", hint: "Ota-onalar uchun: autizm haqida va bolaga qanday yordam berish" },
-  { kind: "exercise", label: "🧸 Mashqlar", hint: "Bola bilan birga bajariladigan mashqlar" },
 ];
 
 const AGE_GROUPS = [
