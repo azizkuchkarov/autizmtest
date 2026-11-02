@@ -136,7 +136,9 @@ function SectionsCard({ screening, domainName }: { screening: Screening; domainN
 }
 
 /** Testlar tarixi: vertikal chiziq, har bir test — daraja va sana. */
-function HistoryCard({ screening, tiers }: { screening: Screening; tiers: Tiers }) {
+const SIGNS_KEY = { low: "result.signsLow", moderate: "result.signsModerate", high: "result.signsHigh" } as const;
+
+function HistoryCard({ screening }: { screening: Screening }) {
   const { t, locale } = useLocale();
   const formatDate = useFormatDate();
   const list = [...screening.points].reverse();
@@ -156,7 +158,7 @@ function HistoryCard({ screening, tiers }: { screening: Screening; tiers: Tiers 
               </div>
               <div className={`flex flex-1 flex-col gap-0.5 pt-px ${isLast ? "" : "pb-[18px]"}`}>
                 <div className="flex items-center gap-2">
-                  <span className="t-small-bold flex-1 text-[14.5px] group-hover:underline">{tiers[p.tier]}</span>
+                  <span className="t-small-bold flex-1 text-[14.5px] group-hover:underline">{t(SIGNS_KEY[p.tier])}</span>
                   {trend ? <TrendBadge trend={trend} label={t(TREND_LABEL[trend])} /> : null}
                   <ChevronRight className="h-3.5 w-3.5 text-ink-3" />
                 </div>
@@ -201,7 +203,7 @@ export function ScreeningDynamics({
         </Card>
       ) : null}
       <SectionsCard screening={screening} domainName={domainName} />
-      <HistoryCard screening={screening} tiers={tiers} />
+      <HistoryCard screening={screening} />
       <p className="t-small text-ink-3">{t("progress.retestHint")}</p>
     </>
   );

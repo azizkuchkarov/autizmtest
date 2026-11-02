@@ -164,7 +164,9 @@ function SectionRow({ emoji, title, domain, compared }: { emoji?: string; title:
 }
 
 /** Testlar tarixi: vertikal chiziq, har bir test — daraja va sana. */
-function HistoryCard({ screening, tiers }: { screening: Screening; tiers: Tiers }) {
+const SIGNS_KEY = { low: 'result.signsLow', moderate: 'result.signsModerate', high: 'result.signsHigh' } as const;
+
+function HistoryCard({ screening }: { screening: Screening }) {
   const { t, locale } = useLocale();
   const theme = useTheme();
   const formatDate = useFormatDate();
@@ -186,7 +188,7 @@ function HistoryCard({ screening, tiers }: { screening: Screening; tiers: Tiers 
               <View style={{ flex: 1, gap: 2, paddingBottom: isLast ? 0 : Spacing.three + 2, paddingTop: 1 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
                   <ThemedText type="smallBold" style={{ flex: 1, fontSize: 14.5 }}>
-                    {tiers[p.tier]}
+                    {t(SIGNS_KEY[p.tier])}
                   </ThemedText>
                   {trend ? <TrendBadge trend={trend} label={t(TREND_LABEL[trend])} /> : null}
                   <SymbolView name={sym('chevron.right', 'chevron_right')} size={12} tintColor={theme.textTertiary} />
@@ -232,7 +234,7 @@ export function ScreeningDynamics({
         </Card>
       ) : null}
       <SectionsCard screening={screening} domainName={domainName} />
-      <HistoryCard screening={screening} tiers={tiers} />
+      <HistoryCard screening={screening} />
       <ThemedText type="small" themeColor="textTertiary">
         {t('progress.retestHint')}
       </ThemedText>
