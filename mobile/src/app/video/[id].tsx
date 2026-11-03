@@ -10,6 +10,7 @@ import { ThemedText } from '@/components/themed-text';
 import { sectionLook } from '@/components/lesson-sections';
 import { Button, Card, EmptyState, Icon, Pill, Screen, SectionHeader, Skeleton, sym } from '@/components/ui';
 import { VideoRow } from '@/components/video-cards';
+import { ExerciseAddCard } from '@/components/video-exercises';
 import { Radius, Spacing } from '@/constants/theme';
 import { useLocale } from '@/contexts/locale';
 import { useProfile } from '@/contexts/profile';
@@ -175,6 +176,7 @@ export default function VideoScreen() {
           </Card>
         ) : null}
       </Animated.View>
+      <ExerciseAddCard video={video} />
       {upNext.length > 0 ? (
         <View style={{ gap: Spacing.two + 2 }}>
           <SectionHeader title={t('video.upNext')} />

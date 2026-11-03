@@ -149,6 +149,7 @@ model Child {
   playSessions PlaySession[]
   aacDays      AacDay[]
   syncReceipts SyncReceipt[]
+  exercisePlans ExercisePlan[]
 
   @@index([userId])
 }
@@ -294,12 +295,45 @@ model Video {
   status        String          @default("ready") // ready | processing | failed — admin yuklagan fayl serverda siqilmoqda
   sourceFile    String? // siqilishi kutilayotgan yuklangan fayl (MEDIA_DIR/incoming/...)
   processError  String?
+  /// Mashq uchun video: ota-onaga tavsiya — kuniga necha marta, necha kun
+  exerciseEnabled Boolean @default(false)
+  exerciseReps    Int?
+  exerciseDays    Int?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   category      ContentCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   watches       VideoWatch[]
+  exercisePlans ExercisePlan[]
 
   @@index([categoryId])
+}
+
+/// Ota-ona bolasi uchun tanlagan video mashq: kuniga repsPerDay marta, days kun. Faqat to'liq bajarilgan kunlar sanaladi.
+model ExercisePlan {
+  id          String            @id @default(uuid())
+  childId     String
+  videoId     String
+  repsPerDay  Int
+  days        Int
+  completedAt DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  child       Child             @relation(fields: [childId], references: [id], onDelete: Cascade)
+  video       Video             @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  log         ExerciseDayLog[]
+
+  @@unique([childId, videoId])
+  @@index([videoId])
+}
+
+/// Bir kunda necha marta bajarilgani (day — qurilmadagi sana, YYYY-MM-DD).
+model ExerciseDayLog {
+  planId String
+  day    String
+  count  Int          @default(0)
+  plan   ExercisePlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@id([planId, day])
 }
 
 /// Ota-ona videoni qayergacha ko'rgani; completedAt — oxirigacha ko'rilgan ("Ko'rildi" belgisi).

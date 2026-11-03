@@ -59,7 +59,7 @@ function Emoji({ activity, size }: { activity: PlayActivity; size: number }) {
 }
 
 /** Oxirgi 7 kun: bajarilgan kunlar yashil. */
-function WeekDots({ week }: { week: { day: string; done: boolean }[] }) {
+export function WeekDots({ week }: { week: { day: string; done: boolean }[] }) {
   const todayKey = dayKey();
   const { locale } = useLocale();
   return (

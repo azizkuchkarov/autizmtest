@@ -6,7 +6,8 @@ import { useEffect, useState } from "react";
 
 import { useLocale, useProfile } from "@/components/app/providers";
 import { assessmentTier, nextScreeningDate, ResultRow, useFormatDate } from "@/components/app/result-summary";
-import { Button, Card, FadeIn, HeroCard, PageHeader, Screen, SectionHeader } from "@/components/app/ui";
+import { BackHeader } from "@/components/app/app-shell";
+import { Button, Card, FadeIn, HeroCard, Screen, SectionHeader } from "@/components/app/ui";
 import { listAssessments, useAssessmentsVersion, type StoredAssessment } from "@/lib/app/history";
 import { bandForMonths, itemsFor, SECTIONS } from "@/lib/screening-v3/items";
 import { ageInMonths } from "@/lib/screening-v3/score";
@@ -39,7 +40,7 @@ export default function TestPage() {
 
   return (
     <Screen>
-      <PageHeader title={t("test.title")} subtitle={t("test.subtitle")} />
+      <BackHeader title={t("test.title")} />
 
       <FadeIn>
         <HeroCard className="flex flex-col gap-4 md:p-8">

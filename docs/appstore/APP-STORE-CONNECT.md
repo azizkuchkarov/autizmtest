@@ -61,7 +61,8 @@ SEE YOUR CHILD GROW
 A 5-minute skills test every 4 weeks shows which skills are improving and which need more practice.
 
 ALSO INSIDE
-• Video lessons from specialists for parents
+• Video lessons by topic, with watched marks
+• Video exercises: choose how many times a day and for how many days
 • Sound lessons and a picture board for children who speak little
 • Morning diary: sleep, mood, behaviour
 • Gentle reminders at the time you choose
@@ -105,7 +106,8 @@ AutizmTest помогает родителям заметить ранние п�
 5-минутный тест навыков раз в 4 недели показывает, какие навыки улучшаются, а какие требуют больше занятий.
 
 ТАКЖЕ В ПРИЛОЖЕНИИ
-• Видеоуроки специалистов для родителей
+• Видеоуроки по направлениям с отметкой о просмотре
+• Видеоупражнения: сами выбираете, сколько раз в день и сколько дней выполнять
 • Звуковые уроки и карточки для детей, которые мало говорят
 • Утренний дневник: сон, настроение, поведение
 • Мягкие напоминания в удобное время
@@ -132,7 +134,7 @@ AutizmTest помогает родителям заметить ранние п�
 | Support URL | https://autizmtest.uz |
 | Marketing URL | https://autizmtest.uz |
 | Copyright | 2026 AutizmTest |
-| Version | 1.0.0 (build 7) |
+| Version | 1.0.0 (build 8) |
 
 ### Skrinshotlar — 6.9" Display
 `docs/appstore/screenshots-6.9-v2/` papkasidagi 7 ta fayl (1320 × 2868), shu tartibda:
@@ -201,7 +203,7 @@ How to sign in:
 1. Open the app, tap "Keyingi" (Next) on the intro screens and accept the terms.
 2. Enter the phone number from the "User name" field and tap continue.
 3. Enter the 6-digit code from the "Password" field (no SMS is sent to this demo number).
-4. Create a child profile (any name and birth year), then explore Home, Test, Lessons and Exercises.
+4. Create a child profile (any name and birth year), then explore Home, Lessons, Exercises, Progress and Profile. The screening test is in the Progress tab.
 
 The app interface is in Uzbek and Russian (language switch: top-right on the intro screens, or Profile → Language).
 
@@ -209,7 +211,7 @@ About the app: AutizmTest is a screening and parent-education tool, not a diagno
 
 Account deletion: Profile → "Akkauntni o'chirish" (Delete account) permanently deletes the account and all data.
 
-Methodology: Profile → "Test haqida" (About the test), also linked from the Test tab and the result screen, explains the test's structure, sources (DSM-5 structure, CDC milestones, AAP/AAN guidance) and limitations, including that it is not yet clinically validated. The privacy policy is linked in Profile.
+Methodology: Profile → "Test haqida" (About the test), also linked from the Progress tab and the result screen, explains the test's structure, sources (DSM-5 structure, CDC milestones, AAP/AAN guidance) and limitations, including that it is not yet clinically validated. The privacy policy is linked in Profile.
 
 Permissions: camera, photo library and microphone are requested only when a parent adds a custom picture card with their own photo or voice; these files stay on the device.
 ```

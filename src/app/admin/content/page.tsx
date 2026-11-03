@@ -27,6 +27,9 @@ type Video = {
   status: "ready" | "processing" | "failed";
   sourceFile: string | null;
   processError: string | null;
+  exerciseEnabled: boolean;
+  exerciseReps: number | null;
+  exerciseDays: number | null;
 };
 
 type Category = { id: string; kind: Kind; professionId: string; titleUz: string; order: number; active: boolean; videos: Video[] };
@@ -137,6 +140,9 @@ function VideoCard({
         <div className="text-xs text-slate-500">{categoryTitle}</div>
         <div className="flex flex-wrap items-center gap-1.5">
           <StatusBadge v={v} />
+          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${v.exerciseEnabled ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"}`}>
+            {v.exerciseEnabled ? `Mashq · ${v.exerciseReps} marta · ${v.exerciseDays} kun` : "Dars"}
+          </span>
           {warnings.length ? <span className="text-xs text-amber-700">⚠ {warnings.join(" · ")}</span> : null}
         </div>
         {v.processError ? <div className="text-xs text-rose-600">Xato: {v.processError}</div> : null}
@@ -164,6 +170,9 @@ type Draft = {
   descriptionUz: string;
   titleRu: string;
   descriptionRu: string;
+  exerciseEnabled: boolean;
+  exerciseReps: string;
+  exerciseDays: string;
   ageGroups: string[];
   domains: string[];
   active: boolean;
@@ -223,6 +232,9 @@ function VideoEditor({
     ageGroups: video?.ageGroups ?? [],
     domains: video?.domains ?? [],
     active: video?.active ?? true,
+    exerciseEnabled: video?.exerciseEnabled ?? false,
+    exerciseReps: String(video?.exerciseReps ?? 3),
+    exerciseDays: String(video?.exerciseDays ?? 7),
     videoUrl: video?.videoUrl ?? "",
   }));
   const set = (patch: Partial<Draft>) => setD((prev) => ({ ...prev, ...patch }));
@@ -259,6 +271,12 @@ function VideoEditor({
       alert("Avval video faylni yuklang.");
       return;
     }
+    const reps = Number(d.exerciseReps);
+    const days = Number(d.exerciseDays);
+    if (d.exerciseEnabled && !(Number.isInteger(reps) && reps >= 1 && reps <= 10 && Number.isInteger(days) && days >= 1 && days <= 60)) {
+      alert("Mashq uchun: kuniga 1–10 marta va 1–60 kun kiriting.");
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
@@ -270,6 +288,9 @@ function VideoEditor({
         ageGroups: d.ageGroups,
         domains: d.domains,
         active: d.active,
+        exerciseEnabled: d.exerciseEnabled,
+        exerciseReps: d.exerciseEnabled ? reps : null,
+        exerciseDays: d.exerciseEnabled ? days : null,
         ...(uploadId ? { uploadId } : d.videoUrl.trim() && d.videoUrl !== video?.videoUrl ? { videoUrl: d.videoUrl.trim() } : {}),
       };
       if (video) await api(`/api/admin/content/videos/${video.id}`, "PATCH", payload);
@@ -414,6 +435,30 @@ function VideoEditor({
               </option>
             ))}
           </select>
+        </div>
+
+        {/* 4. Mashq uchun */}
+        <div className={`rounded-xl p-4 ring-1 ${d.exerciseEnabled ? "bg-emerald-50 ring-emerald-200" : "bg-slate-50 ring-slate-200"}`}>
+          <label className="flex cursor-pointer items-start gap-3">
+            <input type="checkbox" checked={d.exerciseEnabled} onChange={(e) => set({ exerciseEnabled: e.target.checked })} className="mt-0.5 h-5 w-5" />
+            <span>
+              <span className="block text-sm font-semibold text-slate-900">4. Mashq uchun video</span>
+              <span className="block text-xs text-slate-600">Videoda bola bilan bajariladigan mashq ko&apos;rsatilgan bo&apos;lsa belgilang. Ota-ona uni &quot;Mashqlar&quot; bo&apos;limiga qo&apos;sha oladi.</span>
+            </span>
+          </label>
+          {d.exerciseEnabled ? (
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div>
+                <label className={label}>Kuniga necha marta</label>
+                <input className={input} type="number" min={1} max={10} value={d.exerciseReps} onChange={(e) => set({ exerciseReps: e.target.value })} required />
+              </div>
+              <div>
+                <label className={label}>Necha kun</label>
+                <input className={input} type="number" min={1} max={60} value={d.exerciseDays} onChange={(e) => set({ exerciseDays: e.target.value })} required />
+              </div>
+              <p className="col-span-2 text-xs text-slate-600">Bu tavsiya ota-onaga ko&apos;rinadi, u o&apos;zgartira oladi. Sonlarni mutaxassis bilan aniqlang.</p>
+            </div>
+          ) : null}
         </div>
 
         <Disclosure title="Ruscha matn (ixtiyoriy)">

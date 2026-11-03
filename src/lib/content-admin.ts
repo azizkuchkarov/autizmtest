@@ -45,6 +45,9 @@ export const videoFieldsSchema = z.object({
   domains: z.array(z.enum(DOMAINS)).optional(),
   order: z.number().int().optional(),
   active: z.boolean().optional(),
+  exerciseEnabled: z.boolean().optional(),
+  exerciseReps: z.number().int().min(1).max(10).nullish(),
+  exerciseDays: z.number().int().min(1).max(60).nullish(),
 });
 
 /** Yangi video: ruscha nom va havola ixtiyoriy (fayl yuklansa havolani server o'zi yozadi). */

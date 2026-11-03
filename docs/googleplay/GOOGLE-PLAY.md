@@ -21,7 +21,7 @@ Hammasi shu yerda: nusxalab joylashtiring. Asosiy til: ro'yxatda **Uzbek** bo'ls
 
 | Nima | Fayl |
 |---|---|
-| Play'ga yuklanadigan build | `docs/googleplay/build/AutizmTest-1.0.0-4.aab` |
+| Play'ga yuklanadigan build | `docs/googleplay/build/AutizmTest-1.0.0-5.aab` |
 | App icon (512×512) | `docs/googleplay/icon-512.png` |
 | Feature graphic (1024×500) | `docs/googleplay/feature-graphic-1024x500.png` |
 | Phone screenshots (7 ta, 9:16) | `docs/googleplay/screenshots-v2/` (tartib: 1, 2, 3, 7, 4, 5, 6) |
@@ -62,7 +62,8 @@ BOLANGIZ O'SISHINI KO'RING
 Har 4 haftada 5 daqiqalik ko'nikmalar testi qaysi ko'nikmalar o'sayotganini va qaysilariga ko'proq mashq kerakligini ko'rsatadi.
 
 YANA ILOVADA
-• Ota-onalar uchun mutaxassislarning video darslari
+• Yo'nalishlar bo'yicha video darslar, ko'rilganlar belgilanadi
+• Video mashqlar: kuniga necha marta va necha kun bajarishni o'zingiz belgilaysiz
 • Ovozli darslar va kam gapiradigan bolalar uchun rasmli muloqot kartalari
 • Ertalabki kundalik: uyqu, kayfiyat, xulq
 • Siz tanlagan vaqtda yumshoq eslatmalar
@@ -96,7 +97,8 @@ AutizmTest помогает родителям заметить ранние п�
 5-минутный тест навыков раз в 4 недели показывает, какие навыки улучшаются, а какие требуют больше занятий.
 
 ТАКЖЕ В ПРИЛОЖЕНИИ
-• Видеоуроки специалистов для родителей
+• Видеоуроки по направлениям с отметкой о просмотре
+• Видеоупражнения: сами выбираете, сколько раз в день и сколько дней выполнять
 • Звуковые уроки и карточки для детей, которые мало говорят
 • Утренний дневник: сон, настроение, поведение
 • Мягкие напоминания в удобное время

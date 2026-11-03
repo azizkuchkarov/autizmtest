@@ -9,6 +9,7 @@ import { useLocale, useProfile } from "@/components/app/providers";
 import { sectionLook } from "@/components/app/lesson-sections";
 import { accent, Button, Card, EmptyState, FadeIn, Pill, Screen, SectionHeader, Skeleton } from "@/components/app/ui";
 import { VideoRow } from "@/components/app/video-cards";
+import { ExerciseAddCard } from "@/components/app/video-exercises";
 import { useContent } from "@/hooks/use-content";
 import { fetchVideo, type Video } from "@/lib/app/api";
 import { domainStyle } from "@/lib/app/domains";
@@ -154,6 +155,7 @@ export default function VideoPage() {
           </Card>
         ) : null}
       </FadeIn>
+      <ExerciseAddCard video={video} />
       {upNext.length > 0 ? (
         <div className="flex flex-col gap-2.5">
           <SectionHeader title={t("video.upNext")} />

@@ -24,6 +24,8 @@ export function toPublicVideo(v: Video, locale: Locale) {
     durationSec: v.durationSec,
     domains: v.domains,
     ageGroups: v.ageGroups,
+    /** Mashq uchun video bo'lsa — ota-onaga tavsiya */
+    exercise: v.exerciseEnabled && v.exerciseReps && v.exerciseDays ? { reps: v.exerciseReps, days: v.exerciseDays } : null,
   };
 }
 

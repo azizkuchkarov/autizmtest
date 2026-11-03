@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
@@ -14,8 +14,7 @@ import { useProfile } from '@/contexts/profile';
 import { useAccent, useIsDark } from '@/hooks/use-theme';
 import { listAssessments, type StoredAssessment } from '@/lib/history';
 import type { TranslationKey } from '@/lib/i18n';
-
-const TIPS: TranslationKey[] = ['home.tip1', 'home.tip2', 'home.tip3', 'home.tip4', 'home.tip5'];
+import { useTip } from '@/lib/tips';
 
 function greetingKey(): TranslationKey {
   const h = new Date().getHours();
@@ -31,7 +30,7 @@ export default function HomeScreen() {
   const lessons = useAccent('lessons');
   const [items, setItems] = useState<StoredAssessment[]>([]);
   const last = items[0] ?? null;
-  const tip = useMemo(() => TIPS[new Date().getDate() % TIPS.length], []);
+  const tip = useTip();
 
   useFocusEffect(
     useCallback(() => {
@@ -99,7 +98,7 @@ export default function HomeScreen() {
             <ThemedText type="caption" style={{ color: lessons.fg }}>
               {t('home.tipTitle')}
             </ThemedText>
-            <ThemedText type="body">{t(tip)}</ThemedText>
+            <ThemedText type="body">{tip ? t(tip) : ' '}</ThemedText>
           </View>
         </Card>
       </Animated.View>

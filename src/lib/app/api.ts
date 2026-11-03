@@ -153,6 +153,8 @@ export type Video = {
   durationSec: number | null;
   domains: string[];
   ageGroups: string[];
+  /** Mashq uchun video bo'lsa — tavsiya: kuniga necha marta, necha kun */
+  exercise: { reps: number; days: number } | null;
 };
 
 export type Profession = { id: string; slug: string; title: string };
@@ -172,6 +174,37 @@ export function fetchContent(kind: ContentKind, locale: Locale) {
 
 export function fetchVideo(id: string, locale: Locale) {
   return request<{ video: Video }>(`/api/content/videos/${encodeURIComponent(id)}?locale=${locale}`);
+}
+
+export type ExercisePlan = {
+  id: string;
+  videoId: string;
+  repsPerDay: number;
+  days: number;
+  createdAt: string;
+  completedAt: string | null;
+  video: Video;
+  /** kun (YYYY-MM-DD) → necha marta bajarilgan */
+  log: Record<string, number>;
+};
+
+export function fetchExercisePlans(childId: string, locale: Locale) {
+  return request<{ plans: ExercisePlan[] }>(`/api/mobile/children/${childId}/exercises?locale=${locale}`);
+}
+
+export function addExercisePlan(childId: string, body: { videoId: string; repsPerDay: number; days: number }, locale: Locale) {
+  return request<{ plan: ExercisePlan }>(`/api/mobile/children/${childId}/exercises?locale=${locale}`, { method: "POST", body: JSON.stringify(body) });
+}
+
+export function logExercise(childId: string, planId: string, day: string, delta: 1 | -1, locale: Locale) {
+  return request<{ plan: ExercisePlan }>(`/api/mobile/children/${childId}/exercises/${planId}/log?locale=${locale}`, {
+    method: "POST",
+    body: JSON.stringify({ day, delta }),
+  });
+}
+
+export function deleteExercisePlan(childId: string, planId: string) {
+  return request<{ ok: boolean }>(`/api/mobile/children/${childId}/exercises/${planId}`, { method: "DELETE" });
 }
 
 export function fetchVideoProgress() {

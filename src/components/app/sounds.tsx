@@ -1,10 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, ChevronRight, Ear, HandHelping, Hourglass, Lightbulb, Lock, Play, RotateCcw, Volume1, Volume2, WifiOff } from "lucide-react";
+import { Check, ChevronRight, Ear, RefreshCw, HandHelping, Hourglass, Lightbulb, Lock, Play, RotateCcw, Volume1, Volume2, WifiOff } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { WeekDots } from "@/components/app/play";
 import { useLocale, useProfile } from "@/components/app/providers";
 import { accent as accentOf, Button, Card, EmptyState, FadeIn, ProgressBar, SectionHeader, Skeleton } from "@/components/app/ui";
 import { fetchSoundSets, type SoundCard, type SoundSet } from "@/lib/app/api";
@@ -18,7 +19,9 @@ import {
   useSoundSettings,
   type SoundLevel,
   type SoundResult,
+  useSoundLog,
 } from "@/lib/app/sound-progress";
+import { currentWeek, dayKey } from "@/lib/app/play-activities";
 import type { TranslationKey } from "@/lib/app-i18n";
 
 const A = accentOf("lessons");
@@ -74,6 +77,66 @@ export function SoundVisual({ item, size }: { item: Pick<SoundCard, "title" | "i
 /* ------------------------------ To'plamlar ------------------------------ */
 
 /** Darslar → Ovozli: to'plamlar ro'yxati. */
+/** Mashqlar bo'limidagi kunlik ovozli mashq kartasi: "Bugungi 5 daqiqa" bilan bir xil ko'rinish. */
+export function TodaySoundsCard() {
+  const { t, locale } = useLocale();
+  const a = accentOf("lessons");
+  const { child } = useProfile();
+  const log = useSoundLog(child?.id ?? "default");
+  const [sets, setSets] = useState<SoundSet[] | null>(null);
+  const [offset, setOffset] = useState(0);
+
+  useEffect(() => {
+    fetchSoundSets(locale).then(
+      (res) => setSets(res.sets),
+      () => setSets([]),
+    );
+  }, [locale]);
+
+  if (!sets) return <Skeleton height={236} />;
+  if (sets.length === 0) return null;
+
+  const today = dayKey();
+  const set = sets[(new Date().getDate() + offset) % sets.length];
+  const done = log.some((e) => e.day === today);
+  const week = currentWeek().map((day) => ({ day, done: log.some((e) => e.day === day) }));
+  const href = `/lessons/sounds/${set.id}`;
+
+  return (
+    <Card className="!gap-4">
+      <span className="t-caption" style={{ color: a.fg }}>
+        {t("exercises.soundsTitle")}
+      </span>
+      <Link href={href} className="group flex items-center gap-4">
+        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] text-[32px]" style={{ background: a.soft }}>
+          {set.emoji ?? "🎧"}
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col gap-1">
+          <span className="t-heading text-[17px] group-hover:text-tint">{set.title}</span>
+          {set.description ? <span className="t-small line-clamp-2 text-ink-2">{set.description}</span> : null}
+          <span className="t-small text-ink-3">{t("exercises.soundsCards").replace("{n}", String(set.cards.length))}</span>
+        </span>
+      </Link>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <WeekDots week={week} />
+        {done ? (
+          <span className="t-small-bold inline-flex items-center gap-1.5 text-[var(--success)]">
+            <Check className="h-4 w-4" strokeWidth={3} /> {t("play.doneToday")}
+          </span>
+        ) : null}
+      </div>
+      <div className="flex gap-2">
+        <Button title={t("play.start")} icon={Play} size="md" href={href} className="flex-1" />
+        {sets.length > 1 && !done ? (
+          <Button title={t("play.another")} icon={RefreshCw} size="md" variant="secondary" onClick={() => setOffset((n) => n + 1)} className="flex-1" />
+        ) : (
+          <Button title={t("play.all")} size="md" variant="secondary" href="/lessons/sounds" className="flex-1" />
+        )}
+      </div>
+    </Card>
+  );
+}
+
 export function SoundSetList() {
   const { t, locale } = useLocale();
   const [sets, setSets] = useState<SoundSet[] | null>(null);

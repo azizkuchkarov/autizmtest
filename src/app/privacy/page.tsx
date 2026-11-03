@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 const CONTACT_EMAIL = "aziz.kuchkarov91@gmail.com";
-const UPDATED = "2026-11-01";
+const UPDATED = "2026-11-03";
 
 type Section = { title: string; body: string[] };
 type Policy = { id: string; lang: string; title: string; updated: string; intro: string; sections: Section[] };
@@ -32,7 +32,7 @@ const POLICIES: Policy[] = [
           "Bola profili: ismi, tug'ilgan yili va oyi, jinsi, tanlangan avatar.",
           "Skrining va ko'nikmalar testlaridagi javoblar va natijalar.",
           "Ertalabki kundalik: uyqu, kayfiyat, ovqatlanish, xulq, dori qabul qilish kabi belgilaringiz.",
-          "Mashg'ulotlar tarixi: bajarilgan o'yinlar, ovozli darslar javoblari, rasmli muloqot kartalaridan foydalanish soni.",
+          "Mashg'ulotlar tarixi: bajarilgan o'yinlar, ovozli darslar javoblari, rasmli muloqot kartalaridan foydalanish soni, ko'rilgan videolar va tanlangan video mashqlar.",
           "Eslatma sozlamalari (vaqtlar) va bildirishnomalar uchun qurilma tokeni, platforma (iOS/Android) va til.",
         ],
       },
@@ -103,7 +103,7 @@ const POLICIES: Policy[] = [
           "Профиль ребёнка: имя, год и месяц рождения, пол, выбранный аватар.",
           "Ответы и результаты скрининга и теста навыков.",
           "Утренний дневник: сон, настроение, питание, поведение, приём лекарств — то, что вы отмечаете.",
-          "История занятий: выполненные игры, ответы в звуковых уроках, количество использований карточек.",
+          "История занятий: выполненные игры, ответы в звуковых уроках, количество использований карточек, просмотренные видео и выбранные видеоупражнения.",
           "Настройки напоминаний (время) и для уведомлений — токен устройства, платформа (iOS/Android) и язык.",
         ],
       },
@@ -172,7 +172,7 @@ const POLICIES: Policy[] = [
           "Child profile: first name, birth year and month, gender, chosen avatar.",
           "Answers and results of the screening and skills tests.",
           "Morning diary: sleep, mood, meals, behaviour and medication entries you record.",
-          "Practice history: games completed, sound lesson answers, picture-board usage counts.",
+          "Practice history: games completed, sound lesson answers, picture-board usage counts, watched videos and chosen video exercises.",
           "Reminder settings (times) and, for notifications, a device token, platform (iOS/Android) and language.",
         ],
       },

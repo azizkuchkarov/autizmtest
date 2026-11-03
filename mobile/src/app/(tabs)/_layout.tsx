@@ -24,17 +24,13 @@ export default function TabsLayout() {
   return (
     <NativeTabs
       backgroundColor={colors.backgroundElement}
+      labelVisibilityMode="labeled"
       indicatorColor={colors.tintSoft}
       tintColor={colors.tint}
       labelStyle={{ fontFamily: FontFamily.semibold, selected: { color: colors.tint } }}>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>{t('tabs.home')}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="test">
-        <NativeTabs.Trigger.Label>{t('tabs.test')}</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: 'checklist', selected: 'checklist.checked' }} md="checklist" />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="lessons">
@@ -45,6 +41,11 @@ export default function TabsLayout() {
       <NativeTabs.Trigger name="exercises">
         <NativeTabs.Trigger.Label>{t('tabs.exercises')}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'figure.and.child.holdinghands', selected: 'figure.and.child.holdinghands' }} md="family_restroom" />
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="progress">
+        <NativeTabs.Trigger.Label>{t('tabs.progress')}</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'chart.line.uptrend.xyaxis', selected: 'chart.line.uptrend.xyaxis' }} md="monitoring" />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="profile">

@@ -12,6 +12,7 @@ import { useProfile } from '@/contexts/profile';
 import { useTheme } from '@/hooks/use-theme';
 import { useAacLog } from '@/lib/aac-store';
 import { useDiary } from '@/lib/diary';
+import { planProgress, useExercisePlans } from '@/lib/exercises';
 import type { TranslationKey } from '@/lib/i18n';
 import { useChildPlay } from '@/lib/play-store';
 import { nextSkillsDue, useSkillsHistory } from '@/lib/skills-store';
@@ -19,8 +20,6 @@ import { useSoundLog } from '@/lib/sound-progress';
 import { useVideoDays } from '@/lib/video-log';
 import { currentWeek, dayKey, WEEKDAYS } from '@/shared/data/play-activities';
 
-/** Har kungi asosiy vazifalar: kundalik, 5 daqiqa, video, ovozli mashq yoki muloqot */
-const WEEK_TASKS = 4;
 const WEEK_GRADIENT = ['#1E1B4B', '#312E81', '#4338CA'] as const;
 const WEEK_MINT = '#5EEAD4';
 
@@ -28,7 +27,7 @@ type PlanItem = { id: string; emoji: string; title: TranslationKey; hint?: strin
 
 /** Bugun nima qilinishi kerak va nima bajarildi — qo'llanmadagi kun tartibi asosida. */
 export function useTodayPlan(): PlanItem[] {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const { child } = useProfile();
   const childKey = child?.id ?? 'default';
   const today = dayKey();
@@ -38,6 +37,7 @@ export function useTodayPlan(): PlanItem[] {
   const soundLog = useSoundLog(childKey);
   const aacLog = useAacLog(childKey);
   const skills = useSkillsHistory(childKey);
+  const { plans } = useExercisePlans(child?.id, locale);
   const skillsDue = nextSkillsDue(skills);
   const skillsDoneToday = skills.some((r) => dayKey(new Date(r.createdAt)) === today);
 
@@ -57,10 +57,23 @@ export function useTodayPlan(): PlanItem[] {
       emoji: '🎧',
       title: 'today.practice',
       hint: t('today.practiceHint'),
-      open: () => router.navigate({ pathname: '/lessons', params: { tab: 'sounds' } }),
+      open: () => router.navigate('/exercises'),
       done: soundLog.some((e) => e.day === today) || (aacLog[today]?.taps ?? 0) > 0,
     },
   ];
+  // Video mashqlar — ota-ona qo'shgan bo'lsa
+  const activePlans = (plans ?? []).filter((p) => !p.completedAt);
+  if (activePlans.length > 0) {
+    const left = activePlans.filter((p) => !planProgress(p).doneToday).length;
+    plan.push({
+      id: 'exercises',
+      emoji: '🎯',
+      title: 'today.videoExercises',
+      hint: left > 0 ? t('today.videoExercisesHint').replace('{n}', String(left)) : undefined,
+      open: () => router.navigate('/exercises'),
+      done: left === 0,
+    });
+  }
   // Oylik ko'nikmalar testi — faqat vaqti kelganda (birinchi marta va keyin har 4 haftada)
   if (child && (skillsDue.due || skillsDoneToday))
     plan.push({ id: 'skills', emoji: '📈', title: 'today.skills', hint: t('today.skillsHint'), open: () => router.push('/skills/run'), done: skillsDoneToday });
@@ -77,19 +90,24 @@ export function WeekSchedule() {
   const videoDays = useVideoDays(childKey);
   const soundLog = useSoundLog(childKey);
   const aacLog = useAacLog(childKey);
+  const { plans } = useExercisePlans(child?.id, locale);
   const today = dayKey();
   const days = currentWeek().map((day) => {
     const [y, m, dd] = day.split('-').map(Number);
-    const count = [
+    // Video mashq shu kuni faol bo'lsagina vazifa sifatida hisoblanadi
+    const dayPlans = (plans ?? []).filter((p) => p.createdAt.slice(0, 10) <= day && (!p.completedAt || p.completedAt.slice(0, 10) >= day));
+    const tasks = [
       !!diary.byDate(day),
       !!play?.entries.some((e) => e.day === day),
       videoDays.includes(day),
       soundLog.some((e) => e.day === day) || (aacLog[day]?.taps ?? 0) > 0,
-    ].filter(Boolean).length;
-    return { day, count, label: WEEKDAYS[locale][new Date(y, m - 1, dd).getDay()], isToday: day === today, future: day > today };
+      ...(dayPlans.length > 0 ? [dayPlans.every((p) => (p.log[day] ?? 0) >= p.repsPerDay)] : []),
+    ];
+    const count = tasks.filter(Boolean).length;
+    return { day, count, total: tasks.length, label: WEEKDAYS[locale][new Date(y, m - 1, dd).getDay()], isToday: day === today, future: day > today };
   });
   const active = days.filter((d) => d.count > 0).length;
-  const totalTasks = WEEK_TASKS * 7;
+  const totalTasks = days.reduce((n, d) => n + d.total, 0);
   const doneTasks = days.reduce((n, d) => n + d.count, 0);
   const message = active === 0 ? 'today.weekMsg0' : active === 7 ? 'today.weekMsg3' : active >= 3 ? 'today.weekMsg2' : 'today.weekMsg1';
 
@@ -123,7 +141,7 @@ export function WeekSchedule() {
                   opacity: d.future ? 0.6 : 1,
                 },
               ]}>
-              {[3, 2, 1, 0].map((slot) => (
+              {Array.from({ length: d.total }, (_, i) => d.total - 1 - i).map((slot) => (
                 <View key={slot} style={[styles.weekSlot, { backgroundColor: slot < d.count ? WEEK_MINT : 'rgba(255,255,255,0.1)' }]} />
               ))}
             </View>
@@ -284,7 +302,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   weekSlot: {
-    height: 13,
+    height: 11,
     borderRadius: 5,
   },
   time: {

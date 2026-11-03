@@ -4,7 +4,7 @@ import { SymbolView } from 'expo-symbols';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { PressableScale, sym, useCardShadow } from '@/components/ui';
+import { Pill, PressableScale, sym, useCardShadow } from '@/components/ui';
 import { Accents, Radius, Spacing, type AccentName } from '@/constants/theme';
 import { useLocale } from '@/contexts/locale';
 import { useTheme } from '@/hooks/use-theme';
@@ -111,6 +111,7 @@ export function VideoTile({ video, accent, onPress, width }: { video: Video; acc
 export function VideoRow({ video, accent, onPress, index }: { video: Video; accent: AccentName; onPress: () => void; index?: number }) {
   const theme = useTheme();
   const shadow = useCardShadow();
+  const { t } = useLocale();
   const state = useVideoProgress()[video.id];
   return (
     <PressableScale onPress={onPress} style={[styles.row, shadow, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
@@ -122,7 +123,10 @@ export function VideoRow({ video, accent, onPress, index }: { video: Video; acce
           {index !== undefined ? `${index + 1}. ` : ''}
           {video.title}
         </ThemedText>
-        <VideoStatus video={video} state={state} accent={accent} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two, flexWrap: 'wrap' }}>
+          <VideoStatus video={video} state={state} accent={accent} />
+          {video.exercise ? <Pill label={t('ex.chip')} color={Accents.exercises.fg} background={Accents.exercises.soft} /> : null}
+        </View>
       </View>
     </PressableScale>
   );

@@ -7,6 +7,7 @@ import { useLocale, useProfile } from "@/components/app/providers";
 import { Card, ProgressBar } from "@/components/app/ui";
 import { useAacLog } from "@/lib/app/aac-store";
 import { useDiary } from "@/lib/app/diary";
+import { planProgress, useExercisePlans } from "@/lib/app/exercises";
 import { currentWeek, dayKey, WEEKDAYS } from "@/lib/app/play-activities";
 import { useChildPlay } from "@/lib/app/play-store";
 import { nextSkillsDue, useSkillsHistory } from "@/lib/app/skills-store";
@@ -14,15 +15,13 @@ import { useSoundLog } from "@/lib/app/sound-progress";
 import { useVideoDays } from "@/lib/app/video-log";
 import type { TranslationKey } from "@/lib/app-i18n";
 
-/** Har kungi asosiy vazifalar: kundalik, 5 daqiqa, video, ovozli mashq yoki muloqot */
-const WEEK_TASKS = 4;
 const WEEK_MINT = "#5EEAD4";
 
 type PlanItem = { id: string; emoji: string; title: TranslationKey; hint?: string; time?: string | null; href: string; done: boolean };
 
 /** Bugun nima qilinishi kerak va nima bajarildi — qo'llanmadagi kun tartibi asosida. */
 export function useTodayPlan(): PlanItem[] {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const { child } = useProfile();
   const childKey = child?.id ?? "default";
   const today = dayKey();
@@ -32,6 +31,7 @@ export function useTodayPlan(): PlanItem[] {
   const soundLog = useSoundLog(childKey);
   const aacLog = useAacLog(childKey);
   const skills = useSkillsHistory(childKey);
+  const { plans } = useExercisePlans(child?.id, locale);
   const skillsDue = nextSkillsDue(skills);
   const skillsDoneToday = skills.some((r) => dayKey(new Date(r.createdAt)) === today);
 
@@ -51,10 +51,23 @@ export function useTodayPlan(): PlanItem[] {
       emoji: "🎧",
       title: "today.practice",
       hint: t("today.practiceHint"),
-      href: "/lessons?tab=sounds",
+      href: "/exercises",
       done: soundLog.some((e) => e.day === today) || (aacLog[today]?.taps ?? 0) > 0,
     },
   ];
+  // Video mashqlar — ota-ona qo'shgan bo'lsa
+  const activePlans = (plans ?? []).filter((p) => !p.completedAt);
+  if (activePlans.length > 0) {
+    const left = activePlans.filter((p) => !planProgress(p).doneToday).length;
+    plan.push({
+      id: "exercises",
+      emoji: "🎯",
+      title: "today.videoExercises",
+      hint: left > 0 ? t("today.videoExercisesHint").replace("{n}", String(left)) : undefined,
+      href: "/exercises",
+      done: left === 0,
+    });
+  }
   // Oylik ko'nikmalar testi — faqat vaqti kelganda (birinchi marta va keyin har 4 haftada)
   if (child && (skillsDue.due || skillsDoneToday))
     plan.push({ id: "skills", emoji: "📈", title: "today.skills", hint: t("today.skillsHint"), href: "/skills", done: skillsDoneToday });
@@ -71,19 +84,24 @@ export function WeekSchedule() {
   const videoDays = useVideoDays(childKey);
   const soundLog = useSoundLog(childKey);
   const aacLog = useAacLog(childKey);
+  const { plans } = useExercisePlans(child?.id, locale);
   const today = dayKey();
   const days = currentWeek().map((day) => {
     const [y, m, dd] = day.split("-").map(Number);
-    const count = [
+    // Video mashq shu kuni faol bo'lsagina vazifa sifatida hisoblanadi
+    const dayPlans = (plans ?? []).filter((p) => p.createdAt.slice(0, 10) <= day && (!p.completedAt || p.completedAt.slice(0, 10) >= day));
+    const tasks = [
       !!diary.byDate(day),
       !!play?.entries.some((e) => e.day === day),
       videoDays.includes(day),
       soundLog.some((e) => e.day === day) || (aacLog[day]?.taps ?? 0) > 0,
-    ].filter(Boolean).length;
-    return { day, count, label: WEEKDAYS[locale][new Date(y, m - 1, dd).getDay()], isToday: day === today, future: day > today };
+      ...(dayPlans.length > 0 ? [dayPlans.every((p) => (p.log[day] ?? 0) >= p.repsPerDay)] : []),
+    ];
+    const count = tasks.filter(Boolean).length;
+    return { day, count, total: tasks.length, label: WEEKDAYS[locale][new Date(y, m - 1, dd).getDay()], isToday: day === today, future: day > today };
   });
   const active = days.filter((d) => d.count > 0).length;
-  const totalTasks = WEEK_TASKS * 7;
+  const totalTasks = days.reduce((n, d) => n + d.total, 0);
   const doneTasks = days.reduce((n, d) => n + d.count, 0);
   const message = active === 0 ? "today.weekMsg0" : active === 7 ? "today.weekMsg3" : active >= 3 ? "today.weekMsg2" : "today.weekMsg1";
 
@@ -106,8 +124,8 @@ export function WeekSchedule() {
             <span
               className={`flex w-full max-w-10 flex-col gap-[3px] rounded-[13px] border-[1.5px] p-1 ${d.isToday ? "border-white/75 bg-white/[0.16]" : "border-transparent bg-white/[0.07]"} ${d.future ? "opacity-60" : ""}`}
             >
-              {[3, 2, 1, 0].map((slot) => (
-                <span key={slot} className="block h-[13px] rounded-[5px]" style={{ background: slot < d.count ? WEEK_MINT : "rgba(255,255,255,0.1)" }} />
+              {Array.from({ length: d.total }, (_, i) => d.total - 1 - i).map((slot) => (
+                <span key={slot} className="block h-[11px] rounded-[5px]" style={{ background: slot < d.count ? WEEK_MINT : "rgba(255,255,255,0.1)" }} />
               ))}
             </span>
             <span className={`text-[12px] ${d.isToday ? "font-bold text-white" : "font-medium text-white/60"}`}>{d.label}</span>

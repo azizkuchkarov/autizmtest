@@ -8,6 +8,7 @@ import {
 } from '@expo-google-fonts/manrope';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 
@@ -68,12 +69,13 @@ function RootStack({ fontsLoaded }: { fontsLoaded: boolean }) {
       <Stack.Screen name="skills/[id]" options={{ title: t('sk.resultTitle') }} />
       <Stack.Screen name="video/[id]" options={{ title: '' }} />
       <Stack.Screen name="section/[slug]" options={{ title: '' }} />
+      <Stack.Screen name="sounds/index" options={{ title: t('exercises.soundsTitle') }} />
       <Stack.Screen name="sounds/[id]" options={{ title: '' }} />
       <Stack.Screen name="centers" options={{ title: t('centers.title') }} />
       <Stack.Screen name="about-test" options={{ title: t('about.title') }} />
       <Stack.Screen name="talk" options={{ title: t('talk.title') }} />
       <Stack.Screen name="diary" options={{ title: t('diary.title') }} />
-      <Stack.Screen name="progress" options={{ title: t('progress.title') }} />
+      <Stack.Screen name="test" options={{ title: t('test.title') }} />
       <Stack.Screen name="play/index" options={{ title: t('play.title') }} />
       <Stack.Screen name="play/[id]" options={{ title: '' }} />
     </Stack>
@@ -92,6 +94,8 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      {/* Soat va batareya fonga mos rangda: och fonda to'q, to'q fonda och */}
+      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       <LocaleProvider>
         <ProfileProvider>
           <RootStack fontsLoaded={fontsLoaded} />

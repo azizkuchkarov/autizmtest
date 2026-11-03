@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { StyleSheet, Switch, View, type GestureResponderEvent } from 'react-native';
+import { Pressable, StyleSheet, Switch, View, type GestureResponderEvent } from 'react-native';
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -16,6 +16,7 @@ import Animated, {
   ZoomIn,
 } from 'react-native-reanimated';
 
+import { WeekDots } from '@/components/play';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Card, EmptyState, PressableScale, ProgressBar, SectionHeader, Skeleton, sym, useCardShadow, type IconName } from '@/components/ui';
 import { Radius, Spacing } from '@/constants/theme';
@@ -31,11 +32,13 @@ import {
   recordSoundResult,
   SOUND_LEVELS,
   updateSoundSettings,
+  useSoundLog,
   useSoundProgress,
   useSoundSettings,
   type SoundLevel,
   type SoundResult,
 } from '@/lib/sound-progress';
+import { currentWeek, dayKey } from '@/shared/data/play-activities';
 
 /** Bir mashqdagi savollar soni: bola charchamasligi uchun qisqa. */
 const ROUNDS_PER_SESSION = 8;
@@ -83,6 +86,80 @@ export function SoundVisual({ item, size }: { item: Pick<SoundCard, 'title' | 'i
 /* ------------------------------ To'plamlar ------------------------------ */
 
 /** Darslar → Ovozli: to'plamlar ro'yxati. */
+/** Mashqlar bo'limidagi kunlik ovozli mashq kartasi: "Bugungi 5 daqiqa" bilan bir xil ko'rinish. */
+export function TodaySoundsCard() {
+  const { t, locale } = useLocale();
+  const theme = useTheme();
+  const a = useAccent('lessons');
+  const { child } = useProfile();
+  const log = useSoundLog(child?.id ?? 'default');
+  const [sets, setSets] = useState<SoundSet[] | null>(null);
+  const [offset, setOffset] = useState(0);
+
+  useEffect(() => {
+    fetchSoundSets(locale).then(
+      (res) => setSets(res.sets),
+      () => setSets([]),
+    );
+  }, [locale]);
+
+  if (!sets) return <Skeleton height={236} />;
+  if (sets.length === 0) return null;
+
+  const today = dayKey();
+  const set = sets[(new Date().getDate() + offset) % sets.length];
+  const done = log.some((e) => e.day === today);
+  const week = currentWeek().map((day) => ({ day, done: log.some((e) => e.day === day) }));
+  const open = () => router.push(`/sounds/${set.id}`);
+
+  return (
+    <Card style={{ gap: Spacing.three }}>
+      <ThemedText type="caption" style={{ color: a.fg }}>
+        {t('exercises.soundsTitle')}
+      </ThemedText>
+      <Pressable accessibilityRole="button" onPress={open} style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.three }}>
+        <View style={{ width: 64, height: 64, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: a.soft }}>
+          <ThemedText style={{ fontSize: 32, lineHeight: 40 }}>{set.emoji ?? '🎧'}</ThemedText>
+        </View>
+        <View style={{ flex: 1, gap: 4 }}>
+          <ThemedText type="heading">{set.title}</ThemedText>
+          {set.description ? (
+            <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
+              {set.description}
+            </ThemedText>
+          ) : null}
+          <ThemedText type="small" themeColor="textTertiary">
+            {t('exercises.soundsCards').replace('{n}', String(set.cards.length))}
+          </ThemedText>
+        </View>
+      </Pressable>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+        <WeekDots week={week} />
+        {done ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <SymbolView name={sym('checkmark', 'check')} size={13} weight="bold" tintColor={theme.success} />
+            <ThemedText type="smallBold" themeColor="success">
+              {t('play.doneToday')}
+            </ThemedText>
+          </View>
+        ) : null}
+      </View>
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <View style={{ flex: 1 }}>
+          <Button title={t('play.start')} icon={sym('play.fill', 'play_arrow')} size="md" onPress={open} />
+        </View>
+        <View style={{ flex: 0.8 }}>
+          {sets.length > 1 && !done ? (
+            <Button title={t('play.another')} icon={sym('arrow.triangle.2.circlepath', 'refresh')} size="md" variant="secondary" onPress={() => setOffset((n) => n + 1)} />
+          ) : (
+            <Button title={t('play.all')} size="md" variant="secondary" onPress={() => router.push('/sounds')} />
+          )}
+        </View>
+      </View>
+    </Card>
+  );
+}
+
 export function SoundSetList() {
   const { t, locale } = useLocale();
   const theme = useTheme();

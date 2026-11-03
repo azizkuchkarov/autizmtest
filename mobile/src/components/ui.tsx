@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   Pressable,
   ScrollView,
+  Platform,
   StyleSheet,
   View,
   type PressableProps,
@@ -46,6 +47,11 @@ export function Screen({
 }: ScrollViewProps & { children: ReactNode; withTabBar?: boolean; contentStyle?: StyleProp<ViewStyle> }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  // iOS'da contentInsetAdjustmentBehavior holat qatori joyini o'zi qoldiradi; Android'da tab ekranlarida qo'lda qo'shiladi
+  const androidTop =
+    Platform.OS === 'android' && withTabBar
+      ? { paddingTop: insets.top + (Number((StyleSheet.flatten(contentStyle as never) as ViewStyle | undefined)?.paddingTop) || 0) }
+      : null;
   const scroll = (
     <ScrollView
       style={{ flex: 1, backgroundColor: theme.background }}
@@ -55,6 +61,7 @@ export function Screen({
         styles.screenContent,
         { paddingBottom: insets.bottom + Spacing.five + (withTabBar ? BottomTabInset : 0) },
         contentStyle,
+        androidTop,
       ]}
       {...rest}>
       {children}

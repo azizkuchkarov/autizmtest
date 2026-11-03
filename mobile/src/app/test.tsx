@@ -5,7 +5,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { assessmentTier, nextScreeningDate, ResultRow, useFormatDate } from '@/components/result-summary';
 import { ThemedText } from '@/components/themed-text';
-import { Button, Card, GradientCard, PageHeader, Screen, SectionHeader, sym } from '@/components/ui';
+import { Button, Card, GradientCard, Screen, SectionHeader, sym } from '@/components/ui';
 import { HeroGradient, Spacing } from '@/constants/theme';
 import { useLocale } from '@/contexts/locale';
 import { useProfile } from '@/contexts/profile';
@@ -46,7 +46,7 @@ function Stat({ value, label }: { value: string; label: string }) {
   );
 }
 
-export default function TestTab() {
+export default function TestScreen() {
   const { t, locale } = useLocale();
   const { child } = useProfile();
   const dark = useIsDark();
@@ -66,8 +66,7 @@ export default function TestTab() {
   );
 
   return (
-    <Screen withTabBar>
-      <PageHeader title={t('test.title')} subtitle={t('test.subtitle')} />
+    <Screen>
 
       <Animated.View entering={FadeInDown.duration(400)}>
         <GradientCard colors={dark ? HeroGradient.dark : HeroGradient.light} style={{ gap: Spacing.three }}>

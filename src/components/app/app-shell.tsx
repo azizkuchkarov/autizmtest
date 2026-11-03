@@ -1,6 +1,6 @@
 "use client";
 
-import { ChartNoAxesCombined, CircleUserRound, HandHeart, House, ListChecks, MonitorPlay, type LucideIcon } from "lucide-react";
+import { ChartNoAxesCombined, CircleUserRound, HandHeart, House, MonitorPlay, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
@@ -15,7 +15,6 @@ import { useActivitySync } from "@/lib/app/sync";
 
 const TABS: { href: string; label: TranslationKey; icon: LucideIcon }[] = [
   { href: "/", label: "tabs.home", icon: House },
-  { href: "/test", label: "tabs.test", icon: ListChecks },
   { href: "/lessons", label: "tabs.lessons", icon: MonitorPlay },
   { href: "/exercises", label: "tabs.exercises", icon: HandHeart },
   { href: "/progress", label: "tabs.progress", icon: ChartNoAxesCombined },

@@ -1,6 +1,7 @@
 "use client";
 
-import { CalendarClock, Ear, HandHeart, Info, Lightbulb, MessagesSquare, NotebookPen, Stethoscope, TrendingUp, type LucideIcon } from "lucide-react";
+import { ArrowRight, CalendarClock, Ear, HandHeart, Info, Lightbulb, MessagesSquare, NotebookPen, Stethoscope, TrendingUp, type LucideIcon } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { ActivityBadge, BarList, CalendarHeat, ChangeRow, ColumnChart, Legend, Meter, ShareBar, TrendBadge } from "@/components/app/progress/charts";
@@ -8,7 +9,7 @@ import { ScreeningDynamics } from "@/components/app/progress/screening-dynamics"
 import { useLocale, useProfile } from "@/components/app/providers";
 import { riskColors, useFormatDate } from "@/components/app/result-summary";
 import { CardPicture } from "@/components/app/talk/tile";
-import { Button, Card, FadeIn, PageHeader, Pill, Skeleton } from "@/components/app/ui";
+import { Button, Card, FadeIn, HeroCard, PageHeader, Pill, Skeleton } from "@/components/app/ui";
 import { useAacLocalData, useAacLog } from "@/lib/app/aac-store";
 import { fetchAac, fetchSoundSets, type AacCard } from "@/lib/app/api";
 import { domainStyle } from "@/lib/app/domains";
@@ -204,6 +205,22 @@ export function ProgressView() {
     <div className="flex flex-col gap-8">
       <PageHeader title={t("progress.title")} subtitle={child?.name ? t("progress.subtitle").replace("{name}", child.name) : t("progress.subtitleDefault")} />
 
+      {/* ------------------------------- Test ------------------------------- */}
+      <HeroCard className="flex flex-col gap-4 md:p-8">
+        <h2 className="t-subtitle !text-[21px] !leading-[27px]">{t("test.heroTitle")}</h2>
+        <p className="t-small text-white/80">
+          {screening.latest && screening.nextTest
+            ? t("test.lastNext").replace("{last}", formatDate(screening.latest.date.toISOString())).replace("{next}", formatDate(screening.nextTest.toISOString()))
+            : t("home.heroMeta")}
+        </p>
+        <div className="md:max-w-[280px]">
+          <Button title={t("progress.takeTest")} variant="light" href="/screening" icon={ArrowRight} />
+        </div>
+        <Link href="/test" className="t-small-bold text-center text-white hover:underline md:text-left">
+          {t("progress.testAbout")} →
+        </Link>
+      </HeroCard>
+
       {/* ------------------------------ Skrining ------------------------------ */}
       <Section id="screening" icon={Stethoscope} title={t("progress.screeningTitle")} color="test">
         {!screening.latest ? (
@@ -398,7 +415,7 @@ export function ProgressView() {
       {/* --------------------------- Ovozli mashqlar --------------------------- */}
       <Section id="sounds" icon={Ear} title={t("progress.kpiSounds")} color="lessons">
         {sounds.total === 0 ? (
-          <Empty title={t("progress.noSounds")} cta={t("progress.startSounds")} href="/lessons?tab=sounds" />
+          <Empty title={t("progress.noSounds")} cta={t("progress.startSounds")} href="/exercises" />
         ) : (
           <div className="grid gap-3 lg:grid-cols-2">
             <Card className="!gap-4">

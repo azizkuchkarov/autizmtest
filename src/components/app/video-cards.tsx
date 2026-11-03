@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { useLocale } from "@/components/app/providers";
-import { ACCENT_GRADIENT, accent as accentOf, gradient, type AccentName } from "@/components/app/ui";
+import { ACCENT_GRADIENT, accent as accentOf, gradient, Pill, type AccentName } from "@/components/app/ui";
 import type { Video } from "@/lib/app/api";
 import { useVideoProgress, type VideoState } from "@/lib/app/video-progress";
 
@@ -73,6 +73,7 @@ export function VideoTile({ video, accent, width, wide }: { video: Video; accent
 
 /** Ro'yxat qatori ko'rinishidagi kartochka. */
 export function VideoRow({ video, accent, index }: { video: Video; accent: AccentName; index?: number }) {
+  const { t } = useLocale();
   const state = useVideoProgress()[video.id];
   return (
     <Link
@@ -87,7 +88,10 @@ export function VideoRow({ video, accent, index }: { video: Video; accent: Accen
           {index !== undefined ? `${index + 1}. ` : ""}
           {video.title}
         </span>
-        <VideoStatus video={video} state={state} accent={accent} />
+        <span className="flex flex-wrap items-center gap-2">
+          <VideoStatus video={video} state={state} accent={accent} />
+          {video.exercise ? <Pill label={t("ex.chip")} color={accentOf("exercises").fg} background={accentOf("exercises").soft} /> : null}
+        </span>
       </span>
     </Link>
   );

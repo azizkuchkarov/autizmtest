@@ -39,7 +39,7 @@ const PAGES: Page[] = [
         items: [
           "Telefon raqami va akkaunt, Telegram bog'lanishi (Telegram ID va chat ID).",
           "Bola profili: ismi, tug'ilgan yili va oyi, jinsi, avatari.",
-          "Test javoblari va natijalari, kundalik, mashg'ulotlar tarixi, eslatma sozlamalari.",
+          "Test javoblari va natijalari, kundalik, mashg'ulotlar tarixi, ko'rilgan videolar, video mashqlar, eslatma sozlamalari.",
           "Bildirishnoma tokenlari, sessiyalar, kirish kodlari va shu raqam bilan yuborilgan murojaatlar.",
         ],
       },
@@ -77,7 +77,7 @@ const PAGES: Page[] = [
         items: [
           "Номер телефона и аккаунт, привязка Telegram (Telegram ID и ID чата).",
           "Профиль ребёнка: имя, год и месяц рождения, пол, аватар.",
-          "Ответы и результаты тестов, дневник, история занятий, настройки напоминаний.",
+          "Ответы и результаты тестов, дневник, история занятий, просмотренные видео, видеоупражнения, настройки напоминаний.",
           "Токены уведомлений, сессии, коды входа и обращения, отправленные с этим номером.",
         ],
       },
@@ -115,7 +115,7 @@ const PAGES: Page[] = [
         items: [
           "Your phone number and account, and your Telegram link (Telegram ID and chat ID).",
           "Child profile: first name, birth year and month, gender, avatar.",
-          "Test answers and results, diary, practice history, reminder settings.",
+          "Test answers and results, diary, practice history, watched videos, video exercises, reminder settings.",
           "Notification tokens, sessions, sign-in codes and messages you sent us with this number.",
         ],
       },

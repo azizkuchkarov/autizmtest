@@ -2,7 +2,7 @@
 
 import { ArrowRight, Lightbulb } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Avatar } from "@/components/app/avatar";
 import { HomeLessonCard, HomeProgressCard, NextStepCard } from "@/components/app/home-cards";
@@ -12,8 +12,7 @@ import { accent as accentOf, Button, Card, FadeIn, HeroCard, IconBadge, Pill, Sc
 import type { TranslationKey } from "@/lib/app-i18n";
 import { listAssessments, useAssessmentsVersion, type StoredAssessment } from "@/lib/app/history";
 import { useHydrated } from "@/lib/app/local-store";
-
-const TIPS: TranslationKey[] = ["home.tip1", "home.tip2", "home.tip3", "home.tip4", "home.tip5"];
+import { useTip } from "@/lib/app/tips";
 
 function greetingKey(): TranslationKey {
   const h = new Date().getHours();
@@ -31,7 +30,7 @@ export default function HomePage() {
   // Vaqt brauzerda hisoblanadi (server soati boshqa bo'lishi mumkin)
   const hydrated = useHydrated();
   const greeting: TranslationKey = hydrated ? greetingKey() : "home.afternoon";
-  const tip = useMemo(() => TIPS[new Date().getDate() % TIPS.length], []);
+  const tip = useTip();
 
   const assessmentsVersion = useAssessmentsVersion();
   useEffect(() => {
@@ -94,7 +93,7 @@ export default function HomePage() {
             <span className="t-caption" style={{ color: lessons.fg }}>
               {t("home.tipTitle")}
             </span>
-            <p className="t-body">{t(tip)}</p>
+            <p className="t-body min-h-6">{tip ? t(tip) : null}</p>
           </div>
         </Card>
       </FadeIn>
