@@ -1,13 +1,13 @@
 "use client";
 
-import { BadgeCheck, Check, CheckCircle2, Minus, Play, Plus } from "lucide-react";
+import { BadgeCheck, Check, CheckCircle2, ChevronRight, Minus, MonitorPlay, Play, Plus, WifiOff } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
 import { useLocale, useProfile } from "@/components/app/providers";
-import { ACCENT_GRADIENT, accent, Button, Card, ConfirmDialog, gradient } from "@/components/app/ui";
+import { ACCENT_GRADIENT, accent, Button, Card, ConfirmDialog, EmptyState, gradient, ProgressBar, Skeleton } from "@/components/app/ui";
 import type { ExercisePlan, Video } from "@/lib/app/api";
-import { planProgress, useExercisePlans } from "@/lib/app/exercises";
+import { exerciseTotals, planProgress, planTotals, useExercisePlans, useExerciseVideos } from "@/lib/app/exercises";
 
 function Stepper({ label, value, min, max, onChange }: { label: string; value: number; min: number; max: number; onChange: (n: number) => void }) {
   const cls = "flex h-10 w-10 items-center justify-center rounded-[13px] bg-muted text-ink disabled:opacity-40";
@@ -56,7 +56,7 @@ export function ExerciseAddCard({ video }: { video: Video }) {
           </span>
         </span>
         <div className="md:max-w-[280px]">
-          <Button title={t("ex.openExercises")} size="md" variant="secondary" href="/exercises" />
+          <Button title={t("ex.openExercises")} size="md" variant="secondary" href="/video-exercises" />
         </div>
       </div>
     );
@@ -109,10 +109,11 @@ function Thumb({ video }: { video: Video }) {
   );
 }
 
-function PlanCard({ plan, onLog, onRemove }: { plan: ExercisePlan; onLog: (delta: 1 | -1) => Promise<void>; onRemove: () => void }) {
+function PlanCard({ plan, index, onLog, onRemove }: { plan: ExercisePlan; index: number; onLog: (delta: 1 | -1) => Promise<void>; onRemove: () => void }) {
   const { t } = useLocale();
   const green = accent("exercises").fg;
   const p = planProgress(plan);
+  const totals = planTotals(plan);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
   const log = async (delta: 1 | -1) => {
@@ -133,8 +134,13 @@ function PlanCard({ plan, onLog, onRemove }: { plan: ExercisePlan; onLog: (delta
       <Link href={`/video/${plan.videoId}`} className="group flex items-center gap-4">
         <Thumb video={plan.video} />
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="t-heading line-clamp-2 text-[15.5px] leading-[20px] group-hover:text-tint">{plan.video.title}</span>
-          <span className="t-small text-ink-2">{t("ex.dayOf").replace("{n}", String(p.currentDay)).replace("{total}", String(plan.days))}</span>
+          <span className="t-heading line-clamp-2 text-[15.5px] leading-[20px] group-hover:text-tint">
+            {index + 1}. {plan.video.title}
+          </span>
+          <span className="t-small text-ink-2">
+            {t("ex.dayOf").replace("{n}", String(p.currentDay)).replace("{total}", String(plan.days))} ·{" "}
+            {t("ex.planTotal").replace("{done}", String(totals.done)).replace("{total}", String(totals.total))}
+          </span>
         </span>
       </Link>
       <div className="flex items-center gap-2">
@@ -175,50 +181,148 @@ function PlanCard({ plan, onLog, onRemove }: { plan: ExercisePlan; onLog: (delta
   );
 }
 
-/** Mashqlar bo'limi: bugun bajariladigan video mashqlar va yakunlanganlari. */
-export function VideoExercises() {
+function SummaryTile({ label, value, color }: { label: string; value: number; color?: string }) {
+  return (
+    <span className="flex min-w-0 flex-1 flex-col gap-0.5 rounded-[14px] bg-muted px-2.5 py-2.5">
+      <span className="t-heading text-[22px] leading-7 tabular-nums" style={color ? { color } : undefined}>
+        {value}
+      </span>
+      <span className="text-[12px] leading-[15px] text-ink-2">{label}</span>
+    </span>
+  );
+}
+
+/** Mashq boshlanmagan video: tavsiya va ikki tugma. */
+function AvailableCard({ video, index, onStart }: { video: Video; index: number; onStart: () => Promise<void> }) {
+  const { t } = useLocale();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(false);
+  const start = async () => {
+    setBusy(true);
+    setError(false);
+    try {
+      await onStart();
+    } catch {
+      setError(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Card className="!gap-4">
+      <Link href={`/video/${video.id}`} className="group flex items-center gap-4">
+        <Thumb video={video} />
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="t-heading line-clamp-2 text-[15.5px] leading-[20px] group-hover:text-tint">
+            {index + 1}. {video.title}
+          </span>
+          {video.exercise ? (
+            <span className="t-small text-ink-2">
+              {t("ex.advice").replace("{reps}", String(video.exercise.reps)).replace("{days}", String(video.exercise.days))} ·{" "}
+              {t("ex.perVideoTotal").replace("{n}", String(video.exercise.reps * video.exercise.days))}
+            </span>
+          ) : null}
+        </span>
+      </Link>
+      {error ? <p className="t-small text-[var(--danger,#E11D48)]">{t("common.offline")}</p> : null}
+      <div className="flex gap-2">
+        <Button title={t("common.start")} size="md" loading={busy} icon={Plus} onClick={start} className="flex-1" />
+        <Button title={t("ex.watch")} size="md" variant="secondary" href={`/video/${video.id}`} className="flex-1 whitespace-nowrap" />
+      </div>
+    </Card>
+  );
+}
+
+/** Mashqlar sahifasidagi kirish kartasi: videolar faqat shu bosilganda ochiladi. */
+export function VideoExercisesEntry() {
+  const { t, locale } = useLocale();
+  const { child } = useProfile();
+  const { plans } = useExercisePlans(child?.id, locale);
+  const { videos } = useExerciseVideos(locale);
+  const active = (plans ?? []).filter((p) => !p.completedAt);
+  const doneToday = active.filter((p) => planProgress(p).doneToday).length;
+  const totals = videos ? exerciseTotals(videos, plans ?? []) : null;
+  const summary = !totals
+    ? "\u00a0"
+    : totals.videos === 0
+      ? t("ex.entrySoon")
+      : t("ex.entrySummary").replace("{n}", String(totals.videos)).replace("{m}", String(totals.total));
+
+  return (
+    <Link href="/video-exercises" className="flex items-center gap-3.5 rounded-[24px] border border-line bg-element p-4 shadow-card transition-transform active:scale-[0.99]">
+      <span className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-[17px] text-white" style={{ background: gradient(ACCENT_GRADIENT.exercises) }}>
+        <MonitorPlay className="h-[26px] w-[26px]" />
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="t-heading text-[18px]">{t("ex.videoTitle")}</span>
+        <span className="t-small text-ink-2">{summary}</span>
+        {active.length > 0 ? (
+          <span className="text-[12.5px] font-bold" style={{ color: accent("exercises").fg }}>
+            {t("ex.entryToday").replace("{n}", String(doneToday)).replace("{total}", String(active.length))}
+          </span>
+        ) : null}
+      </span>
+      <ChevronRight className="h-4 w-4 shrink-0 text-ink-3" />
+    </Link>
+  );
+}
+
+/** Video mashqlar: admin belgilagan tartibda, har birining holati bilan. */
+export function VideoExercisesList() {
   const { t, locale } = useLocale();
   const { child } = useProfile();
   const { plans, log, remove, add } = useExercisePlans(child?.id, locale);
+  const { videos, error, reload } = useExerciseVideos(locale);
   const [removing, setRemoving] = useState<ExercisePlan | null>(null);
-  if (!plans) return null;
-
-  const active = plans.filter((p) => !p.completedAt);
-  const order = [...active].sort((a, b) => Number(planProgress(a).doneToday) - Number(planProgress(b).doneToday));
-  const finished = plans.filter((p) => p.completedAt);
   const green = accent("exercises").fg;
 
+  if (error && !videos) return <EmptyState icon={WifiOff} title={t("common.offlineTitle")} body={t("common.offline")} actionTitle={t("common.retry")} onAction={reload} />;
+  if (!videos || !plans)
+    return (
+      <>
+        <Skeleton height={150} />
+        <Skeleton height={150} />
+      </>
+    );
+
+  // Belgisi olib tashlangan, lekin ota-ona boshlagan mashqlar ro'yxat oxirida qoladi
+  const known = new Set(videos.map((v) => v.id));
+  const rest = plans.filter((p) => !known.has(p.videoId)).map((p) => p.video);
+  const list = [...videos, ...rest];
+  const totals = exerciseTotals(videos, plans);
+
+  if (list.length === 0) return <EmptyState icon={MonitorPlay} title={t("ex.videoTitle")} body={t("ex.listEmpty")} />;
+
   return (
-    <div className="flex flex-col gap-2.5">
-      <h2 className="t-heading text-[18px]">{t("ex.videoTitle")}</h2>
-      {active.length === 0 && finished.length === 0 ? (
-        <Card className="!gap-4">
-          <p className="t-small text-[14.5px] leading-[21px] text-ink-2">{t("ex.emptyBody")}</p>
-          <div className="md:max-w-[280px]">
-            <Button title={t("ex.openLessons")} size="md" variant="secondary" href="/lessons" />
-          </div>
-        </Card>
-      ) : null}
-      {order.map((plan) => (
-        <PlanCard key={plan.id} plan={plan} onLog={(delta) => log(plan.id, delta)} onRemove={() => setRemoving(plan)} />
-      ))}
-      {finished.length > 0 ? (
-        <Card className="!gap-4">
-          <h3 className="t-heading text-[16px]">{t("ex.finishedTitle")}</h3>
-          {finished.map((plan) => (
-            <div key={plan.id} className="flex items-center gap-2">
-              <BadgeCheck className="h-5 w-5 shrink-0" style={{ color: green }} />
-              <span className="flex min-w-0 flex-1 flex-col">
-                <span className="t-small-bold line-clamp-2">{plan.video.title}</span>
-                <span className="t-small text-ink-3">{t("ex.finishedRow").replace("{days}", String(plan.days)).replace("{reps}", String(plan.repsPerDay))}</span>
+    <>
+      <p className="t-body text-ink-2">{t("ex.listSubtitle")}</p>
+      <Card className="!gap-4">
+        <div className="flex gap-2">
+          <SummaryTile label={t("ex.statVideos")} value={totals.videos} />
+          <SummaryTile label={t("ex.statTotal")} value={totals.total} />
+          <SummaryTile label={t("ex.statDone")} value={totals.done} color={green} />
+        </div>
+        <ProgressBar value={totals.total > 0 ? (totals.done / totals.total) * 100 : 0} color={green} height={7} />
+      </Card>
+      {list.map((video, i) => {
+        const plan = plans.find((p) => p.videoId === video.id);
+        if (!plan) return <AvailableCard key={video.id} video={video} index={i} onStart={() => add(video.id, video.exercise?.reps ?? 3, video.exercise?.days ?? 7)} />;
+        if (!plan.completedAt) return <PlanCard key={video.id} plan={plan} index={i} onLog={(delta) => log(plan.id, delta)} onRemove={() => setRemoving(plan)} />;
+        return (
+          <Card key={video.id} className="!flex-row items-center !gap-2">
+            <BadgeCheck className="h-[22px] w-[22px] shrink-0" style={{ color: green }} />
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="t-small-bold line-clamp-2">
+                {i + 1}. {plan.video.title}
               </span>
-              <button onClick={() => add(plan.videoId, plan.repsPerDay, plan.days).catch(() => {})} className="t-small-bold shrink-0 text-tint hover:underline">
-                {t("ex.again")}
-              </button>
-            </div>
-          ))}
-        </Card>
-      ) : null}
+              <span className="t-small text-ink-3">{t("ex.finishedRow").replace("{days}", String(plan.days)).replace("{reps}", String(plan.repsPerDay))}</span>
+            </span>
+            <button onClick={() => add(plan.videoId, plan.repsPerDay, plan.days).catch(() => {})} className="t-small-bold shrink-0 text-tint hover:underline">
+              {t("ex.again")}
+            </button>
+          </Card>
+        );
+      })}
       <ConfirmDialog
         open={!!removing}
         title={t("ex.remove")}
@@ -232,6 +336,6 @@ export function VideoExercises() {
         }}
         onCancel={() => setRemoving(null)}
       />
-    </div>
+    </>
   );
 }

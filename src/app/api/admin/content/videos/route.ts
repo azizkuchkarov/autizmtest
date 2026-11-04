@@ -20,7 +20,7 @@ export async function POST(req: Request) {
   if (!sourceFile && !data.videoUrl) return NextResponse.json({ error: "Video faylni yuklang." }, { status: 400 });
 
   const video = await prisma.video.create({
-    data: { ...data, ...(sourceFile ? { sourceFile, status: "processing", videoUrl: "" } : { status: "ready" }) },
+    data: { ...data, ...(data.exerciseEnabled ? { exerciseMarkedAt: new Date() } : {}), ...(sourceFile ? { sourceFile, status: "processing", videoUrl: "" } : { status: "ready" }) },
   });
   return NextResponse.json({ video }, { status: 201 });
 }

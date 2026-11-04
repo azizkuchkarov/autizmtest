@@ -6,13 +6,13 @@ import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Button, Card, sym } from '@/components/ui';
+import { Button, Card, EmptyState, PressableScale, ProgressBar, Skeleton, sym, useCardShadow } from '@/components/ui';
 import { Accents, Radius, Spacing } from '@/constants/theme';
 import { useLocale } from '@/contexts/locale';
 import { useProfile } from '@/contexts/profile';
 import { useTheme } from '@/hooks/use-theme';
 import { absoluteUrl, type ExercisePlan, type Video } from '@/lib/api';
-import { planProgress, useExercisePlans } from '@/lib/exercises';
+import { exerciseTotals, planProgress, planTotals, useExercisePlans, useExerciseVideos } from '@/lib/exercises';
 
 const GREEN = Accents.exercises.fg;
 
@@ -71,7 +71,7 @@ export function ExerciseAddCard({ video }: { video: Video }) {
             </ThemedText>
           </View>
         </View>
-        <Button title={t('ex.openExercises')} size="md" variant="secondary" onPress={() => router.navigate('/exercises')} />
+        <Button title={t('ex.openExercises')} size="md" variant="secondary" onPress={() => router.push('/video-exercises')} />
       </Card>
     );
   }
@@ -122,10 +122,11 @@ function Thumb({ video }: { video: Video }) {
   );
 }
 
-function PlanCard({ plan, onLog, onRemove }: { plan: ExercisePlan; onLog: (delta: 1 | -1) => Promise<void>; onRemove: () => void }) {
+function PlanCard({ plan, index, onLog, onRemove }: { plan: ExercisePlan; index: number; onLog: (delta: 1 | -1) => Promise<void>; onRemove: () => void }) {
   const { t } = useLocale();
   const theme = useTheme();
   const p = planProgress(plan);
+  const totals = planTotals(plan);
   const [busy, setBusy] = useState(false);
   const log = async (delta: 1 | -1) => {
     if (busy) return;
@@ -145,10 +146,11 @@ function PlanCard({ plan, onLog, onRemove }: { plan: ExercisePlan; onLog: (delta
         <Thumb video={plan.video} />
         <View style={{ flex: 1, gap: 3 }}>
           <ThemedText type="heading" numberOfLines={2} style={{ fontSize: 15.5, lineHeight: 20 }}>
-            {plan.video.title}
+            {index + 1}. {plan.video.title}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            {t('ex.dayOf').replace('{n}', String(p.currentDay)).replace('{total}', String(plan.days))}
+            {t('ex.dayOf').replace('{n}', String(p.currentDay)).replace('{total}', String(plan.days))} ·{' '}
+            {t('ex.planTotal').replace('{done}', String(totals.done)).replace('{total}', String(totals.total))}
           </ThemedText>
         </View>
       </Pressable>
@@ -198,17 +200,127 @@ function PlanCard({ plan, onLog, onRemove }: { plan: ExercisePlan; onLog: (delta
   );
 }
 
-/** Mashqlar bo'limi: bugun bajariladigan video mashqlar va yakunlanganlari. */
-export function VideoExercises() {
+function SummaryTile({ label, value, accent }: { label: string; value: number; accent?: boolean }) {
+  const theme = useTheme();
+  return (
+    <View style={[styles.tile, { backgroundColor: theme.backgroundMuted }]}>
+      <ThemedText type="heading" style={{ fontSize: 22, lineHeight: 28, fontVariant: ['tabular-nums'], color: accent ? GREEN : undefined }}>
+        {value}
+      </ThemedText>
+      <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12, lineHeight: 15 }}>
+        {label}
+      </ThemedText>
+    </View>
+  );
+}
+
+/** Mashq boshlanmagan video: tavsiya va ikki tugma. */
+function AvailableCard({ video, index, onStart }: { video: Video; index: number; onStart: () => Promise<void> }) {
+  const { t } = useLocale();
+  const [busy, setBusy] = useState(false);
+  const start = async () => {
+    setBusy(true);
+    try {
+      await onStart();
+    } catch {
+      Alert.alert(t('common.error'), t('common.offline'));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Card style={{ gap: Spacing.three }}>
+      <Pressable accessibilityRole="button" onPress={() => router.push(`/video/${video.id}`)} style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.three }}>
+        <Thumb video={video} />
+        <View style={{ flex: 1, gap: 3 }}>
+          <ThemedText type="heading" numberOfLines={2} style={{ fontSize: 15.5, lineHeight: 20 }}>
+            {index + 1}. {video.title}
+          </ThemedText>
+          {video.exercise ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              {t('ex.advice').replace('{reps}', String(video.exercise.reps)).replace('{days}', String(video.exercise.days))} ·{' '}
+              {t('ex.perVideoTotal').replace('{n}', String(video.exercise.reps * video.exercise.days))}
+            </ThemedText>
+          ) : null}
+        </View>
+      </Pressable>
+      <View style={{ flexDirection: 'row', gap: Spacing.two }}>
+        <View style={{ flex: 1 }}>
+          <Button title={t('common.start')} size="md" loading={busy} icon={sym('plus', 'add')} onPress={start} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Button title={t('ex.watch')} size="md" variant="secondary" onPress={() => router.push(`/video/${video.id}`)} />
+        </View>
+      </View>
+    </Card>
+  );
+}
+
+/** Mashqlar sahifasidagi kirish kartasi: videolar faqat shu bosilganda ochiladi. */
+export function VideoExercisesEntry() {
+  const { t, locale } = useLocale();
+  const theme = useTheme();
+  const shadow = useCardShadow();
+  const { child } = useProfile();
+  const { plans } = useExercisePlans(child?.id, locale);
+  const { videos } = useExerciseVideos(locale);
+  const active = (plans ?? []).filter((p) => !p.completedAt);
+  const doneToday = active.filter((p) => planProgress(p).doneToday).length;
+  const totals = videos ? exerciseTotals(videos, plans ?? []) : null;
+  const summary = !totals
+    ? ' '
+    : totals.videos === 0
+      ? t('ex.entrySoon')
+      : t('ex.entrySummary').replace('{n}', String(totals.videos)).replace('{m}', String(totals.total));
+
+  return (
+    <PressableScale
+      onPress={() => router.push('/video-exercises')}
+      style={[styles.entry, shadow, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+      <LinearGradient colors={Accents.exercises.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.entryIcon}>
+        <SymbolView name={sym('play.rectangle.fill', 'smart_display')} size={26} tintColor="#FFFFFF" />
+      </LinearGradient>
+      <View style={{ flex: 1, gap: 2 }}>
+        <ThemedText type="heading" style={{ fontSize: 18 }}>
+          {t('ex.videoTitle')}
+        </ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          {summary}
+        </ThemedText>
+        {active.length > 0 ? (
+          <ThemedText type="smallBold" style={{ fontSize: 12.5, color: GREEN }}>
+            {t('ex.entryToday').replace('{n}', String(doneToday)).replace('{total}', String(active.length))}
+          </ThemedText>
+        ) : null}
+      </View>
+      <SymbolView name={sym('chevron.right', 'chevron_right')} size={15} tintColor={theme.textTertiary} />
+    </PressableScale>
+  );
+}
+
+/** Video mashqlar: admin belgilagan tartibda, har birining holati bilan. */
+export function VideoExercisesList() {
   const { t, locale } = useLocale();
   const theme = useTheme();
   const { child } = useProfile();
   const { plans, log, remove, add } = useExercisePlans(child?.id, locale);
-  if (!plans) return null;
+  const { videos, error, reload } = useExerciseVideos(locale);
 
-  const active = plans.filter((p) => !p.completedAt);
-  const order = [...active].sort((a, b) => Number(planProgress(a).doneToday) - Number(planProgress(b).doneToday));
-  const finished = plans.filter((p) => p.completedAt);
+  if (error && !videos)
+    return <EmptyState icon={sym('wifi.slash', 'wifi_off')} title={t('common.offlineTitle')} body={t('common.offline')} actionTitle={t('common.retry')} onAction={reload} />;
+  if (!videos || !plans)
+    return (
+      <>
+        <Skeleton height={150} />
+        <Skeleton height={150} />
+      </>
+    );
+
+  // Belgisi olib tashlangan, lekin ota-ona boshlagan mashqlar ro'yxat oxirida qoladi
+  const known = new Set(videos.map((v) => v.id));
+  const rest = plans.filter((p) => !known.has(p.videoId)).map((p) => p.video);
+  const list = [...videos, ...rest];
+  const totals = exerciseTotals(videos, plans);
 
   const onRemove = (plan: ExercisePlan) =>
     Alert.alert(t('ex.remove'), t('ex.removeConfirm'), [
@@ -216,50 +328,72 @@ export function VideoExercises() {
       { text: t('ex.remove'), style: 'destructive', onPress: () => remove(plan.id).catch(() => {}) },
     ]);
 
+  if (list.length === 0) return <EmptyState icon={sym('play.rectangle.fill', 'smart_display')} title={t('ex.videoTitle')} body={t('ex.listEmpty')} />;
+
   return (
-    <View style={{ gap: Spacing.two + 2 }}>
-      <ThemedText type="heading" style={{ fontSize: 18 }}>
-        {t('ex.videoTitle')}
+    <>
+      <ThemedText type="body" themeColor="textSecondary">
+        {t('ex.listSubtitle')}
       </ThemedText>
-      {active.length === 0 && finished.length === 0 ? (
-        <Card style={{ gap: Spacing.three }}>
-          <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 14.5, lineHeight: 21 }}>
-            {t('ex.emptyBody')}
-          </ThemedText>
-          <Button title={t('ex.openLessons')} size="md" variant="secondary" onPress={() => router.navigate('/lessons')} />
-        </Card>
-      ) : null}
-      {order.map((plan) => (
-        <PlanCard key={plan.id} plan={plan} onLog={(delta) => log(plan.id, delta)} onRemove={() => onRemove(plan)} />
-      ))}
-      {finished.length > 0 ? (
-        <Card style={{ gap: Spacing.three }}>
-          <ThemedText type="heading" style={{ fontSize: 16 }}>
-            {t('ex.finishedTitle')}
-          </ThemedText>
-          {finished.map((plan) => (
-            <View key={plan.id} style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
-              <SymbolView name={sym('checkmark.seal.fill', 'verified')} size={20} tintColor={GREEN} />
-              <View style={{ flex: 1 }}>
-                <ThemedText type="smallBold" numberOfLines={2}>
-                  {plan.video.title}
-                </ThemedText>
-                <ThemedText type="small" themeColor="textTertiary">
-                  {t('ex.finishedRow').replace('{days}', String(plan.days)).replace('{reps}', String(plan.repsPerDay))}
-                </ThemedText>
-              </View>
-              <ThemedText type="smallBold" style={{ color: theme.tint }} onPress={() => add(plan.videoId, plan.repsPerDay, plan.days).catch(() => {})}>
-                {t('ex.again')}
+      <Card style={{ gap: Spacing.three }}>
+        <View style={{ flexDirection: 'row', gap: Spacing.two }}>
+          <SummaryTile label={t('ex.statVideos')} value={totals.videos} />
+          <SummaryTile label={t('ex.statTotal')} value={totals.total} />
+          <SummaryTile label={t('ex.statDone')} value={totals.done} accent />
+        </View>
+        <ProgressBar value={totals.total > 0 ? (totals.done / totals.total) * 100 : 0} color={GREEN} height={7} />
+      </Card>
+      {list.map((video, i) => {
+        const plan = plans.find((p) => p.videoId === video.id);
+        if (!plan)
+          return <AvailableCard key={video.id} video={video} index={i} onStart={() => add(video.id, video.exercise?.reps ?? 3, video.exercise?.days ?? 7)} />;
+        if (!plan.completedAt)
+          return <PlanCard key={video.id} plan={plan} index={i} onLog={(delta) => log(plan.id, delta)} onRemove={() => onRemove(plan)} />;
+        return (
+          <Card key={video.id} style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+            <SymbolView name={sym('checkmark.seal.fill', 'verified')} size={22} tintColor={GREEN} />
+            <View style={{ flex: 1 }}>
+              <ThemedText type="smallBold" numberOfLines={2}>
+                {i + 1}. {plan.video.title}
+              </ThemedText>
+              <ThemedText type="small" themeColor="textTertiary">
+                {t('ex.finishedRow').replace('{days}', String(plan.days)).replace('{reps}', String(plan.repsPerDay))}
               </ThemedText>
             </View>
-          ))}
-        </Card>
-      ) : null}
-    </View>
+            <ThemedText type="smallBold" style={{ color: theme.tint }} onPress={() => add(plan.videoId, plan.repsPerDay, plan.days).catch(() => {})}>
+              {t('ex.again')}
+            </ThemedText>
+          </Card>
+        );
+      })}
+    </>
   );
 }
 
 const styles = StyleSheet.create({
+  tile: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    borderRadius: 14,
+  },
+  entry: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    padding: 16,
+    borderRadius: Radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  entryIcon: {
+    width: 54,
+    height: 54,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   stepper: {
     flexDirection: 'row',
     alignItems: 'center',

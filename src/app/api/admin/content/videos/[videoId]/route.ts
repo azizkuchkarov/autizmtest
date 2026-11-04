@@ -20,8 +20,17 @@ export async function PATCH(req: Request, { params }: Ctx) {
   const sourceFile = uploadId ? incomingFile(uploadId) : null;
   if (uploadId && !sourceFile) return NextResponse.json({ error: "Yuklangan fayl topilmadi. Qayta yuklang." }, { status: 400 });
 
+  // Mashq belgisi qo'yilgan payt saqlanadi: Mashqlarda videolar shu tartibda chiqadi
+  const before = await prisma.video.findUnique({ where: { id: videoId }, select: { exerciseEnabled: true } });
+  const marked =
+    data.exerciseEnabled === true && !before?.exerciseEnabled
+      ? { exerciseMarkedAt: new Date() }
+      : data.exerciseEnabled === false
+        ? { exerciseMarkedAt: null }
+        : {};
+
   const video = await prisma.video
-    .update({ where: { id: videoId }, data: { ...data, ...(sourceFile ? { sourceFile, processError: null } : {}) } })
+    .update({ where: { id: videoId }, data: { ...data, ...marked, ...(sourceFile ? { sourceFile, processError: null } : {}) } })
     .catch(() => null);
   if (!video) return NextResponse.json({ error: "Video topilmadi." }, { status: 404 });
   return NextResponse.json({ video });

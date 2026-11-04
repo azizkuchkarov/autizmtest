@@ -299,6 +299,7 @@ model Video {
   exerciseEnabled Boolean @default(false)
   exerciseReps    Int?
   exerciseDays    Int?
+  exerciseMarkedAt DateTime? // qachon mashq uchun belgilangan: Mashqlarda shu tartibda
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   category      ContentCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)

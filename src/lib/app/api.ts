@@ -188,6 +188,10 @@ export type ExercisePlan = {
   log: Record<string, number>;
 };
 
+export function fetchExerciseVideos(locale: Locale) {
+  return request<{ videos: Video[] }>(`/api/content/exercises?locale=${locale}`);
+}
+
 export function fetchExercisePlans(childId: string, locale: Locale) {
   return request<{ plans: ExercisePlan[] }>(`/api/mobile/children/${childId}/exercises?locale=${locale}`);
 }

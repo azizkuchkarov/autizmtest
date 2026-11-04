@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 
-import { addExercisePlan, deleteExercisePlan, fetchExercisePlans, logExercise, type ExercisePlan } from '@/lib/app/api';
+import { addExercisePlan, deleteExercisePlan, fetchExercisePlans, fetchExerciseVideos, logExercise, type ExercisePlan, type Video } from '@/lib/app/api';
 import type { Locale } from '@/lib/locale';
 import { dayKey } from '@/lib/app/play-activities';
 
@@ -81,4 +81,42 @@ export function useExercisePlans(childId: string | null | undefined, locale: Loc
   );
 
   return { plans, reload, add, log, remove };
+}
+
+/** Bitta mashq: necha marta bajarilishi kerak va nechtasi bajarildi (kunlik me'yordan ortig'i sanalmaydi). */
+export function planTotals(plan: ExercisePlan) {
+  const total = plan.repsPerDay * plan.days;
+  const done = Object.values(plan.log).reduce((n, c) => n + Math.min(c, plan.repsPerDay), 0);
+  return { total, done: Math.min(done, total) };
+}
+
+/** Video mashqlar bo'yicha umumiy: boshlanmaganlari mutaxassis tavsiyasi bilan sanaladi. */
+export function exerciseTotals(videos: Video[], plans: ExercisePlan[]) {
+  const known = new Set(videos.map((v) => v.id));
+  const fromPlans = plans.map(planTotals);
+  const planned = new Set(plans.map((p) => p.videoId));
+  const waiting = videos.filter((v) => !planned.has(v.id)).reduce((n, v) => n + (v.exercise ? v.exercise.reps * v.exercise.days : 0), 0);
+  return {
+    videos: known.size + plans.filter((p) => !known.has(p.videoId)).length,
+    total: waiting + fromPlans.reduce((n, p) => n + p.total, 0),
+    done: fromPlans.reduce((n, p) => n + p.done, 0),
+  };
+}
+
+/** Admin mashq uchun belgilagan videolar, belgilangan tartibda. null — yuklanmoqda. */
+export function useExerciseVideos(locale: Locale) {
+  const [videos, setVideos] = useState<Video[] | null>(null);
+  const [error, setError] = useState(false);
+  const reload = useCallback(async () => {
+    setError(false);
+    try {
+      setVideos((await fetchExerciseVideos(locale)).videos);
+    } catch {
+      setError(true);
+    }
+  }, [locale]);
+  useEffect(() => {
+    reload();
+  }, [reload]);
+  return { videos, error, reload };
 }
