@@ -134,17 +134,18 @@ AutizmTest помогает родителям заметить ранние п�
 | Support URL | https://autizmtest.uz |
 | Marketing URL | https://autizmtest.uz |
 | Copyright | 2026 AutizmTest |
-| Version | 1.0.0 (build 8) |
+| Version | 1.0.0 (build 9) |
 
 ### Skrinshotlar — 6.9" Display
-`docs/appstore/screenshots-6.9-v2/` papkasidagi 7 ta fayl (1320 × 2868), shu tartibda:
+`docs/appstore/screenshots-6.9-v2/` papkasidagi 8 ta fayl (1320 × 2868), shu tartibda:
 1. `1-result.png` — Natija va keyingi 3 qadam
 2. `2-dynamics.png` — Belgilar o'zgarishi
 3. `3-home.png` — Bosh sahifa: bugungi vazifa va reja
 4. `7-lessons.png` — Bo'lim ichi: video darslar va "Ko'rildi" belgisi
-5. `4-exercises.png` — Bugungi 5 daqiqa
-6. `5-test.png` — Skrining testi
-7. `6-skills.png` — Oylik ko'nikmalar testi
+5. `4-exercises.png` — Mashqlar sahifasi
+6. `8-video-exercises.png` — Video mashqlar: nechta video va jami mashq
+7. `5-test.png` — Skrining testi
+8. `6-skills.png` — Oylik ko'nikmalar testi
 
 > 6.9" yuklansa, kichik iPhone'lar uchun avtomatik ishlatiladi. iPad yo'q (`supportsTablet: false`).
 

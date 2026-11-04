@@ -21,10 +21,10 @@ Hammasi shu yerda: nusxalab joylashtiring. Asosiy til: ro'yxatda **Uzbek** bo'ls
 
 | Nima | Fayl |
 |---|---|
-| Play'ga yuklanadigan build | `docs/googleplay/build/AutizmTest-1.0.0-5.aab` |
+| Play'ga yuklanadigan build | `docs/googleplay/build/AutizmTest-1.0.0-6.aab` |
 | App icon (512×512) | `docs/googleplay/icon-512.png` |
 | Feature graphic (1024×500) | `docs/googleplay/feature-graphic-1024x500.png` |
-| Phone screenshots (7 ta, 9:16) | `docs/googleplay/screenshots-v2/` (tartib: 1, 2, 3, 7, 4, 5, 6) |
+| Phone screenshots (8 ta, 9:16) | `docs/googleplay/screenshots-v2/` (tartib: 1, 2, 3, 7, 4, 8, 5, 6) |
 
 > **Imzolash:** birinchi yuklashda Play **"Play App Signing"**ni taklif qiladi — **qabul qiling** (Google ilovani o'z kaliti bilan imzolaydi; bizning kalit faqat "upload key").
 > Upload key: `~/.android-keys/` (Mac'da, loyihadan tashqarida) — **zaxira nusxasini oling**.
