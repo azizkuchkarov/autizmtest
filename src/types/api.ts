@@ -1,31 +1,6 @@
 import type { OverallResult } from "@/lib/scoring";
 import type { MonitoringResult } from "@/lib/monitoringScoring";
 
-export type AiSummaryStatus = "pending" | "ready" | "failed";
-
-export interface AiSummaryPayload {
-  summary?: {
-    shortConclusion?: string;
-    whyThisLevel?: string;
-  };
-  strengths?: {
-    examples?: string[];
-  };
-  needsFocus?: {
-    priority?: string[];
-  };
-  nextSteps?: {
-    homePlan?: Array<{
-      title?: string;
-      why?: string;
-      how?: string[];
-    }>;
-  };
-  disclaimer?: {
-    text?: string;
-  };
-}
-
 /** Screening v2 natija struktura */
 export interface ScreeningV2Result {
   ageGroupId: string;
@@ -71,22 +46,10 @@ export type AssessmentScoring = ScreeningV2Result | OverallResult | MonitoringRe
 export interface ScoreResponse {
   testType?: "screening" | "progress";
   scoring: AssessmentScoring;
-  aiSummary: {
-    status: AiSummaryStatus;
-    payload?: AiSummaryPayload | null;
-    error?: string | null;
-  };
-  aiSummaryLocale?: string | null;
   /** Test to‘ldirilgan sana (ISO string) */
   completedAt?: string | null;
   /** Yosh guruhi (AGE_1_5_2, AGE_3_4, …) */
   ageGroup?: string | null;
   /** Ota-onaning javoblari (savol id → 0|1|2|3), PDF va boshqa maqsadlar uchun */
   answers?: Record<string, number> | null;
-}
-
-export interface AiSummaryResponse {
-  ok: boolean;
-  status: AiSummaryStatus;
-  error?: string;
 }

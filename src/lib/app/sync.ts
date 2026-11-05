@@ -125,7 +125,6 @@ async function pull(childId: string) {
       ageGroup: a.ageGroup as Parameters<typeof saveAssessment>[0]["ageGroup"],
       childGender: a.childGender ?? "",
       result: a.scoring as ScreeningResult,
-      ...(a.ai ? { ai: a.ai } : {}),
     });
   }
 }

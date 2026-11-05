@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     template: "%s | Autizm skrining",
   },
   description:
-    "Bepul autizm belgilari skrining testi, mutaxassislardan video darslar va uyda mashqlar. 3 soha: ijtimoiy aloqa, muloqot, takroriy xatti-harakatlar. AI xulosa va ABA markazlari.",
+    "Bepul autizm belgilari skrining testi, mutaxassislardan video darslar va uyda mashqlar. 3 soha: ijtimoiy aloqa, muloqot, takroriy xatti-harakatlar. ABA markazlari.",
   keywords: [
     "autizm skrining",
     "bola rivojlanishi",

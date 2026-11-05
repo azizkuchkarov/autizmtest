@@ -61,8 +61,6 @@ export async function POST(req: Request) {
       ageGroup: legacyAgeGroup(ageMonths),
       answers: { version: 3, ageMonths, answers, followUps: followUps ?? {} },
       scoring,
-      // Ko'nikmalar testi uchun AI xulosa yaratilmaydi
-      aiSummaryStatus: testType === "skills" ? "failed" : "pending",
       ...(childGender && { childGender }),
       ...(phone && { phone }),
       ...(childId && { childId }),

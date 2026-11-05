@@ -58,12 +58,6 @@ model ScoringConfig {
   updatedAt DateTime @updatedAt
 }
 
-model AiPrompt {
-  id        String   @id @default("default")
-  prompt    String
-  updatedAt DateTime @updatedAt
-}
-
 model UserEvent {
   id        String   @id @default(uuid())
   type      String
@@ -230,10 +224,6 @@ model Assessment {
   ageGroup         String // AGE_1_5_2 | AGE_3_4 | AGE_5_6 | AGE_7_9
   answers          Json // Record<questionId, 0|1|2|3>
   scoring          Json // OverallResult from scoring.ts
-  aiSummaryStatus  String   @default("pending") // pending | ready | failed
-  aiSummaryPayload Json? // AI structured output
-  aiSummaryLocale  String? // uz | ru — qaysi tilda yaratilgan
-  aiSummaryError   String?
   respondent       String? // Ota | Ona | Vasiy
   childGender      String? // Qiz | O'g'il
   phone            String? // +998XXXXXXXXX

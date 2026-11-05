@@ -165,23 +165,6 @@ export function fetchActivity(childId: string) {
   );
 }
 
-export type AiSummaryPayload = {
-  summary?: { shortConclusion?: string; whyThisLevel?: string };
-  strengths?: { examples?: string[] };
-  needsFocus?: { priority?: string[] };
-  nextSteps?: { homePlan?: Array<{ title?: string; why?: string; how?: string[] }> };
-  disclaimer?: { text?: string };
-};
-
-export function fetchAiSummary(assessmentId: string, locale: Locale) {
-  // AI javobi uzoq davom etishi mumkin
-  return request<{ ok: boolean; status: 'ready' | 'failed' | 'pending'; payload?: AiSummaryPayload; error?: string }>(
-    `/api/assessments/${assessmentId}/ai-summary`,
-    { method: 'POST', body: JSON.stringify({ locale }) },
-    90000,
-  );
-}
-
 /* ------------------------------- Content ------------------------------- */
 
 export type ContentKind = 'lesson' | 'exercise';

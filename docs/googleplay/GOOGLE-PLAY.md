@@ -190,7 +190,7 @@ Har bir tur uchun: **Collected: Yes · Shared: No · Processed ephemerally: No �
 
 **Belgilanmaydi:** Location, Financial info, Messages, Photos and videos, Audio (rasm va ovozlar faqat qurilmada qoladi), Files and docs, Calendar, Contacts, Web browsing, App info and performance (crash yig'ilmaydi).
 
-> "Shared: No" — chunki Eskiz (SMS), OpenAI (AI xulosa) va Firebase (push) biz uchun xizmat ko'rsatuvchi provayderlar; Google qoidasiga ko'ra bu "sharing" hisoblanmaydi.
+> "Shared: No" — chunki Eskiz (SMS) va Firebase (push) biz uchun xizmat ko'rsatuvchi provayderlar; Google qoidasiga ko'ra bu "sharing" hisoblanmaydi.
 
 ---
 

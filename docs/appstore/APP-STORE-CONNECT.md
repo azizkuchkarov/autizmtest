@@ -28,7 +28,7 @@ App Store'da o'zbek tili yo'q — do'kon sahifasi **English (asosiy)** va **Russ
 | Subtitle (RU) | Скрининг аутизма для родителей |
 | Category — Primary | Health & Fitness |
 | Category — Secondary | Education |
-| Content Rights | Does not contain third-party content (videolar sizniki bo'lsa) |
+| Content Rights | **Contains third-party content — Yes, I have the necessary rights** (ovozli darslardagi tovushlar Wikimedia Commons'dan: Public domain/CC0, `prisma/sound-sources.json`) |
 | Privacy Policy URL | https://autizmtest.uz/privacy |
 
 > **Nega "Medical" emas:** Apple tibbiy toifadagi ilovalardan diagnoz bo'yicha ruxsatnomalar so'rashi mumkin (Guideline 1.4.1). Ilova o'zini "skrining va ota-onalar uchun mashg'ulotlar, tashxis emas" deb ko'rsatadi — Health & Fitness shunga mos.
@@ -74,7 +74,7 @@ IMPORTANT: AutizmTest is a screening questionnaire and education tool for parent
 
 **Keywords** (100)
 ```
-autism,ASD,screening,child development,speech delay,toddler,parents,therapy,ABA,milestones,Uzbek
+autism,ASD,screening,child development,speech delay,toddler,parents,milestones,Uzbek,home practice
 ```
 
 **What's New**
@@ -119,7 +119,7 @@ AutizmTest помогает родителям заметить ранние п�
 
 **Keywords**
 ```
-аутизм,РАС,скрининг,развитие ребенка,задержка речи,малыш,родители,АВА,логопед,дефектолог
+аутизм,РАС,скрининг,развитие ребенка,задержка речи,малыш,родители,логопед,дефектолог,занятия дома
 ```
 
 **What's New**
@@ -131,10 +131,10 @@ AutizmTest помогает родителям заметить ранние п�
 
 | Maydon | Qiymat |
 |---|---|
-| Support URL | https://autizmtest.uz |
+| Support URL | https://autizmtest.uz/privacy |
 | Marketing URL | https://autizmtest.uz |
 | Copyright | 2026 AutizmTest |
-| Version | 1.0.0 (build 9) |
+| Version | 1.0.0 (build 10) |
 
 ### Skrinshotlar — 6.9" Display
 `docs/appstore/screenshots-6.9-v2/` papkasidagi 8 ta fayl (1320 × 2868), shu tartibda:
@@ -198,24 +198,49 @@ REVIEW_OTP_CODE=XXXXXX
 ```
 > Raqam haqiqiy abonentniki bo'lmasin (masalan, ishlatilmaydigan raqam) — unga SMS yuborilmaydi, kod shu qiymat bo'ladi.
 
-**Notes** (nusxalang, raqam va kodni o'zingiz qo'ying):
+**Notes** (Apple 2.1 javobi uchun yangilangan; nusxalang, `[VIDEO LINK]` va `[VIDEO RIGHTS STATEMENT]` o'rniga o'zingiznikini yozing, 4000 belgidan oshmasin):
 ```
-How to sign in:
-1. Open the app, tap "Keyingi" (Next) on the intro screens and accept the terms.
-2. Enter the phone number from the "User name" field and tap continue.
-3. Enter the 6-digit code from the "Password" field (no SMS is sent to this demo number).
-4. Create a child profile (any name and birth year), then explore Home, Lessons, Exercises, Progress and Profile. The screening test is in the Progress tab.
+SCREEN RECORDING
+See the video in the Attachment field (or: [VIDEO LINK]). Recorded on a physical iPhone running the latest iOS, starting from app launch. It shows sign-in, the main features and account deletion.
 
-The app interface is in Uzbek and Russian (language switch: top-right on the intro screens, or Profile → Language).
+1. PURPOSE AND AUDIENCE
+AutizmTest is for Uzbek- and Russian-speaking parents of children aged 16 months to 10 years. Parents often do not know whether their child's behaviour needs a specialist's attention or what to do at home. The app offers an age-matched screening questionnaire, a simple result with next steps, short daily home activities, video lessons, sound lessons, a picture communication board and a diary. It is a screening and education tool, not a medical device: it does not diagnose or treat, and result screens recommend consulting a specialist. The test is not yet clinically validated, and the app says so in "Test haqida" (About the test).
 
-About the app: AutizmTest is a screening and parent-education tool, not a diagnostic device. Every result screen states that it is not a medical diagnosis and recommends consulting a specialist.
+2. SETUP AND ACCESS
+Sign-in uses a phone number and a one-time code. Use the demo number from the "User name" field and the code from the "Password" field; no SMS is sent to it. Ask for a new code at most once a minute. After account deletion, the same details create a new empty account.
+1) Open the app, go through the intro screens and accept the terms.
+2) Enter the demo number, choose SMS and enter the code.
+3) Create a child profile with any name and birth date, then finish the short setup.
+4) Home: tap "Testni boshlash" (Start test) for the screening.
+5) Tabs: Asosiy (Home), Darslar (Lessons), Mashqlar (Exercises), Rivojlanish (Progress), Profil (Profile).
+Language: the interface is in Uzbek and Russian; switch it in Profile.
+Account deletion: Profile > "Akkauntni o'chirish" (Delete account), then confirm.
+No sample files are needed.
 
-Account deletion: Profile → "Akkauntni o'chirish" (Delete account) permanently deletes the account and all data.
+The app has no paid content, in-app purchases, subscriptions or ads. It has no public user-generated content: diary notes and picture cards are private to the user and are not visible to other users, so there is nothing to report or block. Camera, photo library and microphone are requested only when a parent adds a custom picture card; those files stay on the device.
 
-Methodology: Profile → "Test haqida" (About the test), also linked from the Progress tab and the result screen, explains the test's structure, sources (DSM-5 structure, CDC milestones, AAP/AAN guidance) and limitations, including that it is not yet clinically validated. The privacy policy is linked in Profile.
+3. EXTERNAL SERVICES
+- Our own server (autizmtest.uz): accounts, content and test results
+- Eskiz.uz: SMS sign-in codes
+- Telegram Bot API: optional sign-in code delivery
+- Firebase Cloud Messaging and Apple Push Notification service: notifications
+No AI, analytics, advertising or payment services are used.
 
-Permissions: camera, photo library and microphone are requested only when a parent adds a custom picture card with their own photo or voice; these files stay on the device.
+4. REGIONAL DIFFERENCES
+Features and content are the same in all regions. The only limit is that regular sign-in accepts Uzbekistan numbers (+998), because codes are delivered by local SMS or Telegram. The demo account works from any region.
+
+5. REGULATED INDUSTRY AND THIRD-PARTY MATERIAL
+The app does not provide medical services, diagnosis or treatment, so it holds no medical licence. Questions were written for this app and are not copied from licensed instruments. The structure follows public sources listed in "Test haqida": DSM-5 criteria structure, CDC milestones, AAP and AAN guidance. Sounds in the sound lessons come from Wikimedia Commons (public domain or CC0). Video lessons: [VIDEO RIGHTS STATEMENT].
 ```
+
+**Attachment** — ekran yozuvi. Haqiqiy iPhone'da, eng so'nggi iOS'da, ilova yopiq holatdan boshlab, uzluksiz yozing:
+1. Ilovani o'chirib qayta o'rnating, ekran yozuvini yoqib, ilovani oching
+2. Intro ekranlari → shartlarni qabul qilish
+3. Demo raqam → SMS → kod → bola profili va qisqa sozlash
+4. Asosiy → "Testni boshlash" → testni oxirigacha to'ldirish → natija
+5. Darslar → video ochish; Mashqlar → video mashq va rasmli muloqot
+6. Rivojlanish → kundalik → Profil → "Test haqida" va maxfiylik siyosati
+7. Profil → "Akkauntni o'chirish" → tasdiqlash → ilova boshlang'ich ekranga qaytishi
 
 ---
 

@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import type { AiSummaryPayload } from '@/lib/api';
 import { riskTier, type AgeGroupId, type RiskTier, type ScreeningResult } from '@/lib/screening';
 import { isScreeningV3 } from '@/shared/lib/screening-v3/score';
 
@@ -9,13 +8,12 @@ const STORAGE_KEY = 'autizm_assessments_v1';
 /** Qurilmada saqlanadigan test natijasi. */
 export type StoredAssessment = {
   id: string;
-  /** Serverdagi assessment ID (AI xulosa uchun). Internet bo'lmasa null. */
+  /** Serverdagi assessment ID. Internet bo'lmasa null. */
   serverId: string | null;
   createdAt: string;
   ageGroup: AgeGroupId;
   childGender: string;
   result: ScreeningResult;
-  ai?: { locale: string; payload: AiSummaryPayload };
 };
 
 export async function listAssessments(): Promise<StoredAssessment[]> {

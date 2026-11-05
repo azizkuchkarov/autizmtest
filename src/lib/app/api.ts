@@ -111,30 +111,11 @@ export function createAssessment(input: CreateAssessmentInput) {
   return request<{ assessmentId: string }>("/api/assessments", { method: "POST", body: JSON.stringify(input) });
 }
 
-export type AiSummaryPayload = {
-  summary?: { shortConclusion?: string; whyThisLevel?: string };
-  strengths?: { examples?: string[] };
-  needsFocus?: { priority?: string[] };
-  nextSteps?: { homePlan?: Array<{ title?: string; why?: string; how?: string[] }> };
-  disclaimer?: { text?: string };
-};
-
-export function fetchAiSummary(assessmentId: string, locale: Locale) {
-  // AI javobi uzoq davom etishi mumkin
-  return request<{ ok: boolean; status: "ready" | "failed" | "pending"; payload?: AiSummaryPayload; error?: string }>(
-    `/api/assessments/${assessmentId}/ai-summary`,
-    { method: "POST", body: JSON.stringify({ locale }) },
-    90000,
-  );
-}
-
 /** Serverdagi natija (boshqa qurilmada topshirilgan yoki havola orqali ochilgan). */
 export function fetchServerAssessment(id: string) {
   return request<{
     testType: string;
     scoring: unknown;
-    aiSummary: { status: string; payload: AiSummaryPayload | null };
-    aiSummaryLocale: string | null;
     completedAt: string | null;
     ageGroup: string | null;
   }>(`/api/assessments/${encodeURIComponent(id)}`);
@@ -328,7 +309,7 @@ export type ActivitySnapshot = {
   sound: { id: string; cardId: string | null; level: 1 | 2 | 3 | 4; result: "ok" | "help" | "miss"; day: string; at: number; snapshot: boolean }[];
   play: { id: string; activityId: string; rating: "great" | "ok" | "hard"; day: string; at: number }[];
   aac: { day: string; taps: number; sentences: number; sentenceWords: number; cards: Record<string, number> }[];
-  assessments: { id: string; createdAt: string; ageGroup: string; childGender: string | null; scoring: unknown; ai: { locale: string; payload: AiSummaryPayload } | null }[];
+  assessments: { id: string; createdAt: string; ageGroup: string; childGender: string | null; scoring: unknown }[];
   skills?: { id: string; createdAt: string; scoring: unknown }[];
 };
 

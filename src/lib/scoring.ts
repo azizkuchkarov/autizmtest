@@ -87,7 +87,6 @@ export interface OverallResult {
     needsAttention: string[];
     needsSupport: string[];
     topPriorityDomains: string[];
-    aiFacts: Record<string, unknown>;
   };
 }
 
@@ -339,43 +338,6 @@ export function scoreAssessment(input: ScoringInput): OverallResult {
     .sort((a, b) => (domains[b]?.risk ?? 0) - (domains[a]?.risk ?? 0))
     .slice(0, 3);
 
-  const aiFacts = {
-    ageGroup,
-    completeness: { answered, total, ratio: Number(completenessRatio.toFixed(2)), isValid },
-    overall: {
-      riskIndex: Number(riskIndex.toFixed(2)),
-      skillIndex: Number(skillIndex.toFixed(2)),
-      level,
-    },
-    redFlags: {
-      count: redFlagCount,
-      ids: redFlagTriggeredIds,
-      triggerAnswer,
-    },
-    domains: activeDomainIds.reduce(
-      (acc, d) => {
-        const dom = domains[d];
-        if (dom)
-          acc[d] = {
-            normalized: Number(dom.normalized.toFixed(2)),
-            risk: Number(dom.risk.toFixed(2)),
-            band: dom.band,
-            answered: dom.answeredCount,
-            total: dom.totalCount,
-            redFlags: dom.flaggedQuestions,
-          };
-        return acc;
-      },
-      {} as Record<string, unknown>
-    ),
-    priorities: {
-      strengths,
-      needsAttention,
-      needsSupport,
-      topPriorityDomains,
-    },
-  };
-
   if (!isValid) {
     levelReason = `Diqqat: test to‘liq emas (${answered}/${total}, ${(completenessRatio * 100).toFixed(0)}%). Natija taxminiy. ${levelReason}`;
   }
@@ -408,7 +370,6 @@ export function scoreAssessment(input: ScoringInput): OverallResult {
       needsAttention,
       needsSupport,
       topPriorityDomains,
-      aiFacts,
     },
   };
 }

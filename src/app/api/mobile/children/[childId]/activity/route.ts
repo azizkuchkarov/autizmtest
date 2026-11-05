@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
-import { isPlaceholderAiPayload } from "@/lib/ai-summary";
 import { prisma } from "@/lib/db";
 import { ownChild, requireUser, validationError } from "@/lib/mobile-api";
 
@@ -69,7 +68,6 @@ export async function GET(_req: Request, { params }: Ctx) {
       ageGroup: a.ageGroup,
       childGender: a.childGender,
       scoring: a.scoring,
-      ai: a.aiSummaryStatus === "ready" && a.aiSummaryPayload && a.aiSummaryLocale && !isPlaceholderAiPayload(a.aiSummaryPayload) ? { locale: a.aiSummaryLocale, payload: a.aiSummaryPayload } : null,
     })),
     skills: skills.map((a) => ({ id: a.id, createdAt: a.createdAt.toISOString(), scoring: a.scoring })),
   });

@@ -124,7 +124,7 @@ function ScreeningRun() {
       }}
       onSubmit={async (answers, followUps) => {
         const result = scoreScreeningV3({ months, answers, followUps });
-        // Natija brauzerda darhol hisoblanadi; server nusxasi akkaunt tarixi va AI xulosa uchun
+        // Natija brauzerda darhol hisoblanadi; server nusxasi akkaunt tarixi uchun
         let serverId: string | null = null;
         try {
           const res = await createAssessmentV3({ testType: "screening", ageMonths: months, answers, followUps, childId: child.id, childGender: child.gender, phone: phone || undefined });

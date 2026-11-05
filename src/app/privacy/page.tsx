@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 const CONTACT_EMAIL = "aziz.kuchkarov91@gmail.com";
-const UPDATED = "2026-11-03";
+const UPDATED = "2026-11-05";
 
 type Section = { title: string; body: string[] };
 type Policy = { id: string; lang: string; title: string; updated: string; intro: string; sections: Section[] };
@@ -54,7 +54,6 @@ const POLICIES: Policy[] = [
         body: [
           "Eskiz.uz — tizimga kirish kodi bilan SMS yuborish uchun telefon raqamingiz uzatiladi.",
           "Telegram — bot orqali kirishni tanlasangiz, kirish kodi Telegram orqali yuboriladi; raqamingizni tasdiqlash uchun kontaktingizni o'zingiz ulashasiz.",
-          "OpenAI — ixtiyoriy AI xulosa uchun test natijalari (ballar, yosh guruhi) yuboriladi; telefon raqami va bola ismi yuborilmaydi.",
           "Google Firebase Cloud Messaging va Apple Push Notification service — bildirishnomalarni yetkazish uchun qurilma tokeni ishlatiladi.",
           "Ma'lumotlar xizmat serverlarimizda saqlanadi.",
         ],
@@ -125,7 +124,6 @@ const POLICIES: Policy[] = [
         body: [
           "Eskiz.uz — для отправки SMS с кодом входа передаётся номер телефона.",
           "Telegram — если вы выбрали вход через бота, код отправляется в Telegram; для подтверждения номера вы сами делитесь своим контактом.",
-          "OpenAI — для необязательного AI-заключения передаются результаты теста (баллы, возрастная группа); номер телефона и имя ребёнка не передаются.",
           "Google Firebase Cloud Messaging и Apple Push Notification service — токен устройства для доставки уведомлений.",
           "Данные хранятся на серверах сервиса.",
         ],
@@ -194,7 +192,6 @@ const POLICIES: Policy[] = [
         body: [
           "Eskiz.uz — receives your phone number to deliver the sign-in SMS.",
           "Telegram — if you choose to sign in with the bot, the code is sent via Telegram; you share your own contact to confirm your number.",
-          "OpenAI — receives test results (scores, age group) for the optional AI summary; your phone number and the child's name are not sent.",
           "Google Firebase Cloud Messaging and Apple Push Notification service — use a device token to deliver notifications.",
           "Data is stored on our service's servers.",
         ],

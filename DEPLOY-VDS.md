@@ -85,7 +85,6 @@ Quyidagini yozing (qiymatlarni o‘zingiznikiga almashtiring):
 
 ```env
 DATABASE_URL="postgresql://autizm_user:SIZNING_PAROL@localhost:5432/autizmtest?schema=public"
-OPENAI_API_KEY=sk-proj-...
 
 ESKIZ_EMAIL=your@email.com
 ESKIZ_PASSWORD=eskiz_parol

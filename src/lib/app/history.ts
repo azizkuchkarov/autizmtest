@@ -1,7 +1,6 @@
 /* Test natijalari brauzerda saqlanadi (mobil ilovadagi AsyncStorage o'rniga localStorage) va akkauntga sinxronlanadi. */
 import { useSyncExternalStore } from "react";
 
-import type { AiSummaryPayload } from "@/lib/app/api";
 import { riskTier, type AgeGroupId, type RiskTier, type ScreeningResult } from "@/lib/app/screening";
 import { isScreeningV3 } from "@/lib/screening-v3/score";
 
@@ -28,13 +27,12 @@ export function useAssessmentsVersion() {
 
 export type StoredAssessment = {
   id: string;
-  /** Serverdagi assessment ID (AI xulosa uchun). Internet bo'lmasa null. */
+  /** Serverdagi assessment ID. Internet bo'lmasa null. */
   serverId: string | null;
   createdAt: string;
   ageGroup: AgeGroupId;
   childGender: string;
   result: ScreeningResult;
-  ai?: { locale: string; payload: AiSummaryPayload };
 };
 
 function read(): StoredAssessment[] {

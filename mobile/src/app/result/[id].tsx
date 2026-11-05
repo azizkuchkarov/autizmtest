@@ -1,7 +1,7 @@
 import { SymbolView } from 'expo-symbols';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { assessmentTier, LevelBadge, useAssessmentAge, useFormatDate, useRiskColors } from '@/components/result-summary';
@@ -13,16 +13,11 @@ import { Spacing } from '@/constants/theme';
 import { SHOW_CENTERS } from '@/constants/features';
 import { useLocale } from '@/contexts/locale';
 import { useAccent, useTheme } from '@/hooks/use-theme';
-import { fetchAiSummary, fetchContent, type AiSummaryPayload, type Video } from '@/lib/api';
+import { fetchContent, type Video } from '@/lib/api';
 import { domainStyle } from '@/lib/domains';
-import { getAssessment, saveAssessment, type StoredAssessment } from '@/lib/history';
+import { getAssessment, type StoredAssessment } from '@/lib/history';
 import { getTestConfig, riskTier, weakDomains, type RiskTier } from '@/lib/screening';
 import { isScreeningV3 } from '@/shared/lib/screening-v3/score';
-
-/** Kalit sozlanmagan paytda server eski versiyada saqlagan soxta xulosa — ota-onaga ko'rsatilmaydi. */
-function isPlaceholderAi(payload: AiSummaryPayload | null | undefined) {
-  return payload?.summary?.shortConclusion === 'AI xulosa sozlamasi topilmadi.';
-}
 
 const LEVEL_KEY: Record<RiskTier, 'result.levelLow' | 'result.levelModerate' | 'result.levelHigh'> = {
   low: 'result.levelLow',
@@ -52,85 +47,6 @@ function DomainCard({ id, title, score }: { id: string; title: string; score: nu
   );
 }
 
-function BulletList({ items, icon, color }: { items: string[]; icon: Parameters<typeof sym>[0]; color: string }) {
-  return (
-    <View style={{ gap: Spacing.two }}>
-      {items.map((item, i) => (
-        <View key={i} style={{ flexDirection: 'row', gap: Spacing.two, alignItems: 'flex-start' }}>
-          <SymbolView name={sym(icon, 'check_circle')} size={16} tintColor={color} style={{ marginTop: 3 }} />
-          <ThemedText type="body" style={{ flex: 1 }}>
-            {item}
-          </ThemedText>
-        </View>
-      ))}
-    </View>
-  );
-}
-
-function AiSummary({ payload }: { payload: AiSummaryPayload }) {
-  const { t } = useLocale();
-  const theme = useTheme();
-  const tint = useAccent('test');
-  return (
-    <View style={{ gap: Spacing.four }}>
-      {payload.summary?.shortConclusion ? <ThemedText type="default">{payload.summary.shortConclusion}</ThemedText> : null}
-      {payload.summary?.whyThisLevel ? (
-        <ThemedText type="body" themeColor="textSecondary">
-          {payload.summary.whyThisLevel}
-        </ThemedText>
-      ) : null}
-      {payload.strengths?.examples?.length ? (
-        <View style={{ gap: Spacing.two }}>
-          <ThemedText type="caption" style={{ color: theme.success }}>
-            {t('result.aiStrengths')}
-          </ThemedText>
-          <BulletList items={payload.strengths.examples} icon="checkmark.circle.fill" color={theme.success} />
-        </View>
-      ) : null}
-      {payload.needsFocus?.priority?.length ? (
-        <View style={{ gap: Spacing.two }}>
-          <ThemedText type="caption" style={{ color: theme.warning }}>
-            {t('result.aiFocus')}
-          </ThemedText>
-          <BulletList items={payload.needsFocus.priority} icon="exclamationmark.circle.fill" color={theme.warning} />
-        </View>
-      ) : null}
-      {payload.nextSteps?.homePlan?.length ? (
-        <View style={{ gap: Spacing.three }}>
-          <ThemedText type="caption" style={{ color: tint.fg }}>
-            {t('result.aiPlan')}
-          </ThemedText>
-          {payload.nextSteps.homePlan.map((p, i) => (
-            <View key={i} style={[styles.planItem, { backgroundColor: theme.backgroundMuted }]}>
-              <View style={{ flexDirection: 'row', gap: Spacing.two, alignItems: 'center' }}>
-                <View style={[styles.planNum, { backgroundColor: tint.fg }]}>
-                  <ThemedText type="smallBold" style={{ color: '#fff' }}>
-                    {i + 1}
-                  </ThemedText>
-                </View>
-                <ThemedText type="heading" style={{ flex: 1, fontSize: 15.5 }}>
-                  {p.title}
-                </ThemedText>
-              </View>
-              {p.why ? (
-                <ThemedText type="small" themeColor="textSecondary">
-                  {p.why}
-                </ThemedText>
-              ) : null}
-              {p.how?.length ? <BulletList items={p.how} icon="arrow.right.circle.fill" color={tint.fg} /> : null}
-            </View>
-          ))}
-        </View>
-      ) : null}
-      {payload.disclaimer?.text ? (
-        <ThemedText type="small" themeColor="textTertiary">
-          {payload.disclaimer.text}
-        </ThemedText>
-      ) : null}
-    </View>
-  );
-}
-
 export default function ResultScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t, locale } = useLocale();
@@ -141,36 +57,11 @@ export default function ResultScreen() {
   const lessons = useAccent('lessons');
   const exercises = useAccent('exercises');
   const [item, setItem] = useState<StoredAssessment | null | undefined>(undefined);
-  const [aiState, setAiState] = useState<'idle' | 'loading' | 'failed'>('idle');
   const [recommended, setRecommended] = useState<Video[]>([]);
 
   useEffect(() => {
     getAssessment(id).then(setItem);
   }, [id]);
-
-  // AI xulosa: tanlangan tilda keshlangan bo'lmasa serverdan so'raladi
-  useEffect(() => {
-    if (!item?.serverId) return;
-    if (item.ai?.locale === locale && !isPlaceholderAi(item.ai.payload)) return;
-    let cancelled = false;
-    setAiState('loading');
-    fetchAiSummary(item.serverId, locale)
-      .then(async (res) => {
-        if (cancelled) return;
-        if (res.status === 'ready' && res.payload && !isPlaceholderAi(res.payload)) {
-          const next = { ...item, ai: { locale, payload: res.payload } };
-          setItem(next);
-          setAiState('idle');
-          await saveAssessment(next);
-        } else {
-          setAiState('failed');
-        }
-      })
-      .catch(() => !cancelled && setAiState('failed'));
-    return () => {
-      cancelled = true;
-    };
-  }, [item, locale]);
 
   // Zaif sohalarga mos uy mashqlari
   useEffect(() => {
@@ -254,25 +145,6 @@ export default function ResultScreen() {
         </>
       )}
 
-      {/* AI xulosa: tayyor bo'lsa yoki tayyorlanayotgan bo'lsa ko'rsatiladi; ishlamasa bo'lim umuman chiqmaydi */}
-      {item.serverId && aiState !== 'failed' && (
-        <>
-          <SectionHeader title={t('result.ai')} />
-          <Card>
-            {item.ai?.locale === locale && !isPlaceholderAi(item.ai.payload) ? (
-              <AiSummary payload={item.ai.payload} />
-            ) : (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.three }}>
-                <ActivityIndicator color={theme.tint} />
-                <ThemedText type="body" themeColor="textSecondary">
-                  {t('result.aiLoading')}
-                </ThemedText>
-              </View>
-            )}
-          </Card>
-        </>
-      )}
-
       {recommended.length > 0 && (
         <>
           <SectionHeader title={t('result.recommended')} />
@@ -329,18 +201,3 @@ export default function ResultScreen() {
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  planItem: {
-    borderRadius: 16,
-    padding: 14,
-    gap: Spacing.two,
-  },
-  planNum: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

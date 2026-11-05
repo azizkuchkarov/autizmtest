@@ -64,7 +64,7 @@ function toIndex(raw: number) {
   return 60 + ((raw - h) / (100 - h)) * 40;
 }
 
-/** Eski yosh guruhi (videolar va AI xulosa uchun) */
+/** Eski yosh guruhi (videolar uchun) */
 export function legacyAgeGroup(months: number) {
   if (months <= 24) return "AGE_1_5_2" as const;
   if (months <= 48) return "AGE_3_4" as const;
@@ -149,7 +149,7 @@ export function scoreScreeningV3(input: { months: number; answers: V3Answers; fo
   };
   const redFlags = [...urgentFlags, ...criticalFailed].map((id) => ({ questionId: id, text: textOf(id) }));
 
-  // Eski natija tuzilmasi bilan mos (AI xulosa, ro'yxatlar, Rivojlanish sahifasi) + v3 maydonlari
+  // Eski natija tuzilmasi bilan mos (ro'yxatlar, Rivojlanish sahifasi) + v3 maydonlari
   const blocks = sectionScores.map((s) => {
     const sectionItems = items.filter((i) => i.section === s.id && risks.has(i.id));
     return {

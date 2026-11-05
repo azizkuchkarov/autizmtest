@@ -21,7 +21,7 @@ EXPO_PUBLIC_API_URL=http://localhost:3000
 
 - `src/app/(tabs)` — Bosh sahifa, Test, Darslar, Mashqlar, Profil tablari
 - `src/app/screening` — test: ma'lumot kiritish (`setup`) va savollar (`run`)
-- `src/app/result/[id]` — natija, AI xulosa va tavsiya qilingan mashqlar
+- `src/app/result/[id]` — natija va tavsiya qilingan mashqlar
 - `src/app/video/[id]` — video pleer
 - `src/shared` — saytdan ko'chirilgan savollar va ball hisoblash (`src/data`, `src/lib/screening-v2-*`). Saytda savollar o'zgarsa, shu yerga ham ko'chiring.
 - `src/lib/api.ts` — backend so'rovlari
@@ -33,7 +33,7 @@ EXPO_PUBLIC_API_URL=http://localhost:3000
 - `GET /api/content/videos/:id?locale=` — bitta video
 - `/api/admin/content` — kategoriya va videolarni boshqarish (admin sessiyasi kerak)
 
-Test natijasi qurilmada hisoblanadi; server faqat AI xulosa va ABA markaziga yozilish uchun kerak.
+Test natijasi qurilmada hisoblanadi; server akkaunt tarixi va ABA markaziga yozilish uchun kerak.
 
 ## App Store'ga yuklash (EAS)
 

@@ -92,7 +92,6 @@ export async function POST(req: Request) {
         ageGroup,
         answers: answers as object,
         scoring,
-        aiSummaryStatus: "pending",
         ...(respondent && { respondent }),
         ...(childGender && { childGender }),
         ...(phone && { phone }),
@@ -112,11 +111,6 @@ export async function POST(req: Request) {
     const response: ScoreResponse = {
       testType,
       scoring: scoring as ScoreResponse["scoring"],
-      aiSummary: {
-        status: "pending",
-        payload: null,
-        error: null,
-      },
     };
 
     return NextResponse.json({ assessmentId: assessment.id, ...response }, { status: 201 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, AlertTriangle, ArrowRightCircle, CheckCircle2, HandHeart, MonitorPlay, Stethoscope, type LucideIcon } from "lucide-react";
+import { AlertTriangle, HandHeart, MonitorPlay, Stethoscope } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
@@ -10,17 +10,12 @@ import { assessmentTier, LevelBadge, riskColors, useAssessmentAge, useFormatDate
 import { accent, Card, EmptyState, FadeIn, IconBadge, ListRow, ProgressBar, Screen, SectionHeader, Spinner } from "@/components/app/ui";
 import { ResultV3, ResultV3Details, v3WeakDomains } from "@/components/app/result-v3";
 import { VideoTile } from "@/components/app/video-cards";
-import { fetchAiSummary, fetchContent, fetchServerAssessment, type AiSummaryPayload, type Video } from "@/lib/app/api";
+import { fetchContent, fetchServerAssessment, type Video } from "@/lib/app/api";
 import { domainStyle } from "@/lib/app/domains";
 import { SHOW_CENTERS } from "@/lib/app/features";
-import { getAssessment, saveAssessment, type StoredAssessment } from "@/lib/app/history";
+import { getAssessment, type StoredAssessment } from "@/lib/app/history";
 import { getTestConfig, isAgeGroup, riskTier, weakDomains, type RiskTier, type ScreeningResult } from "@/lib/app/screening";
 import { isScreeningV3 } from "@/lib/screening-v3/score";
-
-/** Kalit sozlanmagan paytda server eski versiyada saqlagan soxta xulosa — ota-onaga ko'rsatilmaydi. */
-function isPlaceholderAi(payload: AiSummaryPayload | null | undefined) {
-  return payload?.summary?.shortConclusion === "AI xulosa sozlamasi topilmadi.";
-}
 
 const LEVEL_KEY: Record<RiskTier, "result.levelLow" | "result.levelModerate" | "result.levelHigh"> = {
   low: "result.levelLow",
@@ -47,62 +42,6 @@ function DomainRow({ id, title, score }: { id: string; title: string; score: num
   );
 }
 
-function BulletList({ items, icon: Icon, color }: { items: string[]; icon: LucideIcon; color: string }) {
-  return (
-    <ul className="flex flex-col gap-2">
-      {items.map((item, i) => (
-        <li key={i} className="flex items-start gap-2">
-          <Icon className="mt-[3px] h-4 w-4 shrink-0" style={{ color }} />
-          <span className="t-body flex-1">{item}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function AiSummary({ payload }: { payload: AiSummaryPayload }) {
-  const { t } = useLocale();
-  const tint = accent("test");
-  return (
-    <div className="flex flex-col gap-6">
-      {payload.summary?.shortConclusion ? <p className="t-default">{payload.summary.shortConclusion}</p> : null}
-      {payload.summary?.whyThisLevel ? <p className="t-body text-ink-2">{payload.summary.whyThisLevel}</p> : null}
-      {payload.strengths?.examples?.length ? (
-        <div className="flex flex-col gap-2">
-          <span className="t-caption text-success">{t("result.aiStrengths")}</span>
-          <BulletList items={payload.strengths.examples} icon={CheckCircle2} color="var(--success)" />
-        </div>
-      ) : null}
-      {payload.needsFocus?.priority?.length ? (
-        <div className="flex flex-col gap-2">
-          <span className="t-caption text-warning">{t("result.aiFocus")}</span>
-          <BulletList items={payload.needsFocus.priority} icon={AlertCircle} color="var(--warning)" />
-        </div>
-      ) : null}
-      {payload.nextSteps?.homePlan?.length ? (
-        <div className="flex flex-col gap-4">
-          <span className="t-caption" style={{ color: tint.fg }}>
-            {t("result.aiPlan")}
-          </span>
-          {payload.nextSteps.homePlan.map((p, i) => (
-            <div key={i} className="flex flex-col gap-2 rounded-2xl bg-muted p-3.5">
-              <div className="flex items-center gap-2">
-                <span className="t-small-bold flex h-[26px] w-[26px] items-center justify-center rounded-full text-white" style={{ background: tint.fg }}>
-                  {i + 1}
-                </span>
-                <h4 className="t-heading flex-1 text-[15.5px]">{p.title}</h4>
-              </div>
-              {p.why ? <p className="t-small text-ink-2">{p.why}</p> : null}
-              {p.how?.length ? <BulletList items={p.how} icon={ArrowRightCircle} color={tint.fg} /> : null}
-            </div>
-          ))}
-        </div>
-      ) : null}
-      {payload.disclaimer?.text ? <p className="t-small text-ink-3">{payload.disclaimer.text}</p> : null}
-    </div>
-  );
-}
-
 /** Brauzerda topilmasa — serverdan (havola orqali ochilgan natija). */
 async function loadAssessment(id: string): Promise<StoredAssessment | null> {
   const local = await getAssessment(id);
@@ -117,7 +56,6 @@ async function loadAssessment(id: string): Promise<StoredAssessment | null> {
       ageGroup: res.ageGroup,
       childGender: "",
       result: res.scoring as ScreeningResult,
-      ai: res.aiSummary?.status === "ready" && res.aiSummary.payload && res.aiSummaryLocale ? { locale: res.aiSummaryLocale, payload: res.aiSummary.payload } : undefined,
     };
   } catch {
     return null;
@@ -133,35 +71,11 @@ export default function ResultPage() {
   const lessons = accent("lessons");
   const exercises = accent("exercises");
   const [item, setItem] = useState<StoredAssessment | null | undefined>(undefined);
-  /** AI xulosa olinmagan til (yuklanish holati shundan kelib chiqadi) */
-  const [aiFailedLocale, setAiFailedLocale] = useState<string | null>(null);
   const [recommended, setRecommended] = useState<Video[]>([]);
 
   useEffect(() => {
     loadAssessment(id).then(setItem);
   }, [id]);
-
-  // AI xulosa: tanlangan tilda keshlangan bo'lmasa serverdan so'raladi
-  useEffect(() => {
-    if (!item?.serverId) return;
-    if (item.ai?.locale === locale && !isPlaceholderAi(item.ai.payload)) return;
-    let cancelled = false;
-    fetchAiSummary(item.serverId, locale)
-      .then(async (res) => {
-        if (cancelled) return;
-        if (res.status === "ready" && res.payload && !isPlaceholderAi(res.payload)) {
-          const next = { ...item, ai: { locale, payload: res.payload } };
-          setItem(next);
-          if (await getAssessment(item.id)) await saveAssessment(next);
-        } else {
-          setAiFailedLocale(locale);
-        }
-      })
-      .catch(() => !cancelled && setAiFailedLocale(locale));
-    return () => {
-      cancelled = true;
-    };
-  }, [item, locale]);
 
   // Zaif sohalarga mos uy mashqlari
   useEffect(() => {
@@ -250,23 +164,6 @@ export default function ResultPage() {
         </FadeIn>
       )}
 
-        </>
-      )}
-
-      {/* AI xulosa: tayyor bo'lsa yoki tayyorlanayotgan bo'lsa ko'rsatiladi; ishlamasa bo'lim umuman chiqmaydi */}
-      {item.serverId && aiFailedLocale !== locale && (
-        <>
-          <SectionHeader title={t("result.ai")} />
-          <Card>
-            {item.ai?.locale === locale && !isPlaceholderAi(item.ai.payload) ? (
-              <AiSummary payload={item.ai.payload} />
-            ) : (
-              <div className="flex items-center gap-4">
-                <Spinner />
-                <p className="t-body text-ink-2">{t("result.aiLoading")}</p>
-              </div>
-            )}
-          </Card>
         </>
       )}
 

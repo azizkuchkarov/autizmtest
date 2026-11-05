@@ -27,12 +27,12 @@ export const publicOfferUz: PublicOfferDocument = {
     {
       title: "1. Atamalar va tomonlar",
       body:
-        "Xizmat ko‘rsatuvchi — Autizm skrining platformasini boshqaruvchi yuridik yoki jismoniy shaxs (keyingi o‘rinlarda — «Biz», «Platforma»). Foydalanuvchi — ofertani qabul qilib, Platformada ro‘yxatdan o‘tgan yoki testdan foydalangan jismoniy shaxs. Kontent — test savollari, natijalar, sun’iy intellekt yordamida shakllantirilgan matnlar, PDF va boshqa materiallar.",
+        "Xizmat ko‘rsatuvchi — Autizm skrining platformasini boshqaruvchi yuridik yoki jismoniy shaxs (keyingi o‘rinlarda — «Biz», «Platforma»). Foydalanuvchi — ofertani qabul qilib, Platformada ro‘yxatdan o‘tgan yoki testdan foydalangan jismoniy shaxs. Kontent — test savollari, natijalar, PDF va boshqa materiallar.",
     },
     {
       title: "2. Xizmatning predmeti",
       body:
-        "Platforma ota-onalar (yoki vasiylar) uchun bolaning rivojlanishi bo‘yicha skrining so‘rovnomasini to‘ldirish, avtomatik baholash natijalarini shakllantirish va qo‘shimcha xizmatlar (masalan, AI xulosa, PDF eksport) imkonini beradi. Test tugagach natija darhol ko‘rsatiladi. Xizmat masofadan — internet orqali ko‘rsatiladi. Platforma funksiyalari axborot sifatida e’lon qilingan holatda amal qiladi.",
+        "Platforma ota-onalar (yoki vasiylar) uchun bolaning rivojlanishi bo‘yicha skrining so‘rovnomasini to‘ldirish, avtomatik baholash natijalarini shakllantirish va qo‘shimcha xizmatlar (masalan, PDF eksport) imkonini beradi. Test tugagach natija darhol ko‘rsatiladi. Xizmat masofadan — internet orqali ko‘rsatiladi. Platforma funksiyalari axborot sifatida e’lon qilingan holatda amal qiladi.",
     },
     {
       title: "3. Tibbiy tashxis emasligi",
@@ -57,12 +57,12 @@ export const publicOfferUz: PublicOfferDocument = {
     {
       title: "7. Intellektual mulk",
       body:
-        "Platformadagi testlar, dizayn, dasturiy kod, matnlar, AI promptlari va boshqa materiallar intellektual mulk huquqlari bilan himoyalanadi. Ularni ruxsatsiz nusxalash, tarqatish yoki tijorat maqsadida qayta ishlash taqiqlanadi. Foydalanuvchi o‘z shaxsiy foydalanishi uchun natijalarni saqlash va mutaxassisga ko‘rsatish huquqiga ega.",
+        "Platformadagi testlar, dizayn, dasturiy kod, matnlar va boshqa materiallar intellektual mulk huquqlari bilan himoyalanadi. Ularni ruxsatsiz nusxalash, tarqatish yoki tijorat maqsadida qayta ishlash taqiqlanadi. Foydalanuvchi o‘z shaxsiy foydalanishi uchun natijalarni saqlash va mutaxassisga ko‘rsatish huquqiga ega.",
     },
     {
       title: "8. Javobgarlikni cheklash",
       body:
-        "Platforma «boricha» va mavjud texnologiyalar doirasida taqdim etiladi. Uchinchi tomon xizmatlari (hosting, AI provayderlari) uzilishlari uchun Bizning javobgarligimiz ularning xizmat shartlariga bo‘g‘liq. Platforma Foydalanuvchining tibbiy, moddiy yoki boshqa bilvosita zararlar uchun javobgarlikni qonunda ruxsat etilgan chegaradan oshmaydi.",
+        "Platforma «boricha» va mavjud texnologiyalar doirasida taqdim etiladi. Uchinchi tomon xizmatlari (hosting) uzilishlari uchun Bizning javobgarligimiz ularning xizmat shartlariga bo‘g‘liq. Platforma Foydalanuvchining tibbiy, moddiy yoki boshqa bilvosita zararlar uchun javobgarlikni qonunda ruxsat etilgan chegaradan oshmaydi.",
     },
     {
       title: "9. Ofertaning o‘zgarishi va bekor qilinishi",
@@ -89,12 +89,12 @@ export const publicOfferRu: PublicOfferDocument = {
     {
       title: "1. Термины и стороны",
       body:
-        "Исполнитель — лицо, администрирующее платформу Autizm skrining (далее — «Мы», «Платформа»). Пользователь — физическое лицо, принявшее оферту и прошедшее анкету на Платформе. Контент — вопросы теста, результаты, тексты с использованием ИИ, PDF и иные материалы.",
+        "Исполнитель — лицо, администрирующее платформу Autizm skrining (далее — «Мы», «Платформа»). Пользователь — физическое лицо, принявшее оферту и прошедшее анкету на Платформе. Контент — вопросы теста, результаты, PDF и иные материалы.",
     },
     {
       title: "2. Предмет услуги",
       body:
-        "Платформа позволяет родителям (или законным представителям) заполнить скринговую анкету по развитию ребёнка, получить автоматически сформированные оценки и дополнительные функции (например, заключение ИИ, экспорт в PDF). После завершения теста результат отображается сразу. Услуга оказывается дистанционно через интернет. Состав функций действует в редакции, размещённой на сайте.",
+        "Платформа позволяет родителям (или законным представителям) заполнить скринговую анкету по развитию ребёнка, получить автоматически сформированные оценки и дополнительные функции (например, экспорт в PDF). После завершения теста результат отображается сразу. Услуга оказывается дистанционно через интернет. Состав функций действует в редакции, размещённой на сайте.",
     },
     {
       title: "3. Отсутствие медицинского диагноза",
@@ -119,12 +119,12 @@ export const publicOfferRu: PublicOfferDocument = {
     {
       title: "7. Интеллектуальная собственность",
       body:
-        "Тесты, дизайн, программный код, тексты, промпты ИИ и иные материалы охраняются правами на интеллектуальную собственность. Копирование, распространение или коммерческое использование без разрешения запрещено. Пользователь вправе сохранять результаты для личного использования и показа специалисту.",
+        "Тесты, дизайн, программный код, тексты и иные материалы охраняются правами на интеллектуальную собственность. Копирование, распространение или коммерческое использование без разрешения запрещено. Пользователь вправе сохранять результаты для личного использования и показа специалисту.",
     },
     {
       title: "8. Ограничение ответственности",
       body:
-        "Платформа предоставляется «как есть» в рамках доступных технологий. За сбои сторонних сервисов (хостинг, провайдеры ИИ) ответственность ограничивается условиями таких сервисов. Ответственность Исполнителя за прямой или косвенный вред не превышает пределов, установленных законом.",
+        "Платформа предоставляется «как есть» в рамках доступных технологий. За сбои сторонних сервисов (хостинг) ответственность ограничивается условиями таких сервисов. Ответственность Исполнителя за прямой или косвенный вред не превышает пределов, установленных законом.",
     },
     {
       title: "9. Изменение и прекращение оферты",
