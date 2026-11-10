@@ -6,6 +6,7 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } fro
 import Animated, { FadeIn, FadeInRight } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { SourcesLink } from '@/components/sources-link';
 import { ThemedText } from '@/components/themed-text';
 import { Button, IconButton, PressableScale, sym, useCardShadow } from '@/components/ui';
 import { Radius, Spacing } from '@/constants/theme';
@@ -296,6 +297,7 @@ export function Questionnaire({
                     </View>
                   ))}
                 </View>
+                <SourcesLink />
               </>
             )}
 

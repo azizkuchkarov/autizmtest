@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
+import { SourcesLink } from '@/components/sources-link';
 import { Avatar } from '@/components/avatar';
 import { HomeLessonCard, HomeProgressCard, NextStepCard } from '@/components/home-cards';
 import { ThemedText } from '@/components/themed-text';
@@ -99,6 +100,7 @@ export default function HomeScreen() {
               {t('home.tipTitle')}
             </ThemedText>
             <ThemedText type="body">{tip ? t(tip) : ' '}</ThemedText>
+            <SourcesLink style={{ marginTop: 4 }} />
           </View>
         </Card>
       </Animated.View>

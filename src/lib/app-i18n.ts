@@ -700,7 +700,7 @@ const uz = {
 
   'profile.title': 'Profil',
   'profile.privacy': 'Maxfiylik siyosati',
-  'about.title': 'Test haqida',
+  'about.title': 'Manbalar va test haqida',
   'about.link': 'Test qanday tuzilgan va uning manbalari',
   'profile.childCard': 'Farzandim',
   'profile.noName': 'Ism kiritilmagan',
@@ -1502,7 +1502,7 @@ const ru: Record<TranslationKey, string> = {
 
   'profile.title': 'Профиль',
   'profile.privacy': 'Политика конфиденциальности',
-  'about.title': 'О тесте',
+  'about.title': 'Источники и о тесте',
   'about.link': 'Как устроен тест и его источники',
   'profile.childCard': 'Мой ребёнок',
   'profile.noName': 'Имя не указано',

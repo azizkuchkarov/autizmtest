@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
 
+import { SourcesLink } from '@/components/sources-link';
 import { mix } from '@/components/talk/tile';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Card, OptionChip, PressableScale, ProgressBar, sym, useCardShadow } from '@/components/ui';
@@ -254,6 +255,7 @@ export function PlayList() {
       <ThemedText type="small" themeColor="textTertiary" style={{ textAlign: 'center', paddingHorizontal: Spacing.two }}>
         {t('play.note')}
       </ThemedText>
+      <SourcesLink style={{ textAlign: 'center' }} />
     </View>
   );
 }

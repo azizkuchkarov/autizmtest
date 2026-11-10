@@ -186,7 +186,7 @@ export default function ProfileTab() {
           />
         ) : null}
         <ListRow
-          icon={sym('doc.text.magnifyingglass', 'fact_check')}
+          icon={sym('books.vertical.fill', 'menu_book')}
           iconColor={theme.textSecondary}
           iconBackground={theme.backgroundMuted}
           title={t('about.title')}

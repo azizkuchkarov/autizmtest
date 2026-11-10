@@ -114,7 +114,7 @@ export default function TestScreen() {
       </Card>
 
       <ThemedText type="smallBold" themeColor="tint" style={{ textAlign: 'center' }} onPress={() => router.push('/about-test')}>
-        {t('about.link')} →
+        📚 {t('about.link')} →
       </ThemedText>
 
       {history.length > 0 && (

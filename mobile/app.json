@@ -15,7 +15,7 @@
         "ITSAppUsesNonExemptEncryption": false
       },
       "googleServicesFile": "./GoogleService-Info.plist",
-      "buildNumber": "10",
+      "buildNumber": "11",
       "appleTeamId": "AYDZA5WTAD"
     },
     "android": {

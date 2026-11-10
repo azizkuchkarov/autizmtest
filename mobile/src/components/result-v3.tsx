@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
+import { SourcesLink } from '@/components/sources-link';
 import { LevelBadge, nextScreeningDate, useFormatDate, useRiskColors } from '@/components/result-summary';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Card, ProgressBar, SectionHeader, sym } from '@/components/ui';
@@ -272,6 +273,7 @@ export function ResultV3Details({ result }: { result: ScreeningV3Result }) {
           {t('about.link')}
         </ThemedText>
       </ThemedText>
+      <SourcesLink style={{ textAlign: 'center' }} />
     </>
   );
 }
