@@ -37,7 +37,7 @@
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
       "googleServicesFile": "./google-services.json",
-      "versionCode": 6
+      "versionCode": 7
     },
     "web": {
       "output": "server",
