@@ -121,6 +121,25 @@ export function fetchServerAssessment(id: string) {
   }>(`/api/assessments/${encodeURIComponent(id)}`);
 }
 
+/* ------------------------------- To'lov ------------------------------- */
+
+/** Natija qulflanganmi (to'lov kerakmi) va narx. */
+export function fetchAssessmentAccess(id: string) {
+  return request<{ locked: boolean; amount: number | null }>(`/api/assessments/${encodeURIComponent(id)}/access`);
+}
+
+/** Click to'lov sahifasi havolasi. paid=true — to'lov allaqachon o'tgan (yoki lokal test). */
+export function startCheckout(assessmentId: string) {
+  return request<{ ok: boolean; paid: boolean; redirectUrl?: string }>("/api/payment/checkout", {
+    method: "POST",
+    body: JSON.stringify({ assessmentId, client: "web" }),
+  });
+}
+
+export function redeemPromo(assessmentId: string, code: string) {
+  return request<{ ok: boolean }>("/api/promo/redeem", { method: "POST", body: JSON.stringify({ assessmentId, code }) });
+}
+
 /* ------------------------------- Content ------------------------------- */
 
 export type ContentKind = "lesson" | "exercise";
@@ -309,7 +328,7 @@ export type ActivitySnapshot = {
   sound: { id: string; cardId: string | null; level: 1 | 2 | 3 | 4; result: "ok" | "help" | "miss"; day: string; at: number; snapshot: boolean }[];
   play: { id: string; activityId: string; rating: "great" | "ok" | "hard"; day: string; at: number }[];
   aac: { day: string; taps: number; sentences: number; sentenceWords: number; cards: Record<string, number> }[];
-  assessments: { id: string; createdAt: string; ageGroup: string; childGender: string | null; scoring: unknown }[];
+  assessments: { id: string; createdAt: string; ageGroup: string; childGender: string | null; scoring: unknown; locked?: boolean }[];
   skills?: { id: string; createdAt: string; scoring: unknown }[];
 };
 
@@ -336,5 +355,5 @@ export function createAssessmentV3(input: {
   childGender?: string;
   phone?: string;
 }) {
-  return request<{ assessmentId: string; scoring: unknown }>("/api/assessments/v3", { method: "POST", body: JSON.stringify(input) }, 30000);
+  return request<{ assessmentId: string; scoring: unknown; locked?: boolean }>("/api/assessments/v3", { method: "POST", body: JSON.stringify(input) }, 30000);
 }

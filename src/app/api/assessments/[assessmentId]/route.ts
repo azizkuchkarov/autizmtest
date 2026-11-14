@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { isAssessmentLocked, paymentsVisible } from "@/lib/payment-config";
 import type { ScoreResponse, ScreeningV2Result } from "@/types/api";
 
 export async function GET(
@@ -84,10 +85,15 @@ export async function GET(
 
     const assessment = await prisma.assessment.findUnique({
       where: { id: assessmentId },
+      include: { payment: { select: { status: true } } },
     });
 
     if (!assessment) {
       return NextResponse.json({ error: "Assessment topilmadi." }, { status: 404 });
+    }
+    // To'lanmagan natija havola orqali ham ochilmaydi
+    if (isAssessmentLocked(assessment, await paymentsVisible())) {
+      return NextResponse.json({ error: "payment_required", locked: true }, { status: 402 });
     }
 
     const rawScoring = assessment.scoring;

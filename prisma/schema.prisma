@@ -229,9 +229,47 @@ model Assessment {
   phone            String? // +998XXXXXXXXX
   childId          String? // akkauntdagi bola — natijalar telefon almashsa ham saqlanadi
   child            Child?   @relation(fields: [childId], references: [id], onDelete: SetNull)
+  /// Test topshirilganda to'lov UI ko'rinib turgan bo'lsa true — natija to'lovdan keyin ochiladi
+  requiresPayment  Boolean  @default(false)
+  paymentId        String?
+  payment          Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  promoCodes       PromoCode[]
   createdAt        DateTime @default(now())
 
   @@index([childId])
+  @@index([paymentId])
+}
+
+/// Click orqali skrining natijasi uchun to'lov
+model Payment {
+  id                String       @id @default(uuid())
+  phone             String
+  amount            Int // so'm
+  status            String       @default("pending") // pending | paid | failed
+  merchantTransId   String       @unique // Click uchun
+  clickTransId      String?
+  merchantPrepareId Int?
+  createdAt         DateTime     @default(now())
+  paidAt            DateTime?
+  assessments       Assessment[]
+
+  @@index([phone])
+}
+
+/// Admin tomonidan beriladigan promokod — to'lovsiz natijaga kirish
+model PromoCode {
+  id           String     @id @default(uuid())
+  code         String     @unique
+  assessmentId String
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  expiresAt    DateTime?
+  maxUses      Int        @default(1)
+  usedCount    Int        @default(0)
+  active       Boolean    @default(true)
+  note         String?
+  createdAt    DateTime   @default(now())
+
+  @@index([assessmentId])
 }
 
 /// Video kontent yo'nalishi (kasb): autizm, logoped, sensor integratsiya va h.k.

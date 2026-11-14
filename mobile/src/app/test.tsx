@@ -81,7 +81,7 @@ export default function TestScreen() {
             <Stat value={`~${minutes}`} label={t('test.statMinutes')} />
             <Stat value="7" label={t('test.statDomains')} />
           </View>
-          {lastScreening ? (
+          {lastScreening && !lastScreening.locked ? (
             <ThemedText type="small" style={{ color: 'rgba(255,255,255,0.8)' }}>
               {t('test.lastNext')
                 .replace('{last}', formatDate(lastScreening.createdAt))

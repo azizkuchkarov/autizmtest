@@ -1,19 +1,20 @@
 "use client";
 
 import { AlertTriangle, HandHeart, MonitorPlay, Stethoscope } from "lucide-react";
-import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { BackHeader } from "@/components/app/app-shell";
 import { useLocale } from "@/components/app/providers";
 import { assessmentTier, LevelBadge, riskColors, useAssessmentAge, useFormatDate } from "@/components/app/result-summary";
 import { accent, Card, EmptyState, FadeIn, IconBadge, ListRow, ProgressBar, Screen, SectionHeader, Spinner } from "@/components/app/ui";
+import { Paywall } from "@/components/app/paywall";
 import { ResultV3, ResultV3Details, v3WeakDomains } from "@/components/app/result-v3";
 import { VideoTile } from "@/components/app/video-cards";
-import { fetchContent, fetchServerAssessment, type Video } from "@/lib/app/api";
+import { fetchAssessmentAccess, fetchContent, fetchServerAssessment, type Video } from "@/lib/app/api";
 import { domainStyle } from "@/lib/app/domains";
 import { SHOW_CENTERS } from "@/lib/app/features";
-import { getAssessment, type StoredAssessment } from "@/lib/app/history";
+import { getAssessment, setAssessmentLocked, type StoredAssessment } from "@/lib/app/history";
 import { getTestConfig, isAgeGroup, riskTier, weakDomains, type RiskTier, type ScreeningResult } from "@/lib/app/screening";
 import { isScreeningV3 } from "@/lib/screening-v3/score";
 
@@ -42,10 +43,8 @@ function DomainRow({ id, title, score }: { id: string; title: string; score: num
   );
 }
 
-/** Brauzerda topilmasa — serverdan (havola orqali ochilgan natija). */
-async function loadAssessment(id: string): Promise<StoredAssessment | null> {
-  const local = await getAssessment(id);
-  if (local) return local;
+/** Serverdan (havola orqali ochilgan yoki boshqa qurilmada topshirilgan natija). */
+async function loadServerAssessment(id: string): Promise<StoredAssessment | null> {
   try {
     const res = await fetchServerAssessment(id);
     if (res.testType !== "screening" || !isAgeGroup(res.ageGroup) || !res.scoring) return null;
@@ -70,16 +69,73 @@ export default function ResultPage() {
   const centers = accent("centers");
   const lessons = accent("lessons");
   const exercises = accent("exercises");
+  const router = useRouter();
+  const returnedFromPayment = useSearchParams().get("paid") === "1";
   const [item, setItem] = useState<StoredAssessment | null | undefined>(undefined);
   const [recommended, setRecommended] = useState<Video[]>([]);
+  // To'lov holati: serverId bo'lmasa (oflayn natija) — qulflanmaydi
+  const [serverId, setServerId] = useState<string | null>(null);
+  const [lock, setLock] = useState<{ locked: boolean; amount: number | null } | undefined>(undefined);
+  const [checking, setChecking] = useState(false);
+  const [notConfirmed, setNotConfirmed] = useState(false);
+
+  const checkAccess = useCallback(async (sid: string, fallback: boolean) => {
+    try {
+      const a = await fetchAssessmentAccess(sid);
+      await setAssessmentLocked(sid, a.locked);
+      return a;
+    } catch {
+      return { locked: fallback, amount: null };
+    }
+  }, []);
 
   useEffect(() => {
-    loadAssessment(id).then(setItem);
-  }, [id]);
+    let cancelled = false;
+    (async () => {
+      const local = await getAssessment(id);
+      const sid = local ? local.serverId : id;
+      let access = sid ? await checkAccess(sid, !!local?.locked) : { locked: false, amount: null };
+
+      // Click'dan qaytdi: complete webhook kechikishi mumkin — bir necha marta tekshiramiz
+      if (sid && access.locked && returnedFromPayment) {
+        setServerId(sid);
+        setLock(access);
+        setChecking(true);
+        for (let i = 0; i < 5 && access.locked && !cancelled; i++) {
+          await new Promise((r) => setTimeout(r, 2000));
+          access = await checkAccess(sid, true);
+        }
+        if (!cancelled) {
+          setChecking(false);
+          setNotConfirmed(access.locked);
+        }
+      }
+      if (cancelled) return;
+      setServerId(sid);
+      setLock(access);
+      if (access.locked) return setItem(local ?? null);
+      setItem(local ?? (await loadServerAssessment(id)));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [id, returnedFromPayment, checkAccess]);
+
+  const unlock = useCallback(async () => {
+    if (!serverId) return;
+    const a = await checkAccess(serverId, false);
+    setNotConfirmed(a.locked);
+    setLock(a);
+    if (!a.locked) {
+      // ?paid=1 olib tashlanadi; effekt natijani qayta yuklaydi
+      if (returnedFromPayment) return router.replace(`/result/${id}`);
+      if (!item) setItem(await loadServerAssessment(id));
+    }
+  }, [serverId, checkAccess, returnedFromPayment, router, id, item]);
 
   // Zaif sohalarga mos uy mashqlari
   useEffect(() => {
-    if (!item) return;
+    if (!item || lock?.locked) return;
     const weak = isScreeningV3(item.result) ? v3WeakDomains(item.result) : weakDomains(item.result);
     fetchContent("lesson", locale)
       .then(({ categories }) => {
@@ -90,13 +146,28 @@ export default function ResultPage() {
         setRecommended(matches.slice(0, 6));
       })
       .catch(() => setRecommended([]));
-  }, [item, locale]);
+  }, [item, locale, lock?.locked]);
 
   // Soha nomlari va savol matnlari tanlangan tilda
   const config = useMemo(() => (item ? getTestConfig(item.ageGroup, locale) : null), [item, locale]);
   const domainTitle = (blockId: string, fallback: string) => config?.domains.find((d) => d.id === blockId)?.title ?? fallback;
   const questionText = (qid: string, fallback: string) => config?.questions.find((q) => q.id === qid)?.text ?? fallback;
 
+  if (lock?.locked && serverId)
+    return (
+      <Screen>
+        <BackHeader title={t("result.title")} />
+        <Paywall
+          assessmentId={serverId}
+          amount={lock.amount}
+          checking={checking}
+          notConfirmed={notConfirmed}
+          onUnlocked={unlock}
+          onRecheck={unlock}
+        />
+        <p className="t-small mt-2 text-center text-ink-3">{t("home.disclaimer")}</p>
+      </Screen>
+    );
   if (item === undefined)
     return (
       <div className="flex min-h-[60vh] items-center justify-center">

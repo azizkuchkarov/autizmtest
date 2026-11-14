@@ -1,9 +1,18 @@
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
+
 import type { Locale } from '@/shared/lib/locale';
 
 /** Backend manzili. Lokal ishlab chiqishda .env da EXPO_PUBLIC_API_URL=http://localhost:3000 qiling. */
 export const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? 'https://autizmtest.uz').replace(/\/$/, '');
 
 const REQUEST_TIMEOUT_MS = 20000;
+
+/** Server to'lov UI ni ilova versiyasiga qarab yoqadi/yashiradi (PAYMENTS_MIN_VERSION, PAYMENTS_HIDE_VERSIONS). */
+const APP_HEADERS: Record<string, string> = {
+  'X-App-Platform': Platform.OS,
+  'X-App-Version': Constants.expoConfig?.version ?? '',
+};
 
 /** Sessiya tokeni: SessionProvider o'rnatadi, har bir so'rovga qo'shiladi. */
 let authToken: string | null = null;
@@ -29,6 +38,7 @@ async function request<T>(path: string, init?: RequestInit, timeoutMs = REQUEST_
       ...init,
       headers: {
         'Content-Type': 'application/json',
+        ...APP_HEADERS,
         ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
         ...init?.headers,
       },
@@ -152,10 +162,29 @@ export type CreateAssessmentV3Input = {
 
 /** Skrining v3 va oylik ko'nikmalar testi: natija serverda qayta hisoblanadi va bolaga bog'lanadi. */
 export function createAssessmentV3(input: CreateAssessmentV3Input) {
-  return request<{ assessmentId: string; scoring: unknown }>('/api/assessments/v3', {
+  return request<{ assessmentId: string; scoring: unknown; locked?: boolean }>('/api/assessments/v3', {
     method: 'POST',
     body: JSON.stringify(input),
   });
+}
+
+/* ------------------------------- To'lov ------------------------------- */
+
+/** Natija qulflanganmi (to'lov kerakmi) va narx. */
+export function fetchAssessmentAccess(id: string) {
+  return request<{ locked: boolean; amount: number | null }>(`/api/assessments/${encodeURIComponent(id)}/access`);
+}
+
+/** Click to'lov sahifasi havolasi; to'lovdan keyin autizm://result/<id> orqali ilovaga qaytadi. */
+export function startCheckout(assessmentId: string) {
+  return request<{ ok: boolean; paid: boolean; redirectUrl?: string }>('/api/payment/checkout', {
+    method: 'POST',
+    body: JSON.stringify({ assessmentId, client: 'app' }),
+  });
+}
+
+export function redeemPromo(assessmentId: string, code: string) {
+  return request<{ ok: boolean }>('/api/promo/redeem', { method: 'POST', body: JSON.stringify({ assessmentId, code }) });
 }
 
 /** Bolaning serverdagi tarixi (hozircha faqat ko'nikmalar testi natijalari ishlatiladi). */

@@ -14,6 +14,8 @@ export type StoredAssessment = {
   ageGroup: AgeGroupId;
   childGender: string;
   result: ScreeningResult;
+  /** To'lanmagan natija: daraja yashiriladi, natija ekranida to'lov taklif qilinadi */
+  locked?: boolean;
 };
 
 export async function listAssessments(): Promise<StoredAssessment[]> {
@@ -28,13 +30,22 @@ export async function listAssessments(): Promise<StoredAssessment[]> {
 
 export async function getAssessment(id: string): Promise<StoredAssessment | null> {
   const items = await listAssessments();
-  return items.find((a) => a.id === id) ?? null;
+  // autizm://result/<serverId> deep link ham shu natijani ochadi
+  return items.find((a) => a.id === id) ?? items.find((a) => a.serverId === id) ?? null;
 }
 
 export async function saveAssessment(item: StoredAssessment): Promise<void> {
   const items = await listAssessments();
   const next = [item, ...items.filter((a) => a.id !== item.id)];
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+}
+
+/** To'lov yoki promokoddan keyin (yoki server holati o'zgarganda) qulf holatini yangilaydi. */
+export async function setAssessmentLocked(id: string, locked: boolean): Promise<void> {
+  const items = await listAssessments();
+  const target = items.find((a) => a.id === id || a.serverId === id);
+  if (!target || !!target.locked === locked) return;
+  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(items.map((a) => (a === target ? { ...a, locked } : a))));
 }
 
 /** Akkaunt o'chirilganda qurilmadagi natijalarni ham tozalaydi. */

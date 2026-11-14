@@ -126,14 +126,16 @@ function ScreeningRun() {
         const result = scoreScreeningV3({ months, answers, followUps });
         // Natija brauzerda darhol hisoblanadi; server nusxasi akkaunt tarixi uchun
         let serverId: string | null = null;
+        let locked = false;
         try {
           const res = await createAssessmentV3({ testType: "screening", ageMonths: months, answers, followUps, childId: child.id, childGender: child.gender, phone: phone || undefined });
           serverId = res.assessmentId;
+          locked = !!res.locked;
         } catch {
           serverId = null;
         }
         const id = newLocalId();
-        await saveAssessment({ id, serverId, createdAt: new Date().toISOString(), ageGroup: result.ageGroupId, childGender: child.gender, result: result as unknown as ScreeningResult });
+        await saveAssessment({ id, serverId, createdAt: new Date().toISOString(), ageGroup: result.ageGroupId, childGender: child.gender, result: result as unknown as ScreeningResult, locked });
         const saved = await getAssessment(id);
         if (!saved && serverId) return router.replace(`/result/${serverId}`);
         if (!saved) throw new Error("not saved");

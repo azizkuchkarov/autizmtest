@@ -58,10 +58,16 @@ export function ResultRow({ item, onPress }: { item: StoredAssessment; onPress: 
   const colors = useRiskColors(tier);
   return (
     <Card onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.three }}>
-      <LevelBadge tier={tier} />
+      {item.locked ? (
+        <View style={{ width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.tintSoft }}>
+          <SymbolView name={sym('lock.fill', 'lock')} size={20} tintColor={theme.tint} />
+        </View>
+      ) : (
+        <LevelBadge tier={tier} />
+      )}
       <View style={{ flex: 1, gap: 2 }}>
-        <ThemedText type="heading" style={{ fontSize: 15.5, color: colors.fg }}>
-          {t(`result.${tier}`)}
+        <ThemedText type="heading" style={{ fontSize: 15.5, color: item.locked ? theme.text : colors.fg }}>
+          {item.locked ? t('pay.lockedRow') : t(`result.${tier}`)}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
           {formatDate(item.createdAt)} · {ageOf(item)}
