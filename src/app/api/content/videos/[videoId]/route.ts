@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { parseLocale, toPublicVideo } from "@/lib/content";
+import { getLessonAccess } from "@/lib/lesson-access";
 
 export async function GET(req: Request, { params }: { params: Promise<{ videoId: string }> }) {
   const { videoId } = await params;
@@ -8,9 +9,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ videoId:
 
   const video = await prisma.video.findFirst({
     where: { id: videoId, active: true, status: "ready", category: { active: true, profession: { active: true } } },
+    include: { category: { select: { kind: true } } },
   });
   if (!video) {
     return NextResponse.json({ error: "Video topilmadi." }, { status: 404 });
   }
-  return NextResponse.json({ video: toPublicVideo(video, locale) });
+  // Dars videolari oylik to'lov bilan; uyda mashqlar videolari bepul
+  const locked = video.category.kind === "lesson" && (await getLessonAccess()).locked;
+  return NextResponse.json({ video: toPublicVideo(video, locale, locked), locked }, { headers: { "Cache-Control": "no-store" } });
 }

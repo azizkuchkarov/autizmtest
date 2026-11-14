@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { Avatar } from "@/components/app/avatar";
 import { useLocale, useProfile } from "@/components/app/providers";
 import { accent, Button, Card, ConfirmDialog, ListRow, PageHeader, Screen, SectionHeader, Segmented } from "@/components/app/ui";
+import { useLessonAccess } from "@/hooks/use-lesson-access";
 import type { TranslationKey } from "@/lib/app-i18n";
 import { formatAge } from "@/lib/app/age";
 import { SHOW_CENTERS } from "@/lib/app/features";
@@ -29,6 +30,13 @@ export default function ProfilePage() {
   const exercises = accent("exercises");
   const centers = accent("centers");
   const [testsCount, setTestsCount] = useState(0);
+  // Oylik kirish holati (to'lov UI yoqilgan bo'lsa)
+  const { access } = useLessonAccess();
+  const lessonAccessLabel = !access?.visible
+    ? undefined
+    : access.paidUntil
+      ? t("pay.activeUntil").replace("{date}", new Date(access.paidUntil).toLocaleDateString("ru-RU"))
+      : t("pay.inactive");
   const [dialog, setDialog] = useState<"logout" | "delete" | null>(null);
   const [busy, setBusy] = useState(false);
   const [deleteError, setDeleteError] = useState("");
@@ -107,7 +115,14 @@ export default function ProfilePage() {
           href="/start/routine?edit=1"
         />
         <ListRow icon={BarChart3} iconColor={test.fg} iconBackground={test.soft} title={t("profile.history")} value={String(testsCount)} href="/test" />
-        <ListRow icon={MonitorPlay} iconColor={lessons.fg} iconBackground={lessons.soft} title={t("lessons.title")} href="/lessons" />
+        <ListRow
+          icon={MonitorPlay}
+          iconColor={lessons.fg}
+          iconBackground={lessons.soft}
+          title={t("lessons.title")}
+          value={lessonAccessLabel}
+          href="/lessons"
+        />
         <ListRow icon={HandHeart} iconColor={exercises.fg} iconBackground={exercises.soft} title={t("exercises.title")} href="/exercises" last={!SHOW_CENTERS} />
         {SHOW_CENTERS ? (
           <ListRow icon={Building2} iconColor={centers.fg} iconBackground={centers.soft} title={t("profile.centers")} href="/centers" last />

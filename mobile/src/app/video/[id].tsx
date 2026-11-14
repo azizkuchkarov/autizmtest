@@ -8,6 +8,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
 import { sectionLook } from '@/components/lesson-sections';
+import { LessonsPaywall } from '@/components/paywall';
 import { Button, Card, EmptyState, Icon, Pill, Screen, SectionHeader, Skeleton, sym } from '@/components/ui';
 import { VideoRow } from '@/components/video-cards';
 import { ExerciseAddCard } from '@/components/video-exercises';
@@ -22,6 +23,7 @@ import type { TranslationKey } from '@/lib/i18n';
 import { markVideoWatched } from '@/lib/video-log';
 import { buildSections, flushVideoProgress, getVideoState, recordPosition, useVideoProgress } from '@/lib/video-progress';
 import { useContent } from '@/hooks/use-content';
+import { useLessonAccess } from '@/hooks/use-lesson-access';
 
 /** Pleyer: to'xtagan joydan davom etadi va oxirigacha ko'rilganda belgi qo'yadi. */
 function Player({ uri, videoId, durationSec }: { uri: string; videoId: string; durationSec: number | null }) {
@@ -123,6 +125,13 @@ export default function VideoScreen() {
     load();
   }, [load]);
 
+  // Dars videosi yopiq bo'lsa — to'lovdan keyin (kirish ochilganda) havola qayta olinadi
+  const { access } = useLessonAccess();
+  const lockedVideo = !!video && video.videoUrl === null;
+  useEffect(() => {
+    if (lockedVideo && access && !access.locked) load();
+  }, [lockedVideo, access, load]);
+
   if (error)
     return (
       <View style={{ flex: 1, backgroundColor: theme.background, justifyContent: 'center' }}>
@@ -151,7 +160,11 @@ export default function VideoScreen() {
 
   return (
     <Screen>
-      {uri ? <Player key={video.id} uri={uri} videoId={video.id} durationSec={video.durationSec} /> : null}
+      {uri ? (
+        <Player key={video.id} uri={uri} videoId={video.id} durationSec={video.durationSec} />
+      ) : video.videoUrl === null ? (
+        access ? <LessonsPaywall access={access} /> : <Skeleton height={210} radius={Radius.lg} />
+      ) : null}
       {done ? <DoneCard next={next} sectionSlug={section?.slug ?? null} /> : null}
       <Animated.View entering={FadeInDown.duration(400)} style={{ gap: Spacing.three }}>
         <ThemedText type="title" style={{ fontSize: 25, lineHeight: 31 }}>

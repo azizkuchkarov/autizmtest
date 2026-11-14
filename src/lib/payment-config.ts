@@ -1,10 +1,11 @@
 /**
- * To'lov sozlamalari (.env):
- *   PAYMENTS_UI=show | hide        — to'lov UI ko'rinadimi (default: hide). hide bo'lsa natijalar bepul ochiladi,
+ * To'lov sozlamalari (.env). Skrining testlari bepul; to'lov faqat Darslar bo'limi (video va ovozli darslar) uchun.
+ *   PAYMENTS_UI=show | hide        — to'lov UI ko'rinadimi (default: hide). hide bo'lsa Darslar bepul ochiladi,
  *                                    Click endpointlari esa ishlashda davom etadi (faqat UI yashiriladi).
  *   PAYMENTS_MIN_VERSION=1.1.0     — mobil ilova shu versiyadan past bo'lsa to'lov ko'rinmaydi (ixtiyoriy)
  *   PAYMENTS_HIDE_VERSIONS=1.2.0   — vergul bilan: shu versiyalarda to'lov yashiriladi, masalan App Store review'dagi build (ixtiyoriy)
- *   PAYMENT_AMOUNT=99000           — narx, so'm
+ *   PAYMENT_AMOUNT=99000           — Darslar bo'limiga oylik kirish narxi, so'm
+ *   PAYMENT_PERIOD_DAYS=30         — bitta to'lov necha kunlik kirish beradi
  * Veb sayt faqat PAYMENTS_UI ga bo'ysunadi; mobil ilova versiyasini X-App-Version sarlavhasida yuboradi.
  */
 
@@ -12,6 +13,11 @@ import { headers } from "next/headers";
 
 export const APP_VERSION_HEADER = "x-app-version";
 export const APP_PLATFORM_HEADER = "x-app-platform";
+
+export function getPaymentPeriodDays(): number {
+  const n = parseInt(process.env.PAYMENT_PERIOD_DAYS ?? "", 10);
+  return Number.isFinite(n) && n > 0 ? n : 30;
+}
 
 export function getPaymentAmount(): number {
   const v = process.env.PAYMENT_AMOUNT;
@@ -65,14 +71,4 @@ export async function paymentsVisible(): Promise<boolean> {
 /** Click kalitlari yo'q va production emas — lokal test uchun to'lov darhol "paid" bo'ladi. */
 export function isPaymentDevSkip(): boolean {
   return process.env.NODE_ENV !== "production" && !(process.env.CLICK_MERCHANT_ID && process.env.CLICK_SERVICE_ID);
-}
-
-type AccessAssessment = {
-  requiresPayment: boolean;
-  payment: { status: string } | null;
-};
-
-/** Natija qulflanganmi: test to'lov bilan topshirilgan, hali to'lanmagan va to'lov UI hozir ham ko'rinadi. */
-export function isAssessmentLocked(a: AccessAssessment, visible: boolean): boolean {
-  return visible && a.requiresPayment && a.payment?.status !== "paid";
 }

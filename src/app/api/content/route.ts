@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { isContentKind, parseLocale, toPublicCategory, toPublicProfession } from "@/lib/content";
+import { getLessonAccess } from "@/lib/lesson-access";
 
 /** Faol mavzular va videolar. ?kind=lesson|exercise&locale=uz|ru&profession=<slug> (ixtiyoriy) */
 export async function GET(req: Request) {
@@ -26,8 +27,15 @@ export async function GET(req: Request) {
     }),
   ]);
 
-  return NextResponse.json({
-    professions: professions.map((p) => toPublicProfession(p, locale)),
-    categories: categories.map((c) => toPublicCategory(c, locale)),
-  });
+  // Darslar oylik to'lov bilan: kirish yo'q bo'lsa video havolalari berilmaydi (ro'yxat va nomlar ko'rinadi)
+  const locked = kind === "lesson" && (await getLessonAccess()).locked;
+
+  return NextResponse.json(
+    {
+      professions: professions.map((p) => toPublicProfession(p, locale)),
+      categories: categories.map((c) => toPublicCategory(c, locale, locked)),
+      locked,
+    },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }

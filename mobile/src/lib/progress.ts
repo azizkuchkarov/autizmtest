@@ -59,9 +59,7 @@ export function pointTrend(prev: { score: number; tier: RiskTier }, cur: { score
 }
 
 export function screeningProgress(assessments: StoredAssessment[], now = new Date()) {
-  const points: ScreeningPoint[] = assessments
-    // To'lanmagan natijalar dinamikada ko'rsatilmaydi
-    .filter((a) => !a.locked)
+  const points: ScreeningPoint[] = [...assessments]
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
     .map((a) => ({
       id: a.id,

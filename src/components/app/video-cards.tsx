@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, CheckCircle2, Clock, Play } from "lucide-react";
+import { Check, CheckCircle2, Clock, Lock, Play } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -32,7 +32,10 @@ function Thumbnail({ video, accent, iconSize, state }: { video: Video; accent: A
         className={`relative flex items-center justify-center rounded-full border-[1.5px] text-white ${done ? "border-white" : "border-white/60 bg-[rgb(14_19_48/0.45)]"}`}
         style={{ width: iconSize, height: iconSize, ...(done ? { background: accentOf("exercises").fg } : {}) }}
       >
-        {done ? (
+        {video.videoUrl === null ? (
+          // Dars videosi oylik kirish bilan ochiladi
+          <Lock style={{ width: iconSize * 0.42, height: iconSize * 0.42 }} strokeWidth={2.5} />
+        ) : done ? (
           <Check style={{ width: iconSize * 0.55, height: iconSize * 0.55 }} strokeWidth={3} />
         ) : (
           <Play fill="currentColor" strokeWidth={0} style={{ width: iconSize * 0.42, height: iconSize * 0.42, marginLeft: iconSize * 0.05 }} />

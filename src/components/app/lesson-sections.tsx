@@ -1,12 +1,14 @@
 "use client";
 
-import { Brain, CalendarDays, ChevronRight, Hand, HeartHandshake, MessagesSquare, MonitorPlay, Play, Puzzle, RefreshCw, WifiOff, type LucideIcon } from "lucide-react";
+import { Brain, CalendarDays, ChevronRight, Hand, HeartHandshake, Lock, MessagesSquare, MonitorPlay, Play, Puzzle, RefreshCw, WifiOff, type LucideIcon } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 
+import { LessonsPaywall } from "@/components/app/paywall";
 import { useLocale } from "@/components/app/providers";
 import { ACCENT_GRADIENT, accent as accentOf, EmptyState, FadeIn, gradient, PageHeader, ProgressBar, Screen, SectionHeader, Skeleton, type AccentName } from "@/components/app/ui";
 import { useContent } from "@/hooks/use-content";
+import { useLessonAccess } from "@/hooks/use-lesson-access";
 import type { Video } from "@/lib/app/api";
 import { buildSections, syncVideoProgress, useVideoProgress, type VideoSection } from "@/lib/app/video-progress";
 
@@ -40,7 +42,11 @@ export function ContinueCard({ video, accent, started }: { video: Video; accent:
           <img src={video.thumbnailUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
         ) : null}
         <span className="relative flex h-[38px] w-[38px] items-center justify-center rounded-full bg-white" style={{ color: accentOf(accent).fg }}>
-          <Play className="ml-0.5 h-[18px] w-[18px]" fill="currentColor" strokeWidth={0} />
+          {video.videoUrl === null ? (
+            <Lock className="h-[17px] w-[17px]" strokeWidth={2.5} />
+          ) : (
+            <Play className="ml-0.5 h-[18px] w-[18px]" fill="currentColor" strokeWidth={0} />
+          )}
         </span>
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -98,6 +104,34 @@ export function LessonSections({ tabs }: { tabs?: ReactNode }) {
     syncVideoProgress();
   }, []);
 
+  // Oylik kirish: Click'dan qaytganda (?paid=1) to'lov bir necha marta tekshiriladi — webhook kechikishi mumkin
+  const { access, refresh } = useLessonAccess();
+  const [checking, setChecking] = useState(false);
+  const [notConfirmed, setNotConfirmed] = useState(false);
+  useEffect(() => {
+    if (!new URLSearchParams(window.location.search).has("paid")) return;
+    let cancelled = false;
+    (async () => {
+      setChecking(true);
+      let a = await refresh();
+      for (let i = 0; i < 5 && a?.locked && !cancelled; i++) {
+        await new Promise((r) => setTimeout(r, 2000));
+        a = await refresh();
+      }
+      if (cancelled) return;
+      setChecking(false);
+      setNotConfirmed(!!a?.locked);
+      window.history.replaceState(null, "", window.location.pathname);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [refresh]);
+  const recheck = useCallback(async () => {
+    const a = await refresh();
+    setNotConfirmed(!!a?.locked);
+  }, [refresh]);
+
   const onRefresh = async () => {
     setRefreshing(true);
     await Promise.all([reload(), syncVideoProgress()]);
@@ -123,6 +157,7 @@ export function LessonSections({ tabs }: { tabs?: ReactNode }) {
         }
       />
       {tabs}
+      {access?.locked ? <LessonsPaywall compact access={access} checking={checking} notConfirmed={notConfirmed} onRecheck={recheck} /> : null}
       {error && !categories ? (
         <EmptyState icon={WifiOff} title={t("common.offlineTitle")} body={t("common.offline")} actionTitle={t("common.retry")} onAction={reload} />
       ) : !categories ? (

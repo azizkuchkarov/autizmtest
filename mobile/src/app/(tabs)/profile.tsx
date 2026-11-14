@@ -10,6 +10,7 @@ import { SHOW_CENTERS } from '@/constants/features';
 import { Radius, Spacing } from '@/constants/theme';
 import { useLocale } from '@/contexts/locale';
 import { useProfile } from '@/contexts/profile';
+import { useLessonAccess } from '@/hooks/use-lesson-access';
 import { useAccent, useTheme } from '@/hooks/use-theme';
 import { formatAge } from '@/lib/age';
 import { API_URL } from '@/lib/api';
@@ -30,6 +31,13 @@ export default function ProfileTab() {
   const shadow = useCardShadow();
   const test = useAccent('test');
   const lessons = useAccent('lessons');
+  // Oylik kirish holati (to'lov UI yoqilgan bo'lsa)
+  const { access } = useLessonAccess();
+  const lessonAccessLabel = !access?.visible
+    ? undefined
+    : access.paidUntil
+      ? t('pay.activeUntil').replace('{date}', new Date(access.paidUntil).toLocaleDateString('ru-RU'))
+      : t('pay.inactive');
   const exercises = useAccent('exercises');
   const centers = useAccent('centers');
   const [testsCount, setTestsCount] = useState(0);
@@ -152,6 +160,7 @@ export default function ProfileTab() {
           iconColor={lessons.fg}
           iconBackground={lessons.soft}
           title={t('lessons.title')}
+          value={lessonAccessLabel}
           onPress={() => router.navigate('/lessons')}
         />
         <ListRow

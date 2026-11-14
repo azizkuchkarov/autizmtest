@@ -51,7 +51,7 @@ export default function TestPage() {
             <Stat value={`~${minutes}`} label={t("test.statMinutes")} />
             <Stat value="7" label={t("test.statDomains")} />
           </div>
-          {lastScreening && !lastScreening.locked ? (
+          {lastScreening ? (
             <p className="t-small text-white/80">
               {t("test.lastNext")
                 .replace("{last}", formatDate(lastScreening.createdAt))

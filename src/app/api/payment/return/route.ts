@@ -1,18 +1,17 @@
 import { NextResponse } from "next/server";
-import { publicBaseUrl } from "@/lib/assessment-access";
 
 /**
  * Click to'lovdan keyin shu manzilga qaytaradi (return_url).
- * Veb — natija sahifasiga, mobil ilova (app=1) — autizm://result/<id> orqali ilovaga.
+ * Veb — Darslar sahifasiga, mobil ilova (app=1) — autizm://lessons orqali ilovaga.
  */
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const id = url.searchParams.get("a") ?? "";
-  const safeId = /^[A-Za-z0-9-]{1,64}$/.test(id) ? id : "";
-  const path = safeId ? `result/${safeId}?paid=1` : "";
-
   if (url.searchParams.get("app") === "1") {
-    return NextResponse.redirect(`autizm://${path}`, 302);
+    return NextResponse.redirect("autizm://lessons?paid=1", 302);
   }
-  return NextResponse.redirect(`${publicBaseUrl(req)}/${path}`, 302);
+  const env = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "");
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+  const proto = req.headers.get("x-forwarded-proto") ?? url.protocol.replace(":", "");
+  const base = env || (host ? `${proto}://${host}` : url.origin);
+  return NextResponse.redirect(`${base}/lessons?paid=1`, 302);
 }

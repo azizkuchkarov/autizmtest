@@ -4,7 +4,7 @@ import { useEffect } from "react";
 
 import { getLocalAacDays, replaceAacDays, type AacDayLog } from "@/lib/app/aac-store";
 import { fetchActivity, pushActivity } from "@/lib/app/api";
-import { listAssessments, saveAssessment, setAssessmentLocked } from "@/lib/app/history";
+import { listAssessments, saveAssessment } from "@/lib/app/history";
 import { dayKey } from "@/lib/app/play-activities";
 import { getLocalPlayEntries, replacePlayEntries } from "@/lib/app/play-store";
 import type { ScreeningResult } from "@/lib/app/screening";
@@ -117,10 +117,7 @@ async function pull(childId: string) {
   const local = await listAssessments();
   const known = new Set(local.flatMap((a) => [a.id, a.serverId ?? ""]));
   for (const a of data.assessments) {
-    if (known.has(a.id)) {
-      await setAssessmentLocked(a.id, !!a.locked);
-      continue;
-    }
+    if (known.has(a.id)) continue;
     await saveAssessment({
       id: a.id,
       serverId: a.id,
@@ -128,7 +125,6 @@ async function pull(childId: string) {
       ageGroup: a.ageGroup as Parameters<typeof saveAssessment>[0]["ageGroup"],
       childGender: a.childGender ?? "",
       result: a.scoring as ScreeningResult,
-      locked: !!a.locked,
     });
   }
 }

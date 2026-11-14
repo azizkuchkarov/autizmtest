@@ -3,7 +3,6 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { ownChild, requireUser, validationError } from "@/lib/mobile-api";
-import { isAssessmentLocked, paymentsVisible } from "@/lib/payment-config";
 
 /*
  * Mashg'ulotlar tarixini sinxronlash: qurilma hodisalarni yuboradi (POST), yangi qurilma esa butun tarixni oladi (GET).
@@ -55,11 +54,9 @@ export async function GET(_req: Request, { params }: Ctx) {
     prisma.soundAnswer.findMany({ where: { childId }, orderBy: { at: "asc" }, take: 10000 }),
     prisma.playSession.findMany({ where: { childId }, orderBy: { at: "asc" }, take: 5000 }),
     prisma.aacDay.findMany({ where: { childId }, orderBy: { day: "asc" } }),
-    prisma.assessment.findMany({ where: { childId, testType: "screening" }, orderBy: { createdAt: "asc" }, include: { payment: { select: { status: true } } } }),
+    prisma.assessment.findMany({ where: { childId, testType: "screening" }, orderBy: { createdAt: "asc" } }),
     prisma.assessment.findMany({ where: { childId, testType: "skills" }, orderBy: { createdAt: "asc" } }),
   ]);
-
-  const payVisible = await paymentsVisible();
 
   return NextResponse.json({
     sound: sound.map((s) => ({ id: s.id, cardId: s.cardId, level: s.level, result: s.result, day: s.day, at: s.at.getTime(), snapshot: s.snapshot })),
@@ -71,8 +68,6 @@ export async function GET(_req: Request, { params }: Ctx) {
       ageGroup: a.ageGroup,
       childGender: a.childGender,
       scoring: a.scoring,
-      /** To'lanmagan natija: UI darajani ko'rsatmaydi, to'lov sahifasini ochadi */
-      locked: isAssessmentLocked(a, payVisible),
     })),
     skills: skills.map((a) => ({ id: a.id, createdAt: a.createdAt.toISOString(), scoring: a.scoring })),
   });

@@ -13,13 +13,14 @@ export function parseLocale(v: string | null): Locale {
 }
 
 /** Mobil ilova va sayt uchun videoni tanlangan tilda qaytaradi. */
-export function toPublicVideo(v: Video, locale: Locale) {
+export function toPublicVideo(v: Video, locale: Locale, locked = false) {
   return {
     id: v.id,
     // Ruscha matn kiritilmagan bo'lsa o'zbekchasi ko'rsatiladi
     title: (locale === "ru" && v.titleRu) || v.titleUz,
     description: (locale === "ru" && v.descriptionRu) || v.descriptionUz || null,
-    videoUrl: v.videoUrl,
+    /** Darslar yopiq bo'lsa (oylik to'lov yo'q) — null */
+    videoUrl: locked ? null : v.videoUrl,
     thumbnailUrl: v.thumbnailUrl,
     durationSec: v.durationSec,
     domains: v.domains,
@@ -33,14 +34,14 @@ export function toPublicProfession(p: Profession, locale: Locale) {
   return { id: p.id, slug: p.slug, title: locale === "ru" ? p.titleRu : p.titleUz };
 }
 
-export function toPublicCategory(c: ContentCategory & { videos: Video[]; profession: Profession }, locale: Locale) {
+export function toPublicCategory(c: ContentCategory & { videos: Video[]; profession: Profession }, locale: Locale, locked = false) {
   return {
     id: c.id,
     slug: c.slug,
     profession: c.profession.slug,
     title: locale === "ru" ? c.titleRu : c.titleUz,
     description: (locale === "ru" ? c.descriptionRu : c.descriptionUz) ?? null,
-    videos: c.videos.map((v) => toPublicVideo(v, locale)),
+    videos: c.videos.map((v) => toPublicVideo(v, locale, locked)),
   };
 }
 

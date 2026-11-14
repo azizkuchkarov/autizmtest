@@ -1,11 +1,10 @@
 import { SymbolView } from 'expo-symbols';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { assessmentTier, LevelBadge, useAssessmentAge, useFormatDate, useRiskColors } from '@/components/result-summary';
-import { Paywall } from '@/components/paywall';
 import { ResultV3, ResultV3Details, v3WeakDomains } from '@/components/result-v3';
 import { ThemedText } from '@/components/themed-text';
 import { Card, EmptyState, IconBadge, ListRow, LoadingState, Pill, ProgressBar, Screen, SectionHeader, sym } from '@/components/ui';
@@ -14,9 +13,9 @@ import { Spacing } from '@/constants/theme';
 import { SHOW_CENTERS } from '@/constants/features';
 import { useLocale } from '@/contexts/locale';
 import { useAccent, useTheme } from '@/hooks/use-theme';
-import { fetchAssessmentAccess, fetchContent, type Video } from '@/lib/api';
+import { fetchContent, type Video } from '@/lib/api';
 import { domainStyle } from '@/lib/domains';
-import { getAssessment, setAssessmentLocked, type StoredAssessment } from '@/lib/history';
+import { getAssessment, type StoredAssessment } from '@/lib/history';
 import { getTestConfig, riskTier, weakDomains, type RiskTier } from '@/lib/screening';
 import { isScreeningV3 } from '@/shared/lib/screening-v3/score';
 
@@ -60,53 +59,13 @@ export default function ResultScreen() {
   const [item, setItem] = useState<StoredAssessment | null | undefined>(undefined);
   const [recommended, setRecommended] = useState<Video[]>([]);
 
-  // To'lov holati: serverId bo'lmasa (oflayn natija) — qulflanmaydi
-  const [lock, setLock] = useState<{ locked: boolean; amount: number | null } | undefined>(undefined);
-  const [checking, setChecking] = useState(false);
-  const [notConfirmed, setNotConfirmed] = useState(false);
-
-  const checkAccess = useCallback(async (local: StoredAssessment) => {
-    if (!local.serverId) return { locked: false, amount: null };
-    try {
-      const a = await fetchAssessmentAccess(local.serverId);
-      await setAssessmentLocked(local.id, a.locked);
-      return a;
-    } catch {
-      return { locked: !!local.locked, amount: null };
-    }
-  }, []);
-
   useEffect(() => {
-    let cancelled = false;
-    getAssessment(id).then(async (local) => {
-      const access = local ? await checkAccess(local) : { locked: false, amount: null };
-      if (cancelled) return;
-      setLock(access);
-      setItem(local);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [id, checkAccess]);
-
-  /** Click sahifasidan qaytdi: complete webhook kechikishi mumkin — bir necha marta tekshiramiz. */
-  const recheck = useCallback(async () => {
-    if (!item) return;
-    setNotConfirmed(false);
-    setChecking(true);
-    let access = await checkAccess(item);
-    for (let i = 0; i < 5 && access.locked; i++) {
-      await new Promise((r) => setTimeout(r, 2000));
-      access = await checkAccess(item);
-    }
-    setChecking(false);
-    setNotConfirmed(access.locked);
-    setLock(access);
-  }, [item, checkAccess]);
+    getAssessment(id).then(setItem);
+  }, [id]);
 
   // Zaif sohalarga mos uy mashqlari
   useEffect(() => {
-    if (!item || lock?.locked) return;
+    if (!item) return;
     const weak = isScreeningV3(item.result) ? v3WeakDomains(item.result) : weakDomains(item.result);
     fetchContent('lesson', locale)
       .then(({ categories }) => {
@@ -119,7 +78,7 @@ export default function ResultScreen() {
         setRecommended(matches.slice(0, 6));
       })
       .catch(() => setRecommended([]));
-  }, [item, locale, lock?.locked]);
+  }, [item, locale]);
 
   // Soha nomlari va savol matnlari tanlangan tilda
   const config = useMemo(() => (item ? getTestConfig(item.ageGroup, locale) : null), [item, locale]);
@@ -129,25 +88,8 @@ export default function ResultScreen() {
   const tier = item ? assessmentTier(item) : 'low';
   const colors = useRiskColors(tier);
 
-  if (item === undefined || lock === undefined) return <LoadingState />;
+  if (item === undefined) return <LoadingState />;
   if (item === null) return <EmptyState icon={sym('exclamationmark.triangle', 'error')} title={t('common.error')} />;
-
-  if (lock.locked && item.serverId)
-    return (
-      <Screen>
-        <Paywall
-          assessmentId={item.serverId}
-          amount={lock.amount}
-          checking={checking}
-          notConfirmed={notConfirmed}
-          onUnlocked={recheck}
-          onReturned={recheck}
-        />
-        <ThemedText type="small" themeColor="textTertiary" style={{ textAlign: 'center', marginTop: Spacing.two }}>
-          {t('home.disclaimer')}
-        </ThemedText>
-      </Screen>
-    );
 
   const v3 = isScreeningV3(item.result) ? item.result : null;
 

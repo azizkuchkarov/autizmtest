@@ -4,7 +4,6 @@ import { prisma } from "@/lib/db";
 import { bandForMonths, itemsFor } from "@/lib/screening-v3/items";
 import { legacyAgeGroup, scoreScreeningV3, scoreSkills, skillsBand } from "@/lib/screening-v3/score";
 import { skillItemsFor } from "@/lib/screening-v3/skills";
-import { getPaymentAmount, paymentsVisible } from "@/lib/payment-config";
 import { logUserEvent } from "@/lib/user-event";
 import { getSessionUser } from "@/lib/user-auth";
 
@@ -56,13 +55,9 @@ export async function POST(req: Request) {
     scoring = scoreSkills({ months: ageMonths, answers: answers as never });
   }
 
-  // To'lov UI shu mijozga ko'rinib turgan bo'lsa — skrining natijasi to'lovdan keyin ochiladi
-  const requiresPayment = testType === "screening" && (await paymentsVisible());
-
   const assessment = await prisma.assessment.create({
     data: {
       testType,
-      requiresPayment,
       ageGroup: legacyAgeGroup(ageMonths),
       answers: { version: 3, ageMonths, answers, followUps: followUps ?? {} },
       scoring,
@@ -74,8 +69,5 @@ export async function POST(req: Request) {
 
   void logUserEvent("test_completed", { assessmentId: assessment.id, testType, version: 3, ageMonths, phone: phone ?? null });
 
-  return NextResponse.json(
-    { assessmentId: assessment.id, scoring, locked: requiresPayment, amount: requiresPayment ? getPaymentAmount() : null },
-    { status: 201 },
-  );
+  return NextResponse.json({ assessmentId: assessment.id, scoring }, { status: 201 });
 }

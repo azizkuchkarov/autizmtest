@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyCompleteSign } from "@/lib/click";
+import { extendLessonAccess } from "@/lib/lesson-access";
 import { logUserEvent } from "@/lib/user-event";
 
 async function parseBody(req: Request): Promise<Record<string, string>> {
@@ -83,14 +84,21 @@ export async function POST(req: Request) {
     const merchantConfirmId = payment.merchantPrepareId || merchantPrepareId;
 
     if (error === "0") {
-      await prisma.payment.update({
-        where: { merchantTransId },
-        data: { status: "paid", paidAt: new Date() },
+      // Faqat birinchi tasdiq kirish muddatini uzaytiradi (Click qayta yuborsa ikki marta qo'shilmaydi)
+      const paidUntil = await prisma.$transaction(async (tx) => {
+        const res = await tx.payment.updateMany({
+          where: { merchantTransId, status: { not: "paid" } },
+          data: { status: "paid", paidAt: new Date() },
+        });
+        if (res.count === 0 || !payment.userId) return null;
+        return extendLessonAccess(tx, payment.userId, payment.days);
       });
       void logUserEvent("payment_success", {
         paymentId: payment.id,
         phone: payment.phone,
         amount: payment.amount,
+        days: payment.days,
+        paidUntil: paidUntil?.toISOString() ?? null,
         merchantTransId: payment.merchantTransId,
         source: "click_complete",
       });

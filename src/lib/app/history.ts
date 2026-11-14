@@ -33,8 +33,6 @@ export type StoredAssessment = {
   ageGroup: AgeGroupId;
   childGender: string;
   result: ScreeningResult;
-  /** To'lanmagan natija: daraja yashiriladi, natija sahifasida to'lov taklif qilinadi */
-  locked?: boolean;
 };
 
 function read(): StoredAssessment[] {
@@ -56,24 +54,6 @@ export async function getAssessment(id: string): Promise<StoredAssessment | null
 
 export async function saveAssessment(item: StoredAssessment): Promise<void> {
   const next = [item, ...read().filter((a) => a.id !== item.id)];
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  } catch {}
-  changed();
-}
-
-/** To'lov yoki promokoddan keyin (yoki server holati o'zgarganda) qulf holatini yangilaydi. */
-export async function setAssessmentLocked(id: string, locked: boolean): Promise<void> {
-  const all = read();
-  let touched = false;
-  const next = all.map((a) => {
-    if ((a.id === id || a.serverId === id) && !!a.locked !== locked) {
-      touched = true;
-      return { ...a, locked };
-    }
-    return a;
-  });
-  if (!touched) return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   } catch {}

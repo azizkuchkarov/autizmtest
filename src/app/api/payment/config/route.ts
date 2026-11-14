@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
-import { getPaymentAmount, paymentsVisible } from "@/lib/payment-config";
+import { getLessonAccess } from "@/lib/lesson-access";
 
-/** To'lov UI shu mijozga (veb yoki mobil ilova versiyasi) ko'rinadimi va narx. */
+/**
+ * Darslar bo'limiga kirish holati: to'lov UI shu mijozga (veb yoki mobil ilova versiyasi) ko'rinadimi,
+ * foydalanuvchining oylik kirishi qachongacha va narx.
+ */
 export async function GET() {
-  const visible = await paymentsVisible();
-  return NextResponse.json(
-    { visible, amount: visible ? getPaymentAmount() : null },
-    { headers: { "Cache-Control": "no-store" } },
-  );
+  return NextResponse.json(await getLessonAccess(), { headers: { "Cache-Control": "no-store" } });
 }

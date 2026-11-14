@@ -33,7 +33,12 @@ function Thumbnail({ video, accent, iconSize, state }: { video: Video; accent: A
           { width: iconSize, height: iconSize, borderRadius: iconSize / 2 },
           done && { backgroundColor: Accents.exercises.fg, borderColor: '#FFFFFF' },
         ]}>
-        <SymbolView name={done ? sym('checkmark', 'check') : sym('play.fill', 'play_arrow')} size={iconSize * (done ? 0.5 : 0.42)} tintColor="#FFFFFF" />
+        {/* Dars videosi oylik kirish bilan ochiladi: havola yo'q — qulf */}
+        <SymbolView
+          name={video.videoUrl === null ? sym('lock.fill', 'lock') : done ? sym('checkmark', 'check') : sym('play.fill', 'play_arrow')}
+          size={iconSize * (done ? 0.5 : 0.42)}
+          tintColor="#FFFFFF"
+        />
       </View>
       {part > 0 ? (
         <View style={styles.partTrack}>

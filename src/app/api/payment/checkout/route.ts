@@ -1,47 +1,44 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { publicBaseUrl } from "@/lib/assessment-access";
 import { prisma } from "@/lib/db";
-import { getPaymentAmount, isPaymentDevSkip } from "@/lib/payment-config";
+import { extendLessonAccess } from "@/lib/lesson-access";
+import { getPaymentAmount, getPaymentPeriodDays, isPaymentDevSkip } from "@/lib/payment-config";
+import { getSessionUser } from "@/lib/user-auth";
 import { logUserEvent } from "@/lib/user-event";
 
 const CLICK_PAY_URL = "https://my.click.uz/services/pay";
 
 const bodySchema = z.object({
-  assessmentId: z.string().min(1).max(64),
   /** "app" — mobil ilova: Click'dan keyin autizm:// orqali ilovaga qaytadi */
   client: z.enum(["web", "app"]).default("web"),
 });
 
 /**
- * Skrining natijasi uchun Click to'lov sahifasi havolasini yaratadi (karta yoki Click ilovasi).
- * To'lov natijaga darhol bog'lanadi; Click "complete" chaqirgach status "paid" bo'ladi.
+ * Darslar bo'limiga oylik kirish uchun Click to'lov sahifasi havolasi (karta yoki Click ilovasi).
+ * To'lov akkauntga bog'lanadi; Click "complete" chaqirgach kirish muddati uzaytiriladi.
  */
 export async function POST(req: Request) {
-  const parsed = bodySchema.safeParse(await req.json().catch(() => null));
+  const user = await getSessionUser().catch(() => null);
+  if (!user) return NextResponse.json({ error: "Avtorizatsiya talab qilinadi." }, { status: 401 });
+
+  const parsed = bodySchema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return NextResponse.json({ error: "Ma'lumot noto'g'ri." }, { status: 400 });
-  const { assessmentId, client } = parsed.data;
+  const { client } = parsed.data;
 
   try {
-    const assessment = await prisma.assessment.findUnique({
-      where: { id: assessmentId },
-      include: { payment: true },
-    });
-    if (!assessment) return NextResponse.json({ error: "Natija topilmadi." }, { status: 404 });
-    if (!assessment.requiresPayment || assessment.payment?.status === "paid") {
-      return NextResponse.json({ ok: true, paid: true });
-    }
-
     const amount = getPaymentAmount();
-    const phone = assessment.phone ?? "CARD";
+    const days = getPaymentPeriodDays();
 
     // Lokal test: Click kalitlari yo'q — to'lov darhol o'tadi
     if (isPaymentDevSkip()) {
-      const paid = await prisma.payment.create({
-        data: { phone, amount, status: "paid", merchantTransId: newTransId(), paidAt: new Date() },
+      const paid = await prisma.$transaction(async (tx) => {
+        const p = await tx.payment.create({
+          data: { userId: user.id, phone: user.phone, amount, days, status: "paid", merchantTransId: newTransId(), paidAt: new Date() },
+        });
+        await extendLessonAccess(tx, user.id, days);
+        return p;
       });
-      await prisma.assessment.update({ where: { id: assessmentId }, data: { paymentId: paid.id } });
-      void logUserEvent("payment_success", { paymentId: paid.id, phone, amount, merchantTransId: paid.merchantTransId, source: "dev_skip" });
+      void logUserEvent("payment_success", { paymentId: paid.id, phone: user.phone, amount, days, merchantTransId: paid.merchantTransId, source: "dev_skip" });
       return NextResponse.json({ ok: true, paid: true });
     }
 
@@ -51,16 +48,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "To'lov vaqtincha ishlamayapti." }, { status: 503 });
     }
 
-    // Shu natija uchun kutilayotgan to'lov bo'lsa — o'shani qayta ishlatamiz (eski havola ham amal qiladi)
-    let payment = assessment.payment;
-    if (!payment || payment.status !== "pending" || payment.amount !== amount) {
-      payment = await prisma.payment.create({
-        data: { phone, amount, status: "pending", merchantTransId: newTransId() },
-      });
-      await prisma.assessment.update({ where: { id: assessmentId }, data: { paymentId: payment.id } });
-    }
+    // So'nggi 30 daqiqadagi kutilayotgan to'lov qayta ishlatiladi (bir necha marta bosilsa ham bitta to'lov)
+    let payment = await prisma.payment.findFirst({
+      where: { userId: user.id, status: "pending", amount, days, createdAt: { gt: new Date(Date.now() - 30 * 60 * 1000) } },
+      orderBy: { createdAt: "desc" },
+    });
+    payment ??= await prisma.payment.create({
+      data: { userId: user.id, phone: user.phone, amount, days, status: "pending", merchantTransId: newTransId() },
+    });
 
-    const returnUrl = `${publicBaseUrl(req)}/api/payment/return?${new URLSearchParams({ a: assessmentId, ...(client === "app" && { app: "1" }) })}`;
+    const returnUrl = `${publicBaseUrl(req)}/api/payment/return${client === "app" ? "?app=1" : ""}`;
     const params = new URLSearchParams({
       service_id: serviceId,
       merchant_id: merchantId,
@@ -69,7 +66,7 @@ export async function POST(req: Request) {
       return_url: returnUrl,
     });
 
-    return NextResponse.json({ ok: true, paid: false, redirectUrl: `${CLICK_PAY_URL}?${params}`, amount });
+    return NextResponse.json({ ok: true, paid: false, redirectUrl: `${CLICK_PAY_URL}?${params}`, amount, days });
   } catch (err) {
     console.error("[payment checkout]", err);
     return NextResponse.json({ error: "Xatolik." }, { status: 500 });
@@ -78,4 +75,13 @@ export async function POST(req: Request) {
 
 function newTransId() {
   return `autizm-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+/** Click qaytgandan keyin yo'naltiriladigan sayt manzili. */
+function publicBaseUrl(req: Request): string {
+  const env = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (env) return env.replace(/\/$/, "");
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+  const proto = req.headers.get("x-forwarded-proto") ?? new URL(req.url).protocol.replace(":", "");
+  return host ? `${proto}://${host}` : new URL(req.url).origin;
 }

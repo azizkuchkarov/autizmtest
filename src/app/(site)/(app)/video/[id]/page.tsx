@@ -8,9 +8,11 @@ import { BackHeader } from "@/components/app/app-shell";
 import { useLocale, useProfile } from "@/components/app/providers";
 import { sectionLook } from "@/components/app/lesson-sections";
 import { accent, Button, Card, EmptyState, FadeIn, Pill, Screen, SectionHeader, Skeleton } from "@/components/app/ui";
+import { LessonsPaywall } from "@/components/app/paywall";
 import { VideoRow } from "@/components/app/video-cards";
 import { ExerciseAddCard } from "@/components/app/video-exercises";
 import { useContent } from "@/hooks/use-content";
+import { useLessonAccess } from "@/hooks/use-lesson-access";
 import { fetchVideo, type Video } from "@/lib/app/api";
 import { domainStyle } from "@/lib/app/domains";
 import { markVideoWatched } from "@/lib/app/video-log";
@@ -60,6 +62,20 @@ export default function VideoPage() {
       .catch(() => setError(true));
   }, [id, locale]);
 
+  // Dars videosi yopiq bo'lsa — to'lovdan keyin (kirish ochilganda) havola qayta olinadi
+  const { access } = useLessonAccess();
+  const lockedVideo = !!video && video.videoUrl === null;
+  useEffect(() => {
+    if (!lockedVideo || !access || access.locked) return;
+    let cancelled = false;
+    fetchVideo(id, locale)
+      .then((res) => !cancelled && setVideo(res.video))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [lockedVideo, access, id, locale]);
+
   if (error)
     return (
       <Screen>
@@ -92,6 +108,9 @@ export default function VideoPage() {
   return (
     <Screen className="md:max-w-[900px]">
       <BackHeader />
+      {video.videoUrl === null ? (
+        access ? <LessonsPaywall access={access} /> : <Skeleton height={210} radius={24} className="aspect-video !h-auto" />
+      ) : (
       <div className="overflow-hidden rounded-[24px] bg-black shadow-card">
         <video
           key={video.videoUrl}
@@ -121,6 +140,7 @@ export default function VideoPage() {
           className="aspect-video w-full"
         />
       </div>
+      )}
       {done ? (
         <FadeIn>
           <div className="flex flex-col gap-3 rounded-[20px] p-4" style={{ background: green.soft }}>

@@ -123,21 +123,19 @@ export function fetchServerAssessment(id: string) {
 
 /* ------------------------------- To'lov ------------------------------- */
 
-/** Natija qulflanganmi (to'lov kerakmi) va narx. */
-export function fetchAssessmentAccess(id: string) {
-  return request<{ locked: boolean; amount: number | null }>(`/api/assessments/${encodeURIComponent(id)}/access`);
+/** Darslar bo'limiga oylik kirish holati (PAYMENTS_UI, foydalanuvchi to'lovi). */
+export type LessonAccess = { visible: boolean; locked: boolean; paidUntil: string | null; amount: number | null; days: number };
+
+export function fetchLessonAccess() {
+  return request<LessonAccess>("/api/payment/config");
 }
 
-/** Click to'lov sahifasi havolasi. paid=true — to'lov allaqachon o'tgan (yoki lokal test). */
-export function startCheckout(assessmentId: string) {
+/** Click to'lov sahifasi havolasi. paid=true — to'lov darhol o'tgan (lokal test). */
+export function startCheckout() {
   return request<{ ok: boolean; paid: boolean; redirectUrl?: string }>("/api/payment/checkout", {
     method: "POST",
-    body: JSON.stringify({ assessmentId, client: "web" }),
+    body: JSON.stringify({ client: "web" }),
   });
-}
-
-export function redeemPromo(assessmentId: string, code: string) {
-  return request<{ ok: boolean }>("/api/promo/redeem", { method: "POST", body: JSON.stringify({ assessmentId, code }) });
 }
 
 /* ------------------------------- Content ------------------------------- */
@@ -148,7 +146,8 @@ export type Video = {
   id: string;
   title: string;
   description: string | null;
-  videoUrl: string;
+  /** Dars videosi va oylik kirish yo'q bo'lsa null (server havolani bermaydi) */
+  videoUrl: string | null;
   thumbnailUrl: string | null;
   durationSec: number | null;
   domains: string[];
@@ -169,11 +168,11 @@ export type ContentCategory = {
 };
 
 export function fetchContent(kind: ContentKind, locale: Locale) {
-  return request<{ professions: Profession[]; categories: ContentCategory[] }>(`/api/content?kind=${kind}&locale=${locale}`);
+  return request<{ professions: Profession[]; categories: ContentCategory[]; locked?: boolean }>(`/api/content?kind=${kind}&locale=${locale}`);
 }
 
 export function fetchVideo(id: string, locale: Locale) {
-  return request<{ video: Video }>(`/api/content/videos/${encodeURIComponent(id)}?locale=${locale}`);
+  return request<{ video: Video; locked?: boolean }>(`/api/content/videos/${encodeURIComponent(id)}?locale=${locale}`);
 }
 
 export type ExercisePlan = {
@@ -328,7 +327,7 @@ export type ActivitySnapshot = {
   sound: { id: string; cardId: string | null; level: 1 | 2 | 3 | 4; result: "ok" | "help" | "miss"; day: string; at: number; snapshot: boolean }[];
   play: { id: string; activityId: string; rating: "great" | "ok" | "hard"; day: string; at: number }[];
   aac: { day: string; taps: number; sentences: number; sentenceWords: number; cards: Record<string, number> }[];
-  assessments: { id: string; createdAt: string; ageGroup: string; childGender: string | null; scoring: unknown; locked?: boolean }[];
+  assessments: { id: string; createdAt: string; ageGroup: string; childGender: string | null; scoring: unknown }[];
   skills?: { id: string; createdAt: string; scoring: unknown }[];
 };
 
@@ -355,5 +354,5 @@ export function createAssessmentV3(input: {
   childGender?: string;
   phone?: string;
 }) {
-  return request<{ assessmentId: string; scoring: unknown; locked?: boolean }>("/api/assessments/v3", { method: "POST", body: JSON.stringify(input) }, 30000);
+  return request<{ assessmentId: string; scoring: unknown }>("/api/assessments/v3", { method: "POST", body: JSON.stringify(input) }, 30000);
 }

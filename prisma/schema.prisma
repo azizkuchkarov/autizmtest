@@ -98,15 +98,18 @@ model AbaCenter {
 }
 
 model User {
-  id          String        @id @default(uuid())
-  phone       String        @unique
-  pinHash     String? // PIN bilan kirish uchun; OTP foydalanuvchilarda null
-  guideSeenAt DateTime? // ota-ona qo'llanmasini ko'rib chiqqan vaqt
-  createdAt   DateTime      @default(now())
-  sessions    UserSession[]
-  children    Child[]
-  pushTokens  PushToken[]
-  videoWatches VideoWatch[]
+  id               String        @id @default(uuid())
+  phone            String        @unique
+  pinHash          String? // PIN bilan kirish uchun; OTP foydalanuvchilarda null
+  guideSeenAt      DateTime? // ota-ona qo'llanmasini ko'rib chiqqan vaqt
+  createdAt        DateTime      @default(now())
+  sessions         UserSession[]
+  children         Child[]
+  pushTokens       PushToken[]
+  videoWatches     VideoWatch[]
+  /// Darslar bo'limi shu vaqtgacha ochiq (oylik to'lov). null — to'lanmagan
+  lessonsPaidUntil DateTime?
+  payments         Payment[]
 }
 
 /// Mobil ilovaning Expo push tokeni: bir foydalanuvchida bir nechta qurilma bo'lishi mumkin
@@ -124,25 +127,25 @@ model PushToken {
 
 /// Mobil ilovada ro'yxatdan o'tishda kiritiladigan bola profili
 model Child {
-  id           String        @id @default(uuid())
-  userId       String
-  name         String
-  birthYear    Int
-  birthMonth   Int? // 1–12; testni bolaning aniq yoshiga (oy) moslash uchun
-  gender       String // Qiz | O'g'il
-  avatar       String // mobil ilovadagi avatar identifikatori, masalan "girl-1"
-  practiceTime String? // kunlik mashg'ulot vaqti "HH:MM" — 15 daqiqa oldin eslatiladi
-  diaryTime    String? // ertalabki kundalik eslatmasi "HH:MM"
-  remindersOn  Boolean       @default(true)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  diary        DiaryEntry[]
-  assessments  Assessment[]
-  soundAnswers SoundAnswer[]
-  playSessions PlaySession[]
-  aacDays      AacDay[]
-  syncReceipts SyncReceipt[]
+  id            String         @id @default(uuid())
+  userId        String
+  name          String
+  birthYear     Int
+  birthMonth    Int? // 1–12; testni bolaning aniq yoshiga (oy) moslash uchun
+  gender        String // Qiz | O'g'il
+  avatar        String // mobil ilovadagi avatar identifikatori, masalan "girl-1"
+  practiceTime  String? // kunlik mashg'ulot vaqti "HH:MM" — 15 daqiqa oldin eslatiladi
+  diaryTime     String? // ertalabki kundalik eslatmasi "HH:MM"
+  remindersOn   Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  diary         DiaryEntry[]
+  assessments   Assessment[]
+  soundAnswers  SoundAnswer[]
+  playSessions  PlaySession[]
+  aacDays       AacDay[]
+  syncReceipts  SyncReceipt[]
   exercisePlans ExercisePlan[]
 
   @@index([userId])
@@ -219,57 +222,38 @@ model PinSetupToken {
 }
 
 model Assessment {
-  id               String   @id @default(uuid())
-  testType         String   @default("screening") // screening | progress
-  ageGroup         String // AGE_1_5_2 | AGE_3_4 | AGE_5_6 | AGE_7_9
-  answers          Json // Record<questionId, 0|1|2|3>
-  scoring          Json // OverallResult from scoring.ts
-  respondent       String? // Ota | Ona | Vasiy
-  childGender      String? // Qiz | O'g'il
-  phone            String? // +998XXXXXXXXX
-  childId          String? // akkauntdagi bola — natijalar telefon almashsa ham saqlanadi
-  child            Child?   @relation(fields: [childId], references: [id], onDelete: SetNull)
-  /// Test topshirilganda to'lov UI ko'rinib turgan bo'lsa true — natija to'lovdan keyin ochiladi
-  requiresPayment  Boolean  @default(false)
-  paymentId        String?
-  payment          Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
-  promoCodes       PromoCode[]
-  createdAt        DateTime @default(now())
+  id          String   @id @default(uuid())
+  testType    String   @default("screening") // screening | progress
+  ageGroup    String // AGE_1_5_2 | AGE_3_4 | AGE_5_6 | AGE_7_9
+  answers     Json // Record<questionId, 0|1|2|3>
+  scoring     Json // OverallResult from scoring.ts
+  respondent  String? // Ota | Ona | Vasiy
+  childGender String? // Qiz | O'g'il
+  phone       String? // +998XXXXXXXXX
+  childId     String? // akkauntdagi bola — natijalar telefon almashsa ham saqlanadi
+  child       Child?   @relation(fields: [childId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
 
   @@index([childId])
-  @@index([paymentId])
 }
 
-/// Click orqali skrining natijasi uchun to'lov
+/// Click orqali Darslar bo'limiga oylik kirish uchun to'lov
 model Payment {
-  id                String       @id @default(uuid())
+  id                String    @id @default(uuid())
+  userId            String?
+  user              User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
   phone             String
   amount            Int // so'm
-  status            String       @default("pending") // pending | paid | failed
-  merchantTransId   String       @unique // Click uchun
+  days              Int       @default(30) // to'lov necha kunlik kirish beradi
+  status            String    @default("pending") // pending | paid | failed
+  merchantTransId   String    @unique // Click uchun
   clickTransId      String?
   merchantPrepareId Int?
-  createdAt         DateTime     @default(now())
+  createdAt         DateTime  @default(now())
   paidAt            DateTime?
-  assessments       Assessment[]
 
   @@index([phone])
-}
-
-/// Admin tomonidan beriladigan promokod — to'lovsiz natijaga kirish
-model PromoCode {
-  id           String     @id @default(uuid())
-  code         String     @unique
-  assessmentId String
-  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
-  expiresAt    DateTime?
-  maxUses      Int        @default(1)
-  usedCount    Int        @default(0)
-  active       Boolean    @default(true)
-  note         String?
-  createdAt    DateTime   @default(now())
-
-  @@index([assessmentId])
+  @@index([userId])
 }
 
 /// Video kontent yo'nalishi (kasb): autizm, logoped, sensor integratsiya va h.k.
@@ -307,48 +291,48 @@ model ContentCategory {
 }
 
 model Video {
-  id            String          @id @default(uuid())
-  categoryId    String
-  titleUz       String
-  titleRu       String
-  descriptionUz String?
-  descriptionRu String?
-  videoUrl      String // HLS (.m3u8) yoki MP4 manzili
-  thumbnailUrl  String?
-  durationSec   Int?
-  ageGroups     String[] // AGE_1_5_2 | AGE_3_4 | AGE_5_6 | AGE_7_9; bo'sh = barcha yoshlar
-  domains       String[] // Skrining sohalari A | B | C — natijaga qarab tavsiya qilish uchun
-  order         Int             @default(0)
-  active        Boolean         @default(true)
-  status        String          @default("ready") // ready | processing | failed — admin yuklagan fayl serverda siqilmoqda
-  sourceFile    String? // siqilishi kutilayotgan yuklangan fayl (MEDIA_DIR/incoming/...)
-  processError  String?
+  id               String          @id @default(uuid())
+  categoryId       String
+  titleUz          String
+  titleRu          String
+  descriptionUz    String?
+  descriptionRu    String?
+  videoUrl         String // HLS (.m3u8) yoki MP4 manzili
+  thumbnailUrl     String?
+  durationSec      Int?
+  ageGroups        String[] // AGE_1_5_2 | AGE_3_4 | AGE_5_6 | AGE_7_9; bo'sh = barcha yoshlar
+  domains          String[] // Skrining sohalari A | B | C — natijaga qarab tavsiya qilish uchun
+  order            Int             @default(0)
+  active           Boolean         @default(true)
+  status           String          @default("ready") // ready | processing | failed — admin yuklagan fayl serverda siqilmoqda
+  sourceFile       String? // siqilishi kutilayotgan yuklangan fayl (MEDIA_DIR/incoming/...)
+  processError     String?
   /// Mashq uchun video: ota-onaga tavsiya — kuniga necha marta, necha kun
-  exerciseEnabled Boolean @default(false)
-  exerciseReps    Int?
-  exerciseDays    Int?
+  exerciseEnabled  Boolean         @default(false)
+  exerciseReps     Int?
+  exerciseDays     Int?
   exerciseMarkedAt DateTime? // qachon mashq uchun belgilangan: Mashqlarda shu tartibda
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  category      ContentCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  watches       VideoWatch[]
-  exercisePlans ExercisePlan[]
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  category         ContentCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  watches          VideoWatch[]
+  exercisePlans    ExercisePlan[]
 
   @@index([categoryId])
 }
 
 /// Ota-ona bolasi uchun tanlagan video mashq: kuniga repsPerDay marta, days kun. Faqat to'liq bajarilgan kunlar sanaladi.
 model ExercisePlan {
-  id          String            @id @default(uuid())
+  id          String           @id @default(uuid())
   childId     String
   videoId     String
   repsPerDay  Int
   days        Int
   completedAt DateTime?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  child       Child             @relation(fields: [childId], references: [id], onDelete: Cascade)
-  video       Video             @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  child       Child            @relation(fields: [childId], references: [id], onDelete: Cascade)
+  video       Video            @relation(fields: [videoId], references: [id], onDelete: Cascade)
   log         ExerciseDayLog[]
 
   @@unique([childId, videoId])

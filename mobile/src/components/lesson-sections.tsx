@@ -1,16 +1,18 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useState, type ReactNode } from 'react';
 import { RefreshControl, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
+import { LessonsPaywall } from '@/components/paywall';
 import { ThemedText } from '@/components/themed-text';
 import { EmptyState, PageHeader, PressableScale, ProgressBar, Screen, SectionHeader, Skeleton, sym, useCardShadow } from '@/components/ui';
 import { Accents, Radius, Spacing, type AccentName } from '@/constants/theme';
 import { useLocale } from '@/contexts/locale';
 import { useContent } from '@/hooks/use-content';
+import { useLessonAccess, waitForLessonAccess } from '@/hooks/use-lesson-access';
 import { useTheme } from '@/hooks/use-theme';
 import { absoluteUrl, type Video } from '@/lib/api';
 import { buildSections, syncVideoProgress, useVideoProgress, type VideoSection } from '@/lib/video-progress';
@@ -44,7 +46,7 @@ export function ContinueCard({ video, accent, started }: { video: Video; accent:
         <View style={styles.continueThumb}>
           {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} /> : null}
           <View style={styles.continuePlay}>
-            <SymbolView name={sym('play.fill', 'play_arrow')} size={18} tintColor={Accents[accent].fg} />
+            <SymbolView name={video.videoUrl === null ? sym('lock.fill', 'lock') : sym('play.fill', 'play_arrow')} size={18} tintColor={Accents[accent].fg} />
           </View>
         </View>
         <View style={{ flex: 1, gap: 3 }}>
@@ -110,9 +112,16 @@ export function LessonSections({ tabs }: { tabs?: ReactNode }) {
     syncVideoProgress();
   }, []);
 
+  // Oylik kirish holati; autizm://lessons?paid=1 orqali ochilsa — to'lov tekshiriladi
+  const { access, refresh } = useLessonAccess();
+  const { paid } = useLocalSearchParams<{ paid?: string }>();
+  useEffect(() => {
+    if (paid) void waitForLessonAccess();
+  }, [paid]);
+
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([reload(), syncVideoProgress()]);
+    await Promise.all([reload(), syncVideoProgress(), refresh()]);
     setRefreshing(false);
   };
 
@@ -124,6 +133,7 @@ export function LessonSections({ tabs }: { tabs?: ReactNode }) {
     <Screen withTabBar refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
       <PageHeader title={t('lessons.title')} subtitle={t('lessons.subtitle')} />
       {tabs}
+      {access?.locked ? <LessonsPaywall compact access={access} /> : null}
       {error && !categories ? (
         <EmptyState
           icon={sym('wifi.slash', 'wifi_off')}

@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, AlertTriangle, Check, ChevronRight, Lock, type LucideIcon } from "lucide-react";
+import { AlertCircle, AlertTriangle, Check, ChevronRight, type LucideIcon } from "lucide-react";
 
 import { useLocale } from "@/components/app/providers";
 import { Card } from "@/components/app/ui";
@@ -55,21 +55,6 @@ export function ResultRow({ item }: { item: StoredAssessment }) {
   const ageOf = useAssessmentAge();
   const tier = assessmentTier(item);
   const colors = riskColors(tier);
-  if (item.locked)
-    return (
-      <Card href={`/result/${item.id}`} className="!flex-row items-center !gap-4">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-tint-soft text-tint">
-          <Lock className="h-5 w-5" strokeWidth={2.5} />
-        </span>
-        <div className="flex flex-1 flex-col gap-0.5">
-          <span className="t-heading text-[15.5px]">{t("pay.lockedRow")}</span>
-          <span className="t-small text-ink-2">
-            {formatDate(item.createdAt)} · {ageOf(item)}
-          </span>
-        </div>
-        <ChevronRight className="h-4 w-4 text-ink-3" />
-      </Card>
-    );
   return (
     <Card href={`/result/${item.id}`} className="!flex-row items-center !gap-4">
       <LevelBadge tier={tier} />

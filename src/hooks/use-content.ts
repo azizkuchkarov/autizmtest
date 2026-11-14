@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useLocale } from "@/components/app/providers";
+import { useLessonAccess } from "@/hooks/use-lesson-access";
 import { fetchContent, type ContentCategory, type ContentKind, type Profession } from "@/lib/app/api";
 
 type State = { categories: ContentCategory[] | null; professions: Profession[]; error: boolean };
@@ -35,6 +36,15 @@ export function useContent(kind: ContentKind) {
     setState((prev) => ({ ...prev, error: false }));
     apply(await load());
   }, [load]);
+
+  // Dars videolari oylik kirish bilan: kirish ochilganda havolalar bilan qayta yuklanadi
+  const { access } = useLessonAccess(false);
+  const wasLocked = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (kind !== "lesson" || !access) return;
+    if (wasLocked.current === true && !access.locked) void load().then(apply);
+    wasLocked.current = access.locked;
+  }, [kind, access, load]);
 
   return { ...state, reload, videos: state.categories?.flatMap((c) => c.videos) ?? [] };
 }

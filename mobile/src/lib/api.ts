@@ -162,7 +162,7 @@ export type CreateAssessmentV3Input = {
 
 /** Skrining v3 va oylik ko'nikmalar testi: natija serverda qayta hisoblanadi va bolaga bog'lanadi. */
 export function createAssessmentV3(input: CreateAssessmentV3Input) {
-  return request<{ assessmentId: string; scoring: unknown; locked?: boolean }>('/api/assessments/v3', {
+  return request<{ assessmentId: string; scoring: unknown }>('/api/assessments/v3', {
     method: 'POST',
     body: JSON.stringify(input),
   });
@@ -170,21 +170,19 @@ export function createAssessmentV3(input: CreateAssessmentV3Input) {
 
 /* ------------------------------- To'lov ------------------------------- */
 
-/** Natija qulflanganmi (to'lov kerakmi) va narx. */
-export function fetchAssessmentAccess(id: string) {
-  return request<{ locked: boolean; amount: number | null }>(`/api/assessments/${encodeURIComponent(id)}/access`);
+/** Darslar bo'limiga oylik kirish holati (PAYMENTS_UI, ilova versiyasi, foydalanuvchi to'lovi). */
+export type LessonAccess = { visible: boolean; locked: boolean; paidUntil: string | null; amount: number | null; days: number };
+
+export function fetchLessonAccess() {
+  return request<LessonAccess>('/api/payment/config');
 }
 
-/** Click to'lov sahifasi havolasi; to'lovdan keyin autizm://result/<id> orqali ilovaga qaytadi. */
-export function startCheckout(assessmentId: string) {
+/** Click to'lov sahifasi havolasi; to'lovdan keyin autizm://lessons orqali ilovaga qaytadi. */
+export function startCheckout() {
   return request<{ ok: boolean; paid: boolean; redirectUrl?: string }>('/api/payment/checkout', {
     method: 'POST',
-    body: JSON.stringify({ assessmentId, client: 'app' }),
+    body: JSON.stringify({ client: 'app' }),
   });
-}
-
-export function redeemPromo(assessmentId: string, code: string) {
-  return request<{ ok: boolean }>('/api/promo/redeem', { method: 'POST', body: JSON.stringify({ assessmentId, code }) });
 }
 
 /** Bolaning serverdagi tarixi (hozircha faqat ko'nikmalar testi natijalari ishlatiladi). */
@@ -202,7 +200,8 @@ export type Video = {
   id: string;
   title: string;
   description: string | null;
-  videoUrl: string;
+  /** Dars videosi va oylik kirish yo'q bo'lsa null (server havolani bermaydi) */
+  videoUrl: string | null;
   thumbnailUrl: string | null;
   durationSec: number | null;
   /** Skrining sohalari (A, B, C) — natijaga qarab tavsiya qilish uchun */
