@@ -73,10 +73,12 @@ export function LessonsPaywall({
           </div>
         ) : null}
 
-        <div className="flex w-full max-w-[360px] flex-col gap-2">
-          <Button title={t("pay.button")} icon={CreditCard} onClick={pay} loading={paying} disabled={checking} />
-          <span className="t-small text-ink-3">{t("pay.methods")}</span>
-        </div>
+        {access.purchasable ? (
+          <div className="flex w-full max-w-[360px] flex-col gap-2">
+            <Button title={t("pay.button")} icon={CreditCard} onClick={pay} loading={paying} disabled={checking} />
+            <span className="t-small text-ink-3">{t("pay.methods")}</span>
+          </div>
+        ) : null}
 
         {error ? <p className="t-small text-danger">{error}</p> : null}
       </Card>

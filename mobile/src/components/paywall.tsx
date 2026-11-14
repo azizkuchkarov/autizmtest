@@ -55,6 +55,37 @@ export function LessonsPaywall({ access, compact }: { access: LessonAccess; comp
     }
   };
 
+  // Ilovada sotib olish o'chiq (App Store / Google Play qoidalari): faqat qulf, narx va to'lov tugmasisiz
+  if (!access.purchasable)
+    return (
+      <Animated.View entering={FadeInDown.duration(450)}>
+        <Card style={{ alignItems: 'center', paddingVertical: compact ? Spacing.four : Spacing.five, gap: Spacing.three }}>
+          <IconBadge name={sym('lock.fill', 'lock')} color={tint.fg} background={tint.soft} size={compact ? 52 : 64} />
+          <ThemedText type={compact ? 'heading' : 'subtitle'} style={{ textAlign: 'center' }}>
+            {t('pay.appTitle')}
+          </ThemedText>
+          <ThemedText type="body" themeColor="textSecondary" style={{ textAlign: 'center', paddingHorizontal: Spacing.two }}>
+            {t('pay.appBody')}
+          </ThemedText>
+          <View style={{ alignSelf: 'stretch' }}>
+            <Button
+              title={checking ? t('pay.checking') : t('pay.refresh')}
+              variant="secondary"
+              size="md"
+              icon={sym('arrow.clockwise', 'refresh')}
+              loading={checking}
+              onPress={async () => {
+                setChecking(true);
+                const a = await refreshLessonAccess();
+                setChecking(false);
+                if (a && !a.locked) haptics.success();
+              }}
+            />
+          </View>
+        </Card>
+      </Animated.View>
+    );
+
   return (
     <Animated.View entering={FadeInDown.duration(450)}>
       <Card style={{ alignItems: 'center', paddingVertical: compact ? Spacing.four : Spacing.five, gap: Spacing.three }}>

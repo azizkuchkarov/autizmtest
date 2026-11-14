@@ -124,7 +124,15 @@ export function fetchServerAssessment(id: string) {
 /* ------------------------------- To'lov ------------------------------- */
 
 /** Darslar bo'limiga oylik kirish holati (PAYMENTS_UI, foydalanuvchi to'lovi). */
-export type LessonAccess = { visible: boolean; locked: boolean; paidUntil: string | null; amount: number | null; days: number };
+export type LessonAccess = {
+  visible: boolean;
+  locked: boolean;
+  /** Sotib olish tugmasi ko'rsatiladimi (ilovada odatda yo'q — faqat qulf) */
+  purchasable: boolean;
+  paidUntil: string | null;
+  amount: number | null;
+  days: number;
+};
 
 export function fetchLessonAccess() {
   return request<LessonAccess>("/api/payment/config");

@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { getPaymentAmount, getPaymentPeriodDays, paymentsVisible } from "@/lib/payment-config";
+import { getClientInfo, getPaymentAmount, getPaymentPeriodDays, paymentsVisibleFor, purchaseAllowedFor } from "@/lib/payment-config";
 import { getSessionUser } from "@/lib/user-auth";
 
 export type LessonAccess = {
@@ -8,6 +8,8 @@ export type LessonAccess = {
   visible: boolean;
   /** Darslar yopiq: to'lov ko'rinadi va foydalanuvchining oylik kirishi yo'q */
   locked: boolean;
+  /** Shu mijozda sotib olish tugmasi ko'rsatiladimi (ilovada odatda yo'q — faqat qulf) */
+  purchasable: boolean;
   /** Kirish shu vaqtgacha (ISO), to'lanmagan bo'lsa null */
   paidUntil: string | null;
   amount: number | null;
@@ -16,7 +18,9 @@ export type LessonAccess = {
 
 /** Joriy so'rov egasining Darslar bo'limiga kirish holati. */
 export async function getLessonAccess(): Promise<LessonAccess> {
-  const [visible, user] = await Promise.all([paymentsVisible(), getSessionUser().catch(() => null)]);
+  const [client, user] = await Promise.all([getClientInfo(), getSessionUser().catch(() => null)]);
+  const visible = paymentsVisibleFor(client);
+  const purchasable = visible && purchaseAllowedFor(client);
   const paidUntil = user
     ? (await prisma.user.findUnique({ where: { id: user.id }, select: { lessonsPaidUntil: true } }))?.lessonsPaidUntil ?? null
     : null;
@@ -24,8 +28,10 @@ export async function getLessonAccess(): Promise<LessonAccess> {
   return {
     visible,
     locked: visible && !active,
+    purchasable,
     paidUntil: active ? paidUntil!.toISOString() : null,
-    amount: visible ? getPaymentAmount() : null,
+    // Narx faqat sotib olish mumkin bo'lgan joyda beriladi
+    amount: purchasable ? getPaymentAmount() : null,
     days: getPaymentPeriodDays(),
   };
 }

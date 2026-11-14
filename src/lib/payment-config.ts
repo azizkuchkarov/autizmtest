@@ -1,11 +1,14 @@
 /**
- * To'lov sozlamalari (.env). Skrining testlari bepul; to'lov faqat Darslar bo'limi (video va ovozli darslar) uchun.
+ * To'lov sozlamalari (.env). Skrining testlari bepul; to'lov faqat Darslar bo'limidagi video darslar uchun.
  *   PAYMENTS_UI=show | hide        — to'lov UI ko'rinadimi (default: hide). hide bo'lsa Darslar bepul ochiladi,
  *                                    Click endpointlari esa ishlashda davom etadi (faqat UI yashiriladi).
  *   PAYMENTS_MIN_VERSION=1.1.0     — mobil ilova shu versiyadan past bo'lsa to'lov ko'rinmaydi (ixtiyoriy)
  *   PAYMENTS_HIDE_VERSIONS=1.2.0   — vergul bilan: shu versiyalarda to'lov yashiriladi, masalan App Store review'dagi build (ixtiyoriy)
  *   PAYMENT_AMOUNT=99000           — Darslar bo'limiga oylik kirish narxi, so'm
  *   PAYMENT_PERIOD_DAYS=30         — bitta to'lov necha kunlik kirish beradi
+ *   PAYMENTS_IN_APP=hide | show    — ilova ichida Click tugmasi (default: hide). hide bo'lsa ilovada darslar qulf bilan
+ *                                    ko'rinadi, lekin sotib olish tugmasi yo'q (App Store / Google Play qoidalari);
+ *                                    saytda to'langan kirish ilovada ham ishlaydi (akkaunt bitta).
  * Veb sayt faqat PAYMENTS_UI ga bo'ysunadi; mobil ilova versiyasini X-App-Version sarlavhasida yuboradi.
  */
 
@@ -71,6 +74,12 @@ export function paymentsVisibleFor(client: ClientInfo): boolean {
 
 export async function paymentsVisible(): Promise<boolean> {
   return paymentsVisibleFor(await getClientInfo());
+}
+
+/** Shu mijozda sotib olish (Click tugmasi) mumkinmi: saytda — ha; ilovada — faqat PAYMENTS_IN_APP=show bo'lsa. */
+export function purchaseAllowedFor(client: ClientInfo): boolean {
+  if (client.platform === "web") return true;
+  return (process.env.PAYMENTS_IN_APP ?? "hide").trim().toLowerCase() === "show";
 }
 
 /** Click kalitlari yo'q va production emas — lokal test uchun to'lov darhol "paid" bo'ladi. */

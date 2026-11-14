@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { extendLessonAccess } from "@/lib/lesson-access";
-import { getPaymentAmount, getPaymentPeriodDays, isPaymentDevSkip } from "@/lib/payment-config";
+import { getClientInfo, getPaymentAmount, getPaymentPeriodDays, isPaymentDevSkip, purchaseAllowedFor } from "@/lib/payment-config";
 import { getSessionUser } from "@/lib/user-auth";
 import { logUserEvent } from "@/lib/user-event";
 
@@ -20,6 +20,11 @@ const bodySchema = z.object({
 export async function POST(req: Request) {
   const user = await getSessionUser().catch(() => null);
   if (!user) return NextResponse.json({ error: "Avtorizatsiya talab qilinadi." }, { status: 401 });
+
+  // Ilova ichida sotib olish o'chiq bo'lsa (PAYMENTS_IN_APP) — faqat saytda to'lanadi
+  if (!purchaseAllowedFor(await getClientInfo())) {
+    return NextResponse.json({ error: "Ilovada to'lov mavjud emas." }, { status: 403 });
+  }
 
   const parsed = bodySchema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return NextResponse.json({ error: "Ma'lumot noto'g'ri." }, { status: 400 });
