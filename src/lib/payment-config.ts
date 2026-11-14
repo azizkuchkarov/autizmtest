@@ -36,15 +36,20 @@ export function compareVersions(a: string, b: string): number {
   return 0;
 }
 
-export type ClientInfo = { platform: "web" | "ios" | "android"; version: string | null };
+export type ClientInfo = { platform: "web" | "ios" | "android" | "app"; version: string | null };
 
-/** So'rov kim tomonidan yuborilganini aniqlaydi: mobil ilova sarlavhalari bo'lmasa — veb. */
+/**
+ * So'rov kim tomonidan yuborilganini aniqlaydi.
+ * Yangi ilovalar X-App-Platform/X-App-Version yuboradi. Eski buildlar (1.0.0 va undan oldingi) yubormaydi,
+ * lekin Bearer token bilan keladi (veb esa cookie ishlatadi) — ular "app" (versiyasi noma'lum) deb olinadi.
+ */
 export async function getClientInfo(): Promise<ClientInfo> {
   const h = await headers();
   const p = h.get(APP_PLATFORM_HEADER)?.toLowerCase();
   const version = h.get(APP_VERSION_HEADER)?.trim() || null;
-  const platform = p === "ios" || p === "android" ? p : "web";
-  return { platform, version: platform === "web" ? null : version };
+  if (p === "ios" || p === "android") return { platform: p, version };
+  if (/^Bearer\s+\S+/i.test(h.get("authorization") ?? "")) return { platform: "app", version: null };
+  return { platform: "web", version: null };
 }
 
 /** Shu mijoz uchun to'lov UI ko'rinadimi. */
