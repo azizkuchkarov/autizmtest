@@ -30,6 +30,7 @@ export async function PATCH(req: Request) {
 /**
  * Mobil ilova va web: akkauntni butunlay o'chirish (App Store talabi). Bolalar va sessiyalar ham o'chadi.
  * Assessment, TelegramLink, Feedback va UserEvent User'ga cascade bilan bog'lanmagan — alohida o'chiriladi.
+ * To'lovlar hisob-kitob uchun qoladi, lekin telefon raqami o'chiriladi (userId esa SetNull bilan bo'shaydi) — shaxsga bog'lanmaydi.
  * Matn o'zgarsa: /delete-account va /privacy sahifalarini ham yangilang.
  */
 export async function DELETE() {
@@ -37,6 +38,7 @@ export async function DELETE() {
   if (denied) return denied;
 
   await prisma.$transaction([
+    prisma.payment.updateMany({ where: { OR: [{ userId: user.id }, { phone: user.phone }] }, data: { phone: "deleted" } }),
     prisma.pinSetupToken.deleteMany({ where: { userId: user.id } }),
     prisma.otpCode.deleteMany({ where: { phone: user.phone } }),
     prisma.telegramLink.deleteMany({ where: { phone: user.phone } }),

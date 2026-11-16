@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireAdmin } from "@/lib/content-admin";
 
 export async function GET() {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const [totalTests, totalPdf, last7, adminLogins] = await Promise.all([
     prisma.userEvent.count({ where: { type: "test_open" } }),
     prisma.userEvent.count({ where: { type: "pdf_download" } }),

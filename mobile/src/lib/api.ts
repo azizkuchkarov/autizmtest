@@ -135,21 +135,6 @@ export function deletePushToken(token: string) {
 
 /* ----------------------------- Assessments ----------------------------- */
 
-export type CreateAssessmentInput = {
-  testType: 'screening';
-  ageGroup: string;
-  answers: Record<string, 0 | 1 | 2 | 3>;
-  childGender?: string;
-  phone?: string;
-};
-
-export function createAssessment(input: CreateAssessmentInput) {
-  return request<{ assessmentId: string }>('/api/assessments', {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
-}
-
 export type CreateAssessmentV3Input = {
   testType: 'screening' | 'skills';
   ageMonths: number;

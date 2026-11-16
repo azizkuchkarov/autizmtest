@@ -29,11 +29,24 @@ export default function AdminAbaCenters() {
   const [items, setItems] = React.useState<AbaCenter[]>([]);
   const [status, setStatus] = React.useState("");
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
+  /** Ro'yxat serverdan yuklanmaguncha saqlash o'chiq: aks holda bo'sh ro'yxat saqlanib, markazlar yo'qolishi mumkin edi */
+  const [loaded, setLoaded] = React.useState(false);
+  /** "Ro'yxatdan o'chirish" bosilgan markazlar — server faqat shularni o'chiradi */
+  const [deletedIds, setDeletedIds] = React.useState<string[]>([]);
 
   React.useEffect(() => {
     fetch("/api/admin/aba-centers")
-      .then((r) => r.json())
+      .then(async (r) => {
+        if (r.status === 401) {
+          window.location.href = "/admin/login";
+          return null;
+        }
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then((data) => {
+        if (!data) return;
+        setLoaded(true);
         const existing: AbaCenter[] = Array.isArray(data.items) ? data.items : [];
         if (existing.length > 0) {
           setItems(existing);
@@ -59,7 +72,8 @@ export default function AdminAbaCenters() {
           active: true,
         }));
         setItems(seeded);
-      });
+      })
+      .catch(() => setStatus("Xatolik: ro'yxat yuklanmadi. Sahifani yangilang (saqlash o'chirildi)."));
   }, []);
 
   function update(index: number, patch: Partial<AbaCenter>) {
@@ -165,9 +179,11 @@ export default function AdminAbaCenters() {
 
   function removeCenter(id: string) {
     setItems((prev) => prev.filter((x) => x.id !== id));
+    setDeletedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
   }
 
   async function save() {
+    if (!loaded) return;
     setStatus("Saqlanmoqda...");
     const payload = items.map((it, idx) => ({
       ...it,
@@ -178,14 +194,16 @@ export default function AdminAbaCenters() {
       const res = await fetch("/api/admin/aba-centers", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: payload }),
+        body: JSON.stringify({ items: payload, deletedIds }),
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
+        setDeletedIds([]);
         setStatus("Saqlandi");
+      } else if (res.status === 401) {
+        setStatus("Sessiya tugagan. Qayta kiring — o'zgarishlar saqlanmadi.");
       } else {
-        const details = data?.details ?? data?.error ?? "Xatolik";
-        setStatus(`Xatolik: ${details}`);
+        setStatus(`Xatolik: ${data?.error ?? "Xatolik"}`);
       }
     } catch (e) {
       setStatus("Xatolik: tarmoq yoki server javob bermadi.");
@@ -493,7 +511,11 @@ export default function AdminAbaCenters() {
       </div>
 
       <div className="mt-4 flex items-center gap-3">
-        <button onClick={save} className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">
+        <button
+          onClick={save}
+          disabled={!loaded}
+          className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+        >
           Saqlash
         </button>
         <div className="text-sm text-slate-600">{status}</div>

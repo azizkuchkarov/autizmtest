@@ -3,6 +3,7 @@ import { z } from "zod";
 import { parseLocale } from "@/lib/content";
 import { prisma } from "@/lib/db";
 import { PLAN_INCLUDE, toPublicPlan } from "@/lib/exercise-plans";
+import { getLessonAccess } from "@/lib/lesson-access";
 import { ownChild, requireUser, validationError } from "@/lib/mobile-api";
 
 type Ctx = { params: Promise<{ childId: string }> };
@@ -21,8 +22,14 @@ export async function GET(req: Request, { params }: Ctx) {
   if (!(await ownChild(user.id, childId))) return NextResponse.json({ error: "Topilmadi." }, { status: 404 });
 
   const locale = parseLocale(new URL(req.url).searchParams.get("locale"));
-  const plans = await prisma.exercisePlan.findMany({ where: { childId }, include: PLAN_INCLUDE, orderBy: { createdAt: "asc" } });
-  return NextResponse.json({ plans: plans.map((p) => toPublicPlan(p, locale)) });
+  const [plans, access] = await Promise.all([
+    prisma.exercisePlan.findMany({ where: { childId }, include: PLAN_INCLUDE, orderBy: { createdAt: "asc" } }),
+    getLessonAccess(),
+  ]);
+  return NextResponse.json(
+    { plans: plans.map((p) => toPublicPlan(p, locale, access.locked)) },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }
 
 /** Mashqni qo'shadi; oldin bajarilgan bo'lsa, boshidan boshlanadi. */
@@ -40,8 +47,13 @@ export async function POST(req: Request, { params }: Ctx) {
   if (!video) return NextResponse.json({ error: "Bu video mashq uchun emas." }, { status: 400 });
 
   const locale = parseLocale(new URL(req.url).searchParams.get("locale"));
-  const existing = await prisma.exercisePlan.findUnique({ where: { childId_videoId: { childId, videoId } } });
-  if (existing) await prisma.exercisePlan.delete({ where: { id: existing.id } });
-  const plan = await prisma.exercisePlan.create({ data: { childId, videoId, repsPerDay, days }, include: PLAN_INCLUDE });
-  return NextResponse.json({ plan: toPublicPlan(plan, locale) }, { status: 201 });
+  const { locked } = await getLessonAccess();
+  const plan = await prisma.$transaction(async (tx) => {
+    // Bitta bolaga bir vaqtda kelgan qo'shishlar navbat bilan bajariladi: o'chirish va yaratish aralashib ketmaydi
+    // (aks holda tugma ikki marta bosilganda P2002/P2025 bilan 500 qaytardi)
+    await tx.$queryRaw`SELECT 1 FROM "Child" WHERE "id" = ${childId} FOR UPDATE`;
+    await tx.exercisePlan.deleteMany({ where: { childId, videoId } });
+    return tx.exercisePlan.create({ data: { childId, videoId, repsPerDay, days }, include: PLAN_INCLUDE });
+  });
+  return NextResponse.json({ plan: toPublicPlan(plan, locale, locked) }, { status: 201 });
 }

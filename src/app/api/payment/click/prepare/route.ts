@@ -1,99 +1,70 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { verifyPrepareSign } from "@/lib/click";
+import { isOurService, parseClickBody, sameAmount, verifyPrepareSign } from "@/lib/click";
 
-// Click bu URL ga POST so'rov yuboradi (form-urlencoded yoki JSON)
-async function parseBody(req: Request): Promise<Record<string, string>> {
-  const ct = req.headers.get("content-type") || "";
-  if (ct.includes("application/json")) {
-    const j = await req.json();
-    return Object.fromEntries(Object.entries(j).map(([k, v]) => [k, String(v)]));
-  }
-  const text = await req.text();
-  const params: Record<string, string> = {};
-  new URLSearchParams(text).forEach((v, k) => {
-    params[k] = v;
-  });
-  return params;
-}
-
+/*
+ * Click SHOP-API: Prepare (action=0). Xato kodlari: -1 imzo, -2 summa, -4 allaqachon to'langan, -5 buyurtma topilmadi,
+ * -8 so'rov xato, -9 bekor qilingan.
+ */
 export async function POST(req: Request) {
   try {
-    const p = await parseBody(req);
+    const p = await parseClickBody(req);
     const clickTransId = p.click_trans_id;
-    const serviceId = p.service_id;
     const merchantTransId = p.merchant_trans_id;
-    const amount = parseFloat(p.amount || "0");
     const action = p.action;
     const error = p.error;
-    const signTime = p.sign_time;
-    const signString = p.sign_string;
 
-    function jsonResponse(
-      click_trans_id: string,
-      merchant_trans_id: string,
-      merchant_prepare_id: number,
-      error: number,
-      error_note: string
-    ) {
-      return NextResponse.json(
-        { click_trans_id, merchant_trans_id, merchant_prepare_id, error, error_note },
-        { headers: { "Content-Type": "application/json" } }
-      );
-    }
+    const reply = (merchant_prepare_id: number, code: number, note: string) =>
+      NextResponse.json({
+        click_trans_id: String(clickTransId),
+        merchant_trans_id: String(merchantTransId),
+        merchant_prepare_id,
+        error: code,
+        error_note: note,
+      });
 
     if (!clickTransId || !merchantTransId || action !== "0") {
-      return jsonResponse(String(clickTransId), String(merchantTransId), 0, -8, "Invalid params");
+      return reply(0, -8, "Invalid params");
     }
 
     const signOk = verifyPrepareSign({
       click_trans_id: clickTransId,
-      service_id: serviceId,
+      service_id: p.service_id,
       merchant_trans_id: merchantTransId,
       amount: p.amount,
       action,
-      sign_time: signTime,
-      sign_string: signString,
+      sign_time: p.sign_time,
+      sign_string: p.sign_string,
     });
-
-    if (!signOk) {
-      return jsonResponse(clickTransId, merchantTransId, 0, -1, "Bad sign");
-    }
+    if (!signOk) return reply(0, -1, "Bad sign");
+    if (!isOurService(p.service_id)) return reply(0, -8, "Wrong service");
 
     if (error !== "0" && error !== "") {
-      return jsonResponse(clickTransId, merchantTransId, 0, -9, "Cancel");
+      return reply(0, -9, "Cancel");
     }
 
-    const payment = await prisma.payment.findUnique({
-      where: { merchantTransId },
-    });
+    const payment = await prisma.payment.findUnique({ where: { merchantTransId } });
+    if (!payment) return reply(0, -5, "Order not found");
+    if (payment.status === "paid") return reply(0, -4, "Already paid");
+    if (!sameAmount(p.amount, payment.amount)) return reply(0, -2, "Amount mismatch");
 
-    if (!payment) {
-      return jsonResponse(clickTransId, merchantTransId, 0, -5, "Order not found");
-    }
-    if (payment.status !== "pending") {
-      return jsonResponse(clickTransId, merchantTransId, 0, -4, "Already processed");
-    }
-    if (payment.amount !== amount) {
-      return jsonResponse(clickTransId, merchantTransId, 0, -5, "Amount mismatch");
+    // Click shu tranzaksiya uchun Prepare'ni qayta yuborsa — o'sha merchant_prepare_id qaytariladi
+    if (payment.clickTransId === clickTransId && payment.merchantPrepareId) {
+      return reply(payment.merchantPrepareId, 0, "Success");
     }
 
+    // Yangi urinish (yoki bekor qilingandan keyin qayta to'lash). Eski "failed" buyurtmalar qayta ochiladi.
+    // Shart bilan yoziladi: shu orada boshqa tranzaksiya buyurtmani to'lab qo'ygan bo'lsa, u qayta "kutilmoqda"ga tushmaydi.
     const merchantPrepareId = Date.now() % 100000000;
-
-    await prisma.payment.update({
-      where: { merchantTransId },
-      data: {
-        clickTransId,
-        merchantPrepareId,
-      },
+    const updated = await prisma.payment.updateMany({
+      where: { merchantTransId, status: { not: "paid" } },
+      data: { clickTransId, merchantPrepareId, status: "pending" },
     });
+    if (updated.count === 0) return reply(0, -4, "Already paid");
 
-    return jsonResponse(clickTransId, merchantTransId, merchantPrepareId, 0, "Success");
+    return reply(merchantPrepareId, 0, "Success");
   } catch (err) {
     console.error("[Click prepare]", err);
-    return NextResponse.json(
-      { click_trans_id: "0", merchant_trans_id: "0", merchant_prepare_id: 0, error: -9, error_note: "Server error" },
-      { headers: { "Content-Type": "application/json" } }
-    );
+    return NextResponse.json({ click_trans_id: "0", merchant_trans_id: "0", merchant_prepare_id: 0, error: -9, error_note: "Server error" });
   }
 }

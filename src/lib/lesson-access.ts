@@ -41,6 +41,8 @@ export async function getLessonAccess(): Promise<LessonAccess> {
  * Tranzaksiya ichida chaqiriladi.
  */
 export async function extendLessonAccess(tx: Prisma.TransactionClient, userId: string, days: number): Promise<Date> {
+  // Ikki to'lov bir vaqtda tasdiqlansa, biri ikkinchisining muddatini ustidan yozib yubormasligi uchun foydalanuvchi qatori qulflanadi
+  await tx.$queryRaw`SELECT 1 FROM "User" WHERE "id" = ${userId} FOR UPDATE`;
   const user = await tx.user.findUnique({ where: { id: userId }, select: { lessonsPaidUntil: true } });
   const now = new Date();
   const from = user?.lessonsPaidUntil && user.lessonsPaidUntil > now ? user.lessonsPaidUntil : now;

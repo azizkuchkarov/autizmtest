@@ -51,7 +51,7 @@ sudo -u postgres psql
 PostgreSQL ichida (bitta qatorda yozmaslik, har bir qatordan keyin Enter):
 
 ```sql
-CREATE USER postgres WITH PASSWORD 'KuchkarovAzizShuxratovich';
+CREATE USER postgres WITH PASSWORD 'KUCHLI_TASODIFIY_PAROL';
 CREATE DATABASE autizmtest OWNER postgres;
 \q
 ```
@@ -147,10 +147,12 @@ Brauzerda `http://SERVER_IP:3000` ochib ko‘ring. To‘g‘ri ishlasa, `Ctrl+C`
 
 ```bash
 sudo npm install -g pm2
-pm2 start npm --name "autizmtest" -- start
+pm2 start npm --name "autizmtest" -- start -- -H 127.0.0.1
 pm2 save
 pm2 startup
 ```
+
+`-H 127.0.0.1` — ilova faqat serverning o‘zida (Nginx uchun) tinglaydi. Aks holda `SERVER_IP:3000` orqali Nginx'ni chetlab o‘tib, `X-Real-IP` sarlavhasini soxtalashtirish va IP bo‘yicha cheklovlarni aylanib o‘tish mumkin. Tekshirish: `ss -ltnp | grep 3000` — `127.0.0.1:3000` ko‘rinishi kerak (yoki `sudo ufw deny 3000`).
 
 `pm2 startup` chiqargan buyruqni (sudo ...) nusxalab, qayta ishga tushiring. Shundan keyin server qayta yuklansa ham ilova avtomatik ishga tushadi.
 
@@ -182,9 +184,14 @@ server {
     server_name DOMAIN_OR_IP;
     client_max_body_size 10M;
 
-    # ABA markazlar rasmlari — 404 bo‘lmasligi uchun (loyiha yo‘li: /var/www/autizmtest)
+    # ABA markazlar rasmlari — 404 bo‘lmasligi uchun (loyiha yo‘li: /var/www/autizmtest).
+    # Faqat rasm kengaytmalari beriladi va brauzer turini "taxmin qilmaydi" (nosniff) — yuklangan .html/.svg skript sifatida ishlamaydi.
+    location ~* ^/uploads/(.+\.(?:jpe?g|png|gif|webp))$ {
+        alias /var/www/autizmtest/public/uploads/$1;
+        add_header X-Content-Type-Options nosniff always;
+    }
     location /uploads/ {
-        alias /var/www/autizmtest/public/uploads/;
+        return 404;
     }
 
     location / {
@@ -223,7 +230,9 @@ sudo certbot --nginx -d sizning-domen.uz
 ## 12. Admin panel va ABA markazlar
 
 1. Brauzerda: `https://SIZNING_DOMAIN/admin` (yoki `/admin`).
-2. Admin hisob yaratish odatda seed orqali yoki alohida script orqali bo‘ladi. Agar yo‘q bo‘lsa, bitta admin yaratish uchun Prisma Studio yoki SQL ishlatishingiz mumkin.
+2. Admin hisob faqat script bilan yaratiladi (parolni almashtirish ham shu bilan; eski sessiyalar o‘chiriladi):
+   `ADMIN_EMAIL=siz@example.com ADMIN_PASSWORD='kamida-12-belgili-tasodifiy-parol' node --env-file=.env scripts/create-admin.mjs`
+   Parolni hech qachon kodga yoki git'ga yozmang — repozitoriy ochiq.
 3. Admin panelda **ABA markazlar** bo‘limiga kiring, viloyat/ tuman tanlang, markaz qo‘shing va **rasm yuklang**. Rasm `public/uploads/aba/` ga saqlanadi va saytda ko‘rinadi.
 
 ---
@@ -256,7 +265,7 @@ chmod -R 755 public/uploads
 
 npm run build
 sudo npm install -g pm2
-pm2 start npm --name "autizmtest" -- start
+pm2 start npm --name "autizmtest" -- start -- -H 127.0.0.1
 pm2 save
 pm2 startup
 # Chiqgan sudo ... buyruqni bajarish

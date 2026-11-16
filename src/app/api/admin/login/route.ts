@@ -1,49 +1,54 @@
+import { randomUUID } from "node:crypto";
+import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { createSession, setSessionCookie, verifyPassword } from "@/lib/admin-auth";
+import { clientIp, hit, tooManyRequests } from "@/lib/rate-limit";
+import { logUserEvent } from "@/lib/user-event";
 
 export const runtime = "nodejs";
-import { prisma } from "@/lib/db";
-import { createSession, hashPassword, setSessionCookie, verifyPassword } from "@/lib/admin-auth";
 
+const WINDOW_MS = 15 * 60 * 1000;
+
+/**
+ * Noma'lum email uchun ham bcrypt solishtiriladi — javob vaqti qaysi email borligini oshkor qilmasin.
+ * Birinchi kerak bo'lganda bir marta hisoblanadi.
+ */
+let dummyHash: Promise<string> | null = null;
+const getDummyHash = () => (dummyHash ??= bcrypt.hash(randomUUID(), 10));
+
+/*
+ * Admin bazada bo'lmasa, avval birinchi kirgan odam avtomatik admin bo'lib qolardi — endi admin faqat
+ * scripts/create-admin.mjs bilan yaratiladi.
+ */
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const email = String(body?.email || "").trim().toLowerCase();
-    const password = String(body?.password || "");
+    const body = await req.json().catch(() => null);
+    const email = String(body?.email ?? "").trim().toLowerCase();
+    const password = String(body?.password ?? "");
     if (!email || !password) {
       return NextResponse.json({ error: "Email va parol kerak." }, { status: 400 });
     }
 
-    const adminCount = await prisma.admin.count();
-    let admin = await prisma.admin.findUnique({ where: { email } });
-
-    if (!admin && adminCount === 0) {
-      // bootstrap first admin
-      const hashed = await hashPassword(password);
-      admin = await prisma.admin.create({ data: { email, password: hashed } });
+    // Cheklov IP va (IP + email) bo'yicha. Faqat email bo'yicha bo'lsa, email ochiq bo'lgani uchun istalgan odam adminni bloklab qo'yardi.
+    const ip = await clientIp();
+    if (ip && (!hit(`admin-login:${ip}`, 20, WINDOW_MS) || !hit(`admin-login:${ip}:${email}`, 8, WINDOW_MS))) {
+      return tooManyRequests();
     }
 
-    if (!admin) {
-      return NextResponse.json({ error: "Admin topilmadi." }, { status: 401 });
-    }
-
-    const ok = await verifyPassword(password, admin.password);
-    if (!ok) {
-      return NextResponse.json({ error: "Parol noto‘g‘ri." }, { status: 401 });
+    const admin = await prisma.admin.findUnique({ where: { email } });
+    const ok = await verifyPassword(password, admin?.password ?? (await getDummyHash()));
+    if (!admin || !ok) {
+      return NextResponse.json({ error: "Email yoki parol noto‘g‘ri." }, { status: 401 });
     }
 
     const session = await createSession(admin.id);
     await setSessionCookie(session.token, session.expiresAt);
-
-    await prisma.userEvent.create({
-      data: {
-        type: "admin_login",
-        metadata: { email: admin.email, adminId: admin.id },
-      },
-    });
+    await logUserEvent("admin_login", { email: admin.email, adminId: admin.id, ip });
 
     return NextResponse.json({ ok: true, email: admin.email });
-  } catch (err: any) {
-    const message = typeof err?.message === "string" ? err.message : "Server xatoligi.";
-    return NextResponse.json({ error: "Server xatoligi.", details: message }, { status: 500 });
+  } catch (err) {
+    console.error("[admin login]", err);
+    return NextResponse.json({ error: "Server xatoligi." }, { status: 500 });
   }
 }

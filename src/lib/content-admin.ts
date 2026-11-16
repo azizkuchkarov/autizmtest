@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getSessionAdmin } from "@/lib/admin-auth";
+import { clearSessionCookie, getSessionAdmin } from "@/lib/admin-auth";
 import { CONTENT_KINDS } from "@/lib/content";
 
 const AGE_GROUPS = ["AGE_1_5_2", "AGE_3_4", "AGE_5_6", "AGE_7_9"] as const;
@@ -63,11 +63,16 @@ export function mediaDir() {
   return dir;
 }
 
-/** Admin sessiyasini tekshiradi; yo'q bo'lsa 401 javobini qaytaradi. */
+/**
+ * Admin sessiyasini tekshiradi; yo'q bo'lsa 401 javobini qaytaradi.
+ * Har bir /api/admin/* route shuni chaqirishi shart: middleware faqat cookie bor-yo'qligini ko'radi, sessiyani emas.
+ */
 export async function requireAdmin(): Promise<NextResponse | null> {
   const admin = await getSessionAdmin();
-  if (!admin) return NextResponse.json({ error: "Ruxsat yo'q." }, { status: 401 });
-  return null;
+  if (admin) return null;
+  // Eskirgan yoki o'chirilgan sessiyaning cookie'si tozalanadi — keyingi sahifa ochilishida middleware login sahifasiga yo'naltiradi
+  await clearSessionCookie();
+  return NextResponse.json({ error: "Ruxsat yo'q." }, { status: 401 });
 }
 
 export function validationError(error: z.ZodError) {

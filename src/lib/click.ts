@@ -4,9 +4,43 @@
  * Prepare va Complete URL larni Click merchant panelida ro'yxatdan o'tkazing.
  */
 
-import { createHash } from "crypto";
+import { createHash, timingSafeEqual } from "crypto";
 
 const CLICK_API = "https://api.click.uz/v2/merchant";
+
+/** Click Prepare/Complete so'rov tanasi (form-urlencoded yoki JSON) — barcha qiymatlar satr. */
+export async function parseClickBody(req: Request): Promise<Record<string, string>> {
+  const ct = req.headers.get("content-type") || "";
+  if (ct.includes("application/json")) {
+    const j = (await req.json()) as Record<string, unknown>;
+    return Object.fromEntries(Object.entries(j ?? {}).map(([k, v]) => [k, String(v)]));
+  }
+  const params: Record<string, string> = {};
+  new URLSearchParams(await req.text()).forEach((v, k) => {
+    params[k] = v;
+  });
+  return params;
+}
+
+/** So'rov bizning xizmatimiz uchunmi: service_id raqam sifatida CLICK_SERVICE_ID bilan solishtiriladi. */
+export function isOurService(serviceId: string | undefined): boolean {
+  const ours = Number.parseInt(process.env.CLICK_SERVICE_ID?.trim() ?? "", 10);
+  const theirs = Number.parseInt(String(serviceId ?? "").trim(), 10);
+  return Number.isFinite(ours) && ours === theirs;
+}
+
+/** Click summani "1000.00" ko'rinishida yuboradi — raqam sifatida solishtiriladi. */
+export function sameAmount(posted: string | undefined, expected: number): boolean {
+  const n = Number.parseFloat(String(posted ?? ""));
+  return Number.isFinite(n) && Math.abs(n - expected) < 0.01;
+}
+
+/** Imzoni vaqtga bog'liq bo'lmagan usulda solishtiradi (uzunlik farq qilsa — false, xato emas). */
+function signMatches(expectedHex: string, given: unknown): boolean {
+  const a = Buffer.from(expectedHex);
+  const b = Buffer.from(String(given ?? "").toLowerCase());
+  return a.length === b.length && timingSafeEqual(a, b);
+}
 
 function getAuthHeader(): string {
   const merchantUserId = process.env.CLICK_MERCHANT_USER_ID;
@@ -67,8 +101,7 @@ export function verifyPrepareSign(params: Record<string, string | number>): bool
     params.amount +
     params.action +
     params.sign_time;
-  const hash = createHash("md5").update(str).digest("hex");
-  return hash === String(params.sign_string).toLowerCase();
+  return signMatches(createHash("md5").update(str).digest("hex"), params.sign_string);
 }
 
 /** Complete uchun sign tekshiruvi */
@@ -84,6 +117,5 @@ export function verifyCompleteSign(params: Record<string, string | number>): boo
     params.amount +
     params.action +
     params.sign_time;
-  const hash = createHash("md5").update(str).digest("hex");
-  return hash === String(params.sign_string).toLowerCase();
+  return signMatches(createHash("md5").update(str).digest("hex"), params.sign_string);
 }

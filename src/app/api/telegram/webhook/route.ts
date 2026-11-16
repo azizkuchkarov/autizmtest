@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { BOT_TEXT, botLocale, sendTelegramMessage } from "@/lib/telegram";
+import { OTP_MAX_ATTEMPTS } from "@/lib/user-auth";
 
 /*
  * Telegram bot webhook (setWebhook: scripts/telegram-set-webhook.mjs).
@@ -39,10 +40,10 @@ export async function POST(req: Request) {
   return NextResponse.json({ ok: true });
 }
 
-/** Kod hali amal qiladigan, shu chatga yoki shu havolaga bog'langan oxirgi Telegram so'rovi. */
+/** Kod hali amal qiladigan (urinishlari tugamagan), shu chatga yoki shu havolaga bog'langan oxirgi Telegram so'rovi. */
 function activeOtp(where: { tgToken: string } | { tgChatId: string }) {
   return prisma.otpCode.findFirst({
-    where: { ...where, channel: "telegram", expiresAt: { gt: new Date() } },
+    where: { ...where, channel: "telegram", expiresAt: { gt: new Date() }, attempts: { lt: OTP_MAX_ATTEMPTS } },
     orderBy: { createdAt: "desc" },
   });
 }

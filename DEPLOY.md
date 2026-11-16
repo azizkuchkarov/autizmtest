@@ -30,7 +30,7 @@ Upload `process.cwd()/public/uploads/aba` ga yozadi. PM2 yoki systemd ishlatilsa
 
 ```bash
 cd /var/www/autizmtest
-pm2 start npm --name "autizmtest" -- start
+pm2 start npm --name "autizmtest" -- start -- -H 127.0.0.1   # faqat Nginx orqali kirish
 # yoki ecosystem faylida: cwd: "/var/www/autizmtest"
 ```
 
@@ -47,6 +47,10 @@ location / {
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection 'upgrade';
     proxy_set_header Host $host;
+    # Majburiy: ilova mijoz IP sini faqat shu sarlavhadan oladi (kirish/SMS cheklovlari). Nginx mijoz yuborgan qiymatni almashtiradi.
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
     proxy_cache_bypass $http_upgrade;
 }
 ```

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { parseLocale } from "@/lib/content";
 import { prisma } from "@/lib/db";
 import { PLAN_INCLUDE, refreshCompletion, toPublicPlan } from "@/lib/exercise-plans";
+import { getLessonAccess } from "@/lib/lesson-access";
 import { ownChild, requireUser, validationError } from "@/lib/mobile-api";
 
 type Ctx = { params: Promise<{ childId: string; planId: string }> };
@@ -26,12 +27,17 @@ export async function POST(req: Request, { params }: Ctx) {
   const plan = await prisma.exercisePlan.findFirst({ where: { id: planId, childId } });
   if (!plan) return NextResponse.json({ error: "Topilmadi." }, { status: 404 });
 
-  const current = await prisma.exerciseDayLog.findUnique({ where: { planId_day: { planId, day } } });
-  const count = Math.max(0, Math.min(plan.repsPerDay, (current?.count ?? 0) + delta));
-  await prisma.exerciseDayLog.upsert({ where: { planId_day: { planId, day } }, create: { planId, day, count }, update: { count } });
-  await refreshCompletion(planId);
+  const full = await prisma.$transaction(async (tx) => {
+    // Bir vaqtda kelgan "Bajardim"lar bir-birining hisobini yo'qotmasligi uchun reja qatori qulflanadi
+    await tx.$queryRaw`SELECT 1 FROM "ExercisePlan" WHERE "id" = ${planId} FOR UPDATE`;
+    const current = await tx.exerciseDayLog.findUnique({ where: { planId_day: { planId, day } } });
+    const count = Math.max(0, Math.min(plan.repsPerDay, (current?.count ?? 0) + delta));
+    await tx.exerciseDayLog.upsert({ where: { planId_day: { planId, day } }, create: { planId, day, count }, update: { count } });
+    await refreshCompletion(planId, tx);
+    return tx.exercisePlan.findUniqueOrThrow({ where: { id: planId }, include: PLAN_INCLUDE });
+  });
 
   const locale = parseLocale(new URL(req.url).searchParams.get("locale"));
-  const full = await prisma.exercisePlan.findUniqueOrThrow({ where: { id: planId }, include: PLAN_INCLUDE });
-  return NextResponse.json({ plan: toPublicPlan(full, locale) });
+  const { locked } = await getLessonAccess();
+  return NextResponse.json({ plan: toPublicPlan(full, locale, locked) });
 }

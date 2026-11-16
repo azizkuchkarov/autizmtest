@@ -97,20 +97,6 @@ export function logoutSession() {
 
 /* ----------------------------- Assessments ----------------------------- */
 
-export type CreateAssessmentInput = {
-  testType: "screening";
-  ageGroup: string;
-  answers: Record<string, 0 | 1 | 2 | 3>;
-  childGender?: string;
-  phone?: string;
-  /** Akkauntdagi bola — natija serverda bolaga bog'lanadi */
-  childId?: string;
-};
-
-export function createAssessment(input: CreateAssessmentInput) {
-  return request<{ assessmentId: string }>("/api/assessments", { method: "POST", body: JSON.stringify(input) });
-}
-
 /** Serverdagi natija (boshqa qurilmada topshirilgan yoki havola orqali ochilgan). */
 export function fetchServerAssessment(id: string) {
   return request<{

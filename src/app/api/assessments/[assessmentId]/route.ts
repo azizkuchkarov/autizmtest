@@ -114,7 +114,7 @@ export async function GET(
 
     return NextResponse.json(response, { status: 200 });
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Server xatoligi.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[assessment GET]", e);
+    return NextResponse.json({ error: "Server xatoligi." }, { status: 500 });
   }
 }

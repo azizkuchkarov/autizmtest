@@ -1,19 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import {
-  normalizePhone,
-  createPinSetupToken,
-  setPinSetupCookie,
-  createUserSession,
-  setUserSessionCookie,
-} from "@/lib/user-auth";
+import { createUserSession, normalizePhone, OTP_MAX_ATTEMPTS, setUserSessionCookie } from "@/lib/user-auth";
+import { clientIp, hit, tooManyRequests } from "@/lib/rate-limit";
+
+const PER_IP_LIMIT = 60;
+const PER_IP_WINDOW_MS = 15 * 60 * 1000;
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
     const phone = normalizePhone(String(body?.phone || ""));
     const code = String(body?.code || "").trim();
-    const flow = body?.flow === "test";
+    // "mobile" — token javobda qaytadi; boshqa har qanday qiymat (veb: "test") — sessiya cookie'si o'rnatiladi
     const mobile = body?.flow === "mobile";
 
     if (!/^\+998\d{9}$/.test(phone)) {
@@ -29,34 +27,38 @@ export async function POST(req: Request) {
       );
     }
 
-    const now = new Date();
-    const otp = await prisma.otpCode.findFirst({
-      where: { phone, code },
-      orderBy: { createdAt: "desc" },
+    const ip = await clientIp();
+    if (ip && !hit(`otp-verify:${ip}`, PER_IP_LIMIT, PER_IP_WINDOW_MS)) return tooManyRequests();
+
+    // Avval urinish bazada "band qilinadi" (attempts + 1), keyin kod solishtiriladi. Postgres qatorni qulflab shartni qayta
+    // tekshiradi — bir vaqtda yuborilgan yuzlab so'rov ham bitta kod uchun 5 tadan ortiq taxmin qila olmaydi.
+    const live = await prisma.otpCode.updateManyAndReturn({
+      where: { phone, expiresAt: { gt: new Date() }, attempts: { lt: OTP_MAX_ATTEMPTS } },
+      data: { attempts: { increment: 1 } },
+      select: { id: true, code: true },
     });
 
-    if (!otp) {
-      return NextResponse.json(
-        { error: "Kod noto‘g‘ri." },
-        { status: 401 }
-      );
-    }
-    if (otp.expiresAt < now) {
-      await prisma.otpCode.deleteMany({ where: { phone } });
-      return NextResponse.json(
-        { error: "Kod muddati tugadi. Yangi kod so‘rab yuboring." },
-        { status: 400 }
-      );
+    if (live.length === 0) {
+      const exhausted = await prisma.otpCode.count({ where: { phone, expiresAt: { gt: new Date() } } });
+      return exhausted > 0
+        ? NextResponse.json({ error: "Urinishlar soni tugadi. Yangi kod so‘rang." }, { status: 429 })
+        : NextResponse.json({ error: "Kod muddati tugadi. Yangi kod so‘rab yuboring." }, { status: 400 });
     }
 
-    await prisma.otpCode.deleteMany({ where: { id: otp.id } });
-
-    let user = await prisma.user.findUnique({ where: { phone } });
-    if (!user) {
-      user = await prisma.user.create({
-        data: { phone, pinHash: null },
-      });
+    // Faqat shu so'rovda urinishi band qilingan kodlar bilan solishtiriladi
+    const match = live.find((o) => o.code === code);
+    if (!match) {
+      return NextResponse.json({ error: "Kod noto‘g‘ri." }, { status: 401 });
     }
+
+    // Kod bir marta ishlatiladi: parallel so'rovlardan faqat bittasi uni o'chira oladi
+    const consumed = await prisma.otpCode.deleteMany({ where: { id: match.id } });
+    if (consumed.count === 0) {
+      return NextResponse.json({ error: "Kod noto‘g‘ri." }, { status: 401 });
+    }
+    await prisma.otpCode.deleteMany({ where: { phone } });
+
+    const user = await prisma.user.upsert({ where: { phone }, create: { phone }, update: {} });
 
     // Mobil ilova: sessiya tokeni cookie o'rniga javobda qaytariladi
     if (mobile) {
@@ -69,29 +71,15 @@ export async function POST(req: Request) {
       });
     }
 
-    if (flow) {
-      const { token, expiresAt } = await createUserSession(user.id);
-      await setUserSessionCookie(token, expiresAt);
-      return NextResponse.json({
-        ok: true,
-        needsPin: false,
-        user: { id: user.id, phone: user.phone },
-      });
-    }
-
-    const token = await createPinSetupToken(user.id);
-    await setPinSetupCookie(token);
-
+    const { token, expiresAt } = await createUserSession(user.id);
+    await setUserSessionCookie(token, expiresAt);
     return NextResponse.json({
       ok: true,
-      needsPin: true,
+      needsPin: false,
       user: { id: user.id, phone: user.phone },
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Server xatoligi.";
-    return NextResponse.json(
-      { error: "Server xatoligi.", details: message },
-      { status: 500 }
-    );
+    console.error("[OTP verify]", err);
+    return NextResponse.json({ error: "Server xatoligi." }, { status: 500 });
   }
 }

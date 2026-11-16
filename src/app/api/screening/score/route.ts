@@ -32,7 +32,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(scoreTest(schema, validAnswers, ageGroup), { status: 200 });
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Server xatoligi.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[screening score]", e);
+    return NextResponse.json({ error: "Server xatoligi." }, { status: 500 });
   }
 }

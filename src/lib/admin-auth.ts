@@ -36,6 +36,9 @@ export async function setSessionCookie(token: string, expiresAt: Date) {
 
 export async function clearSessionCookie() {
   const cookieStore = await cookies();
+  // Bazadagi sessiya ham o'chiriladi: chiqqandan keyin cookie nusxasi (o'g'irlangan bo'lsa ham) ishlamaydi
+  const token = cookieStore.get(SESSION_COOKIE)?.value;
+  if (token) await prisma.adminSession.deleteMany({ where: { token } });
   cookieStore.set(SESSION_COOKIE, "", {
     httpOnly: true,
     sameSite: "lax",
@@ -54,7 +57,8 @@ export async function getSessionAdmin() {
   });
   if (!session) return null;
   if (session.expiresAt < new Date()) {
-    await prisma.adminSession.delete({ where: { token } });
+    // deleteMany: parallel so'rov uni allaqachon o'chirgan bo'lsa ham xato bermaydi
+    await prisma.adminSession.deleteMany({ where: { token } });
     return null;
   }
   return session.admin;

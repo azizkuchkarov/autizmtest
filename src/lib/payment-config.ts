@@ -45,6 +45,12 @@ export type ClientInfo = { platform: "web" | "ios" | "android" | "app"; version:
  * So'rov kim tomonidan yuborilganini aniqlaydi.
  * Yangi ilovalar X-App-Platform/X-App-Version yuboradi. Eski buildlar (1.0.0 va undan oldingi) yubormaydi,
  * lekin Bearer token bilan keladi (veb esa cookie ishlatadi) — ular "app" (versiyasi noma'lum) deb olinadi.
+ *
+ * MA'LUM CHEKLOV (ataylab qabul qilingan): bu sarlavhalarni mijozning o'zi yuboradi va server ularni tekshira olmaydi.
+ * paymentsVisibleFor() false bo'lgan mijozda Darslar ochiq (locked=false), shuning uchun istalgan odam o'zini eski build
+ * deb ko'rsatib (masalan, `X-App-Platform: ios` versiyasiz yoki istalgan Bearer token bilan) dars videolarining havolalarini
+ * olishi mumkin. Bu o'rnatilgan eski ilovalar va App Store tekshiruvidagi build ishlashi uchun qilingan; eski buildlar
+ * ishlatilmay qolgach, PAYMENTS_UI=show da barcha mijozlar uchun qulf qo'yishni ko'rib chiqing.
  */
 export async function getClientInfo(): Promise<ClientInfo> {
   const h = await headers();
