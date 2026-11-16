@@ -495,3 +495,11 @@ model SyncReceipt {
 
   @@index([childId])
 }
+
+/// Admin paneldan o'zgartiriladigan sozlamalar (masalan, "payments" — to'lov). Yo'q bo'lsa .env qiymatlari ishlatiladi.
+model AppSetting {
+  key       String   @id
+  value     Json
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+}

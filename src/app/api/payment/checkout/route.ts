@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { extendLessonAccess } from "@/lib/lesson-access";
-import { getClientInfo, getPaymentAmount, getPaymentPeriodDays, isPaymentDevSkip, purchaseAllowedFor } from "@/lib/payment-config";
+import { getClientInfo, getPaymentSettings, isPaymentDevSkip, paymentsVisibleFor, purchaseAllowedFor } from "@/lib/payment-config";
 import { getSessionUser } from "@/lib/user-auth";
 import { logUserEvent } from "@/lib/user-event";
 
@@ -21,8 +21,13 @@ export async function POST(req: Request) {
   const user = await getSessionUser().catch(() => null);
   if (!user) return NextResponse.json({ error: "Avtorizatsiya talab qilinadi." }, { status: 401 });
 
-  // Ilova ichida sotib olish o'chiq bo'lsa (PAYMENTS_IN_APP) — faqat saytda to'lanadi
-  if (!purchaseAllowedFor(await getClientInfo())) {
+  const [clientInfo, settings] = await Promise.all([getClientInfo(), getPaymentSettings()]);
+  // To'lov o'chiq bo'lsa (admin panel) — darslar bepul, sotib olinmaydi
+  if (!paymentsVisibleFor(clientInfo, settings)) {
+    return NextResponse.json({ error: "To'lov hozir yoqilmagan." }, { status: 403 });
+  }
+  // Ilova ichida sotib olish o'chiq bo'lsa — faqat saytda to'lanadi
+  if (!purchaseAllowedFor(clientInfo, settings)) {
     return NextResponse.json({ error: "Ilovada to'lov mavjud emas." }, { status: 403 });
   }
 
@@ -31,8 +36,8 @@ export async function POST(req: Request) {
   const { client } = parsed.data;
 
   try {
-    const amount = getPaymentAmount();
-    const days = getPaymentPeriodDays();
+    const amount = settings.amount;
+    const days = settings.periodDays;
 
     // Lokal test: Click kalitlari yo'q — to'lov darhol o'tadi
     if (isPaymentDevSkip()) {

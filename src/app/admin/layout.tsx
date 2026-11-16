@@ -10,6 +10,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <a href="/admin/content" className="hover:text-slate-900">Video darslar</a>
             <a href="/admin/sounds" className="hover:text-slate-900">Ovozli darslar</a>
             <a href="/admin/aac" className="hover:text-slate-900">Rasmli muloqot</a>
+            <a href="/admin/payments" className="hover:text-slate-900">To'lov</a>
             <a href="/admin/logs" className="hover:text-slate-900">Loglar</a>
             <a href="/admin/push" className="hover:text-slate-900">Push xabarlar</a>
             <a href="/admin/feedback" className="hover:text-slate-900">Feedback</a>
